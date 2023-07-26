@@ -8,22 +8,22 @@ use bevy::{
 pub type ChildKey = Either<u32, &'static str>; //TODO either
 
 pub trait StateTreeRoot: StateTreeNode + Default {
-    type ContextParam: SystemParam;
+    type ContextParam<'a>: SystemParam;
 
-    fn get_context(param: StaticSystemParam<Self::ContextParam>) -> Self::Context;
+    fn get_context<'a, 'b> (param: StaticSystemParam<Self::ContextParam<'a>>) -> Self::Context<'b>;
 }
 
 pub trait StateTreeNode: Eq + Send + Sync + 'static {
-    type Context: DetectChanges;
+    type Context<'b>: DetectChanges;
 
-    fn get_components(
+    fn get_components<'b>(
         &self,
-        context: &Self::Context,
+        context: &Self::Context<'b>,
         component_commands: &mut impl ComponentCommands,
     );
 
-    fn get_children(&self, context: &Self::Context, child_commands: &mut impl ChildCommands);
+    fn get_children<'b>(&self, context: &Self::Context<'b>, child_commands: &mut impl ChildCommands);
 
-    fn get_child_deletion_policy(&self, context: &Self::Context) -> ChildDeletionPolicy;
+    fn get_child_deletion_policy<'b>(&self, context: &Self::Context<'b>) -> ChildDeletionPolicy;
     //fn are_children_ordered(&self) -> bool;
 }

@@ -54,9 +54,9 @@ fn handle_scheduled_for_removal(
     }
 }
 
-fn sync_state<R: StateTreeRoot>(
+fn sync_state<'a, R: StateTreeRoot>(
     mut commands: Commands,
-    param: StaticSystemParam<R::ContextParam>,
+    param: StaticSystemParam<R::ContextParam<'a>>,
     root_query: Query<EntityRef, With<HierarchyRoot<R>>>,
     tree: Query<(EntityRef, &HierarchyChild<R>)>,
 ) {
@@ -90,10 +90,10 @@ fn sync_state<R: StateTreeRoot>(
     }
 }
 
-fn create_recursive<R: StateTreeRoot, N: StateTreeNode>(
+fn create_recursive<'c, R: StateTreeRoot, N: StateTreeNode>(
     mut cec: &mut EntityCommands,
     node: N,
-    context: &N::Context,
+    context: &N::Context<'c>,
 ) {
     let mut creation_commands = ComponentCreationCommands::new(&mut cec);
     node.get_components(&context, &mut creation_commands);
@@ -104,11 +104,11 @@ fn create_recursive<R: StateTreeRoot, N: StateTreeNode>(
     cec.insert(HierarchyNode::new(node));
 }
 
-fn update_recursive<R: StateTreeRoot, N: StateTreeNode>(
+fn update_recursive<'c,R: StateTreeRoot, N: StateTreeNode>(
     commands: &mut Commands,
     entity_ref: EntityRef,
     node: N,
-    context: &N::Context,
+    context: &N::Context<'c>,
     all_child_nodes: Rc<HashMap<Entity, (EntityRef<'_>, ChildKey)>>,
 ) {
     let mut ec = commands.entity(entity_ref.id());

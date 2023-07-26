@@ -5,10 +5,10 @@ use crate::{create_recursive, prelude::*, update_recursive, ChildDeletionPolicy}
 use bevy::{ecs::system::EntityCommands, prelude::*, utils::hashbrown::HashMap};
 
 pub trait ChildCommands {
-    fn ensure_child<N: StateTreeNode>(
+    fn ensure_child<'c, N: StateTreeNode>(
         &mut self,
         key: ChildKey,
-        child_context: &N::Context,
+        child_context: &N::Context<'c>,
         child_node: N,
     );
 }
@@ -21,10 +21,10 @@ pub(crate) struct ChildCreationCommands<'w, 's, 'a, 'b, R: StateTreeRoot> {
 }
 
 impl<'w, 's, 'a, 'b, R: StateTreeRoot> ChildCommands for ChildCreationCommands<'w, 's, 'a, 'b, R> {
-    fn ensure_child<N: StateTreeNode>(
+    fn ensure_child<'c, N: StateTreeNode>(
         &mut self,
         key: ChildKey,
-        child_context: &N::Context,
+        child_context: &N::Context<'c>,
         child_node: N,
     ) {
         self.ec.with_children(|cb| {
@@ -54,10 +54,10 @@ pub(crate) struct UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, R: StateTreeRoot> 
 impl<'w, 's, 'a, 'b, 'w1, R: StateTreeRoot> ChildCommands
     for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, R>
 {
-    fn ensure_child<N: StateTreeNode>(
+    fn ensure_child<'c,N: StateTreeNode>(
         &mut self,
         key: ChildKey,
-        child_context: &N::Context,
+        child_context: &N::Context<'c>,
         child_node: N,
     ) {
         match self.remaining_old_entities.get(&key) {
