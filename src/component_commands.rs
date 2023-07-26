@@ -7,7 +7,11 @@ pub trait ComponentCommands {
 
 //#[derive(Debug)]
 pub(crate) struct ComponentCreationCommands<'w, 's, 'a, 'b> {
-    pub ec: &'b mut EntityCommands<'w, 's, 'a>,
+    ec: &'b mut EntityCommands<'w, 's, 'a>,
+}
+
+impl<'w, 's, 'a, 'b> ComponentCreationCommands<'w, 's, 'a, 'b> {
+    pub(crate) fn new(ec: &'b mut EntityCommands<'w, 's, 'a>) -> Self { Self { ec } }
 }
 
 impl<'w, 's, 'a, 'b> ComponentCommands for ComponentCreationCommands<'w, 's, 'a, 'b> {
@@ -22,12 +26,17 @@ impl<'w, 's, 'a, 'b> ComponentCommands for ComponentCreationCommands<'w, 's, 'a,
 
 //#[derive(Debug)]
 pub(crate) struct ComponentUpdateCommands<'w_e, 'w, 's, 'a, 'b> {
-    pub entity_ref: EntityRef<'w_e>,
-    pub ec: &'b mut EntityCommands<'w, 's, 'a>,
+    entity_ref: EntityRef<'w_e>,
+    ec: &'b mut EntityCommands<'w, 's, 'a>,
+}
+
+impl<'w_e, 'w, 's, 'a, 'b> ComponentUpdateCommands<'w_e, 'w, 's, 'a, 'b> {
+    pub (crate) fn new(entity_ref: EntityRef<'w_e>, ec: &'b mut EntityCommands<'w, 's, 'a>) -> Self {
+        Self { entity_ref, ec }
+    }
 }
 
 impl<'w_e, 'w, 's, 'a, 'b> ComponentCommands for ComponentUpdateCommands<'w_e, 'w, 's, 'a, 'b> {
-
     fn ensure_present<T: Component + Eq>(&mut self, component: T) {
         if let Some(existing) = self.entity_ref.get::<T>() {
             if !existing.eq(&component) {

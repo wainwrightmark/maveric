@@ -1,7 +1,10 @@
 use std::{rc::Rc, time::Duration};
 
 use bevy::{
-    ecs::{query::Has, system::StaticSystemParam},
+    ecs::{
+        query::Has,
+        system::{EntityCommands, StaticSystemParam},
+    },
     prelude::*,
     utils::hashbrown::HashMap,
 };
@@ -58,7 +61,7 @@ fn sync_state<R: StateTreeRoot>(
     mut commands: Commands,
     param: StaticSystemParam<R::ContextParam>,
     root_query: Query<EntityRef, With<HierarchyRoot<R>>>,
-    tree: Query<(EntityRef, &HierarchyChild1<R>)>,
+    tree: Query<(EntityRef, &HierarchyChild<R>)>,
 ) {
     let context = R::get_context(param);
 
@@ -67,52 +70,58 @@ fn sync_state<R: StateTreeRoot>(
     }
 
     let root_node = R::default();
-    let child_deletion_policy = root_node.get_child_deletion_policy(&context);
 
-    let mut all_child_nodes: HashMap<Entity, (EntityRef, ChildKey)> = Default::default();
-
-    for (er, child) in tree.iter() {
-        all_child_nodes.insert(er.id(), (er, child.key));
-    }
+    let all_child_nodes: HashMap<Entity, (EntityRef, ChildKey)> =
+        tree.iter().map(|(e, c)| (e.id(), (e, c.key))).collect();
 
     let all_child_nodes = Rc::new(all_child_nodes);
 
     match root_query.get_single().ok() {
         Some(entity_ref) => {
-            let mut ec = commands.entity(entity_ref.id());
-
-            let mut component_commands = ComponentUpdateCommands {
-                ec: &mut ec,
-                entity_ref,
-            };
-            root_node.get_components(&context, &mut component_commands);
-            let children = entity_ref.get::<Children>();
-
-            let mut child_commands =
-                UnorderedChildCommands::new(&mut ec, children, all_child_nodes);
-
-            root_node.get_children(&context, &mut child_commands);
-
-            child_commands.finish(children, child_deletion_policy);
+            update_recursive::<R, R>(&mut commands, entity_ref, root_node, &context, all_child_nodes);
         }
         None => {
-            let mut ec = commands.spawn_empty();
-
-            ec.insert((
-                HierarchyRoot::<R>::default(),
-                HierarchyNode1::<R>::default(),
-            ));
-
-            let mut component_commands = ComponentCreationCommands { ec: &mut ec };
-            root_node.get_components(&context, &mut component_commands);
-
-            let mut child_commands = UnorderedChildCommands::new(&mut ec, None, all_child_nodes);
-
-            root_node.get_children(&context, &mut child_commands);
-
-            child_commands.finish(None, child_deletion_policy);
+            let mut ec = commands.spawn(HierarchyRoot::<R>::default());
+            create_recursive::<R, R>(&mut ec, root_node, &context);
         }
     }
+}
 
-    drop(tree);
+fn create_recursive<R: StateTreeRoot, N: StateTreeNode>(
+    mut cec: &mut EntityCommands,
+    node: N,
+    context: &N::Context,
+) {
+    let mut creation_commands = ComponentCreationCommands::new(&mut cec);
+    node.get_components(&context, &mut creation_commands);
+    let mut child_commands = ChildCreationCommands::<R>::new(&mut cec);
+
+    node.get_children(&context, &mut child_commands);
+
+    cec.insert(HierarchyNode::new(node));
+}
+
+fn update_recursive<R: StateTreeRoot, N: StateTreeNode>(
+    commands: &mut Commands,
+    entity_ref: EntityRef,
+    node: N,
+    context: &N::Context,
+    all_child_nodes: Rc<HashMap<Entity, (EntityRef<'_>, u32)>>
+) {
+    let mut ec = commands.entity(entity_ref.id());
+    let mut component_commands = ComponentUpdateCommands::new(entity_ref, &mut ec);
+    node.get_components(&context, &mut component_commands);
+    let children = entity_ref.get::<Children>();
+
+    let mut child_commands = UnorderedChildCommands::<R>::new(&mut ec, children, all_child_nodes);
+
+    node.get_children(&context, &mut child_commands);
+    let child_deletion_policy = node.get_child_deletion_policy(&context);
+    child_commands.finish(children, child_deletion_policy);
+
+    ec.insert(HierarchyNode::new(node));
+
+    if entity_ref.contains::<ScheduledForDeletion>() {
+        ec.remove::<ScheduledForDeletion>();
+    }
 }
