@@ -16,7 +16,7 @@ impl<N: StateTreeNode> HierarchyNode<N> {
     pub(crate) fn new(node: N) -> Self { Self { node } }
 }
 
-#[derive(Debug, Default, Component)]
+#[derive(Debug,  Component)]
 pub(crate) struct HierarchyChild<R: StateTreeRoot> {
     pub key: ChildKey,
     phantom: PhantomData<R>

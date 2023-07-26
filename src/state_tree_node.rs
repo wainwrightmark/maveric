@@ -1,11 +1,11 @@
 use crate::{prelude::*, ChildDeletionPolicy};
-
+use either::Either;
 use bevy::{
     ecs::system::{StaticSystemParam, SystemParam},
     prelude::*,
 };
 
-pub type ChildKey = u32; //TODO either
+pub type ChildKey = Either<u32, &'static str>; //TODO either
 
 pub trait StateTreeRoot: StateTreeNode + Default {
     type ContextParam: SystemParam;

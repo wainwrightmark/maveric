@@ -1,10 +1,7 @@
 use std::{rc::Rc, time::Duration};
 
 use bevy::{
-    ecs::{
-        query::Has,
-        system::{EntityCommands, StaticSystemParam},
-    },
+    ecs::system::{EntityCommands, StaticSystemParam},
     prelude::*,
     utils::hashbrown::HashMap,
 };
@@ -78,7 +75,13 @@ fn sync_state<R: StateTreeRoot>(
 
     match root_query.get_single().ok() {
         Some(entity_ref) => {
-            update_recursive::<R, R>(&mut commands, entity_ref, root_node, &context, all_child_nodes);
+            update_recursive::<R, R>(
+                &mut commands,
+                entity_ref,
+                root_node,
+                &context,
+                all_child_nodes,
+            );
         }
         None => {
             let mut ec = commands.spawn(HierarchyRoot::<R>::default());
@@ -106,14 +109,15 @@ fn update_recursive<R: StateTreeRoot, N: StateTreeNode>(
     entity_ref: EntityRef,
     node: N,
     context: &N::Context,
-    all_child_nodes: Rc<HashMap<Entity, (EntityRef<'_>, u32)>>
+    all_child_nodes: Rc<HashMap<Entity, (EntityRef<'_>, ChildKey)>>,
 ) {
     let mut ec = commands.entity(entity_ref.id());
     let mut component_commands = ComponentUpdateCommands::new(entity_ref, &mut ec);
     node.get_components(&context, &mut component_commands);
     let children = entity_ref.get::<Children>();
 
-    let mut child_commands = UnorderedChildCommands::<R>::new(&mut ec, children, all_child_nodes);
+    let mut child_commands =
+        UnorderedChildCommands::<R>::new(&mut ec, children, all_child_nodes.clone());
 
     node.get_children(&context, &mut child_commands);
     let child_deletion_policy = node.get_child_deletion_policy(&context);

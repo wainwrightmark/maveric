@@ -1,6 +1,6 @@
 use std::{marker::PhantomData, rc::Rc};
 
-use crate::{create_recursive, prelude::*, ChildDeletionPolicy, update_recursive};
+use crate::{create_recursive, prelude::*, update_recursive, ChildDeletionPolicy};
 
 use bevy::{ecs::system::EntityCommands, prelude::*, utils::hashbrown::HashMap};
 
@@ -71,8 +71,13 @@ impl<'w, 's, 'a, 'b, 'w1, R: StateTreeRoot> ChildCommands
                         if child_context.is_changed() || existing.node != child_node {
                             //state has changed
 
-                            update_recursive::<R, N> (&mut self.ec.commands(), entity_ref.clone(), child_node, child_context, self.all_child_nodes.clone());
-
+                            update_recursive::<R, N>(
+                                &mut self.ec.commands(),
+                                entity_ref.clone(),
+                                child_node,
+                                child_context,
+                                self.all_child_nodes.clone(),
+                            );
                         } else {
                             //state has not changed - do nothing
                             if entity_ref.contains::<ScheduledForDeletion>() {
