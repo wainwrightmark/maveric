@@ -12,6 +12,8 @@ pub mod component_commands;
 pub mod components;
 pub mod state_tree_context;
 pub mod state_tree_node;
+pub mod has_detect_changes;
+pub mod child_deletion_policy;
 
 pub mod prelude {
     pub use crate::child_commands::*;
@@ -19,13 +21,11 @@ pub mod prelude {
     pub(crate) use crate::components::*;
     pub use crate::state_tree_context::*;
     pub use crate::state_tree_node::*;
+    pub use crate::has_detect_changes::*;
+    pub use crate::child_deletion_policy::*;
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ChildDeletionPolicy {
-    DeleteImmediately,
-    Linger(Duration),
-}
+
 
 #[derive(Debug, Default)]
 pub struct StateTreePlugin;
@@ -62,7 +62,7 @@ fn sync_state<'a, R: StateTreeRoot>(
 ) {
     let context = R::get_context(param);
 
-    if !context.is_changed() {
+    if !context.has_changed() {
         return;
     }
 

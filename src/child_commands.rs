@@ -5,9 +5,9 @@ use crate::{create_recursive, prelude::*, update_recursive, ChildDeletionPolicy}
 use bevy::{ecs::system::EntityCommands, prelude::*, utils::hashbrown::HashMap};
 
 pub trait ChildCommands {
-    fn ensure_child<'c, N: StateTreeNode>(
+    fn add<'c, N: StateTreeNode>(
         &mut self,
-        key: ChildKey,
+        key: impl Into<ChildKey> ,
         child_context: &N::Context<'c>,
         child_node: N,
     );
@@ -21,14 +21,14 @@ pub(crate) struct ChildCreationCommands<'w, 's, 'a, 'b, R: StateTreeRoot> {
 }
 
 impl<'w, 's, 'a, 'b, R: StateTreeRoot> ChildCommands for ChildCreationCommands<'w, 's, 'a, 'b, R> {
-    fn ensure_child<'c, N: StateTreeNode>(
+    fn add<'c, N: StateTreeNode>(
         &mut self,
-        key: ChildKey,
+        key: impl Into<ChildKey> ,
         child_context: &N::Context<'c>,
         child_node: N,
     ) {
         self.ec.with_children(|cb| {
-            let mut cec = cb.spawn(HierarchyChild::<R>::new(key));
+            let mut cec = cb.spawn(HierarchyChild::<R>::new(key.into()));
             create_recursive::<R, N>(&mut cec, child_node, &child_context);
         });
     }
@@ -54,12 +54,13 @@ pub(crate) struct UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, R: StateTreeRoot> 
 impl<'w, 's, 'a, 'b, 'w1, R: StateTreeRoot> ChildCommands
     for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, R>
 {
-    fn ensure_child<'c,N: StateTreeNode>(
+    fn add<'c,N: StateTreeNode>(
         &mut self,
-        key: ChildKey,
+        key: impl Into<ChildKey> ,
         child_context: &N::Context<'c>,
         child_node: N,
     ) {
+        let key = key.into();
         match self.remaining_old_entities.get(&key) {
             Some(entity_ref) => {
                 //check if this node has changed
@@ -68,7 +69,7 @@ impl<'w, 's, 'a, 'b, 'w1, R: StateTreeRoot> ChildCommands
                     Some(existing) => {
                         // unschedule it for deletion if necessary
 
-                        if child_context.is_changed() || existing.node != child_node {
+                        if child_context.has_changed() || existing.node != child_node {
                             //state has changed
 
                             update_recursive::<R, N>(

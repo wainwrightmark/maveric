@@ -1,14 +1,13 @@
-use std::{f32::consts, time::Duration};
-
 use bevy::{ecs::system::EntityCommands, prelude::*};
-use state_hierarchy::{prelude::*, register_state_tree};
 use bevy_tweening::{
     lens::{TransformRotateZLens, TransformScaleLens, UiPositionLens},
     Animator, EaseMethod, Tween, TweeningPlugin,
 };
-
-
-
+use state_hierarchy::{prelude::*, register_state_tree};
+use std::string::ToString;
+use std::{f32::consts, time::Duration};
+use strum::Display;
+use strum::IntoStaticStr;
 
 const TRANSITION_DURATION: Duration = Duration::from_secs(2);
 const RESET_DURATION: Duration = Duration::from_secs(1);
@@ -33,18 +32,12 @@ fn main() {
 
 #[derive(Debug, Clone, Resource, Default)]
 pub struct UIState {
-    pub next_index: usize,
-    pub dynamic_buttons: Vec<usize>,
+    pub next_button: u32,
+    pub dynamic_buttons: Vec<u32>,
 }
 
-// fn text_node_parents(query: Query<(&Text, &Parent)>) {
-//     for ((text, parent)) in query.iter() {
-//         info!("{text:?} has parent {parent:?}")
-//     }
-// }
-
 impl UIState {
-    pub fn remove_or_readd(&mut self, next_number: usize) {
+    pub fn remove_or_readd(&mut self, next_number: u32) {
         match self.dynamic_buttons.binary_search(&next_number) {
             Ok(index) => {
                 self.dynamic_buttons.remove(index);
@@ -56,17 +49,17 @@ impl UIState {
 
     pub fn reset(&mut self) {
         self.dynamic_buttons.clear();
-        self.next_index = 0;
+        self.next_button = 0;
     }
 
     pub fn add(&mut self) {
-        self.dynamic_buttons.push(self.next_index);
+        self.dynamic_buttons.push(self.next_button);
         //info!("Added button {}", self.next_index);
-        self.next_index += 1;
+        self.next_button += 1;
     }
 }
 
-pub fn get_button_left_top(state: &UIState, number: &usize) -> (Val, Val) {
+pub fn get_button_left_top(state: &UIState, number: &u32) -> (Val, Val) {
     let index = state
         .dynamic_buttons
         .binary_search(&number)
@@ -89,55 +82,71 @@ pub fn get_journey_duration(start: (Val, Val), end: (Val, Val)) -> Duration {
     }
 }
 
-#[derive(Debug, Eq, PartialEq, Component, Hash, Clone, Copy)]
+#[derive(Debug, Eq, PartialEq, Component, Hash, Clone, Copy, IntoStaticStr, Display)]
 pub enum Command {
     AddNew,
     Reset,
 }
 
-fn add_text_node(
-    commands: &mut EntityCommands,
-    text: impl Into<String>,
-    asset_server: &AssetServer,
-) {
-    commands.with_children(|s| {
-        s.spawn_empty().insert(TextBundle::from_section(
-            text,
+#[derive(Debug, Eq, PartialEq, Component, Hash, Clone, Copy)]
+pub struct DynamicButtonComponent(u32);
+
+#[derive(Eq, PartialEq, Debug, Default)]
+pub struct TextNode {
+    text: String,
+}
+
+impl StateTreeNode for TextNode {
+    type Context<'c> = Res<'c, AssetServer>;
+
+    fn get_components<'c>(
+        &self,
+        context: &Self::Context<'c>,
+        component_commands: &mut impl ComponentCommands,
+    ) {
+        component_commands.insert(TextBundle::from_section(
+            self.text.clone(),
             TextStyle {
-                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                font: context.load("fonts/FiraSans-Bold.ttf"),
                 font_size: 40.0,
                 color: Color::rgb(0.9, 0.9, 0.9),
             },
         ));
-    });
+    }
+
+    fn get_children<'c>(
+        &self,
+        context: &Self::Context<'c>,
+        child_commands: &mut impl ChildCommands,
+    ) {
+        //
+    }
+
+    fn get_child_deletion_policy<'c>(&self, context: &Self::Context<'c>) -> ChildDeletionPolicy {
+        ChildDeletionPolicy::DeleteImmediately
+    }
 }
-
-#[derive(Debug, Eq, PartialEq, Component, Hash, Clone, Copy)]
-pub struct DynamicButtonComponent(usize);
-
-// #[derive(Eq, PartialEq, Debug, Hash)]
-// pub enum SimpleNode {
-//     Root,
-//     CommandButton(Command),
-//     DynamicButton { number: usize },
-// }
-
-// impl StateTreeRoot for SimpleNode {
-
-// }
 
 #[derive(Eq, PartialEq, Debug, Default)]
 pub struct Root;
 
-impl StateTreeRoot for Root{
-    type ContextParam<'a> = (Res<'a, UIState>, Res<'a, AssetServer>);
+impl StateTreeRoot for Root {
+    type ContextParam<'c> = (Res<'c, UIState>, Res<'c, AssetServer>);
 
-    fn get_context<'a, 'c> (param: bevy::ecs::system::StaticSystemParam<Self::ContextParam<'a>>) -> Self::Context <'c>{
-        (param.0, param.1)
+    fn get_context<'a, 'c, 'w: 'c, 's>(
+        param: bevy::ecs::system::StaticSystemParam<'w, 's, Self::ContextParam<'a>>,
+    ) -> Self::Context<'c> {
+        param.into_inner()
     }
+
+    // fn get_context<'a, 'c : 'a>(
+    //     param: bevy::ecs::system::StaticSystemParam<Self::ContextParam<'a>>,
+    // ) -> Self::Context<'c> {
+    //     param.into_inner()
+    // }
 }
 
-impl StateTreeNode for Root{
+impl StateTreeNode for Root {
     type Context<'c> = (Res<'c, UIState>, Res<'c, AssetServer>);
 
     fn get_components<'b>(
@@ -145,133 +154,155 @@ impl StateTreeNode for Root{
         context: &Self::Context<'b>,
         component_commands: &mut impl ComponentCommands,
     ) {
-        todo!()
+        component_commands.insert(NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+            ..default()
+        });
     }
 
-    fn get_children<'b>(&self, context: &Self::Context<'b>, child_commands: &mut impl ChildCommands) {
-        todo!()
+    fn get_children<'b>(
+        &self,
+        context: &Self::Context<'b>,
+        child_commands: &mut impl ChildCommands,
+    ) {
+        for command_button in [
+            CommandButton(Command::AddNew),
+            CommandButton(Command::Reset),
+        ] {
+            let key: &'static str = command_button.0.into();
+            child_commands.add(ChildKey::Right(key), &context.1, command_button);
+        }
+
+        for number in context.0.dynamic_buttons.iter().cloned() {
+            child_commands.add(ChildKey::Left(number), context, DynamicButton { number });
+        }
     }
 
-    fn get_child_deletion_policy<'b>(&self, context: &Self::Context<'b>) -> state_hierarchy::ChildDeletionPolicy {
-        todo!()
+    fn get_child_deletion_policy<'b>(&self, context: &Self::Context<'b>) -> ChildDeletionPolicy {
+        let duration = if context.0.next_button == 0 {
+            RESET_DURATION
+        } else {
+            TRANSITION_DURATION
+        };
+
+        ChildDeletionPolicy::Linger(duration)
     }
-
-
 }
-
-
-// impl StateTreeNode for Root {
-//     type Context = (UIState, AssetServer);
-
-//     fn get_children(&self, args: &Self::Context) -> Self::Children {
-//         let mut children = vec![
-//             CommandButton(Command::AddNew),
-//             CommandButton(Command::Reset),
-//         ];
-
-//         children.extend(
-//             args.0
-//                 .dynamic_buttons
-//                 .iter()
-//                 .map(|index| DynamicButton { number: *index }),
-//         );
-//         children.into_iter()
-//     }
-
-//     fn create(&self, commands: &mut EntityCommands, args: &Self::Context) {
-//         todo!()
-//     }
-
-//     fn update(
-//         &self,
-//         commands: &mut EntityCommands,
-//         args: &Self::Context,
-//         previous: &Self::Context,
-//         entity_ref: EntityRef,
-//     ) {
-//         todo!()
-//     }
-
-//     fn delete(
-//         &self,
-//         commands: &mut EntityCommands,
-//         args: &Self::Context,
-//         previous: &Self::Context,
-//         entity_ref: EntityRef,
-//     ) -> DeleteResult {
-//         todo!()
-//     }
-
-//     fn cancel_delete(
-//         &self,
-//         commands: &mut EntityCommands,
-//         args: &Self::Context,
-//         previous: &Self::Context,
-//         entity_ref: EntityRef,
-//     ) {
-//         todo!()
-//     }
-
-//     fn should_update(&self, args: &Self::Context, previous: &Self::Context) -> StateTreeShouldUpdate {
-//         todo!()
-//     }
-// }
 
 #[derive(Eq, PartialEq, Debug, Hash)]
 pub struct CommandButton(Command);
 
-// impl StateTreeNode for CommandButton {
-//     type Context = (AssetServer,);
+impl StateTreeNode for CommandButton {
+    type Context<'c> = Res<'c, AssetServer>;
 
-//     type Children = std::iter::Empty<Self>;
+    fn get_components<'b>(
+        &self,
+        context: &Self::Context<'b>,
+        component_commands: &mut impl ComponentCommands,
+    ) {
+        let left = match self.0 {
+            Command::AddNew => Val::Percent(30.),
+            Command::Reset => Val::Percent(70.),
+        };
+        component_commands.insert(ButtonBundle {
+            style: Style {
+                width: Val::Px(DYNAMIC_BOX_WIDTH),
+                height: Val::Px(DYNAMIC_BOX_HEIGHT),
+                border: UiRect::all(Val::Px(5.0)),
+                position_type: PositionType::Absolute,
+                left,
+                top: Val::Px(100.),
+                // horizontally center child text
+                justify_content: JustifyContent::Center,
+                // vertically center child text
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            border_color: BorderColor(Color::BLACK),
+            background_color: NORMAL_BUTTON.into(),
+            ..default()
+        });
+        component_commands.insert(self.0);
+    }
 
-//     fn get_children(&self, args: &Self::Context) -> Self::Children {
-//         std::iter::empty()
-//     }
+    fn get_children<'b>(
+        &self,
+        context: &Self::Context<'b>,
+        child_commands: &mut impl ChildCommands,
+    ) {
+        child_commands.add(
+            ChildKey::Left(0),
+            context,
+            TextNode {
+                text: self.0.to_string(),
+            },
+        )
+    }
 
-//     fn create(&self, commands: &mut EntityCommands, args: &Self::Context) {
-//         todo!()
-//     }
-
-//     fn update(
-//         &self,
-//         commands: &mut EntityCommands,
-//         args: &Self::Context,
-//         previous: &Self::Context,
-//         entity_ref: EntityRef,
-//     ) {
-//     }
-
-//     fn delete(
-//         &self,
-//         commands: &mut EntityCommands,
-//         args: &Self::Context,
-//         previous: &Self::Context,
-//         entity_ref: EntityRef,
-//     ) -> DeleteResult {
-//         DeleteResult { linger_time: None }
-//     }
-
-//     fn cancel_delete(
-//         &self,
-//         commands: &mut EntityCommands,
-//         args: &Self::Context,
-//         previous: &Self::Context,
-//         entity_ref: EntityRef,
-//     ) {
-//     }
-
-//     fn should_update(&self, args: &Self::Context, previous: &Self::Context) -> StateTreeShouldUpdate {
-//         StateTreeShouldUpdate::SELF_ONLY
-//     }
-// }
+    fn get_child_deletion_policy<'b>(&self, context: &Self::Context<'b>) -> ChildDeletionPolicy {
+        ChildDeletionPolicy::DeleteImmediately
+    }
+}
 
 #[derive(Eq, PartialEq, Debug, Hash)]
 pub struct DynamicButton {
-    number: usize,
+    number: u32,
 }
 
-impl StateTreeNode for DynamicButton {}
+impl StateTreeNode for DynamicButton {
+    type Context<'c> = (Res<'c, UIState>, Res<'c, AssetServer>);
+
+    fn get_components<'b>(
+        &self,
+        context: &Self::Context<'b>,
+        component_commands: &mut impl ComponentCommands,
+    ) {
+        let (left, top) = get_button_left_top(&context.0, &self.number);
+
+        component_commands.insert(ButtonBundle {
+            style: Style {
+                width: Val::Px(DYNAMIC_BOX_WIDTH),
+                height: Val::Px(DYNAMIC_BOX_HEIGHT),
+                border: UiRect::all(Val::Px(5.0)),
+                position_type: PositionType::Absolute,
+                left,
+                top,
+                // horizontally center child text
+                justify_content: JustifyContent::Center,
+                // vertically center child text
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            border_color: BorderColor(Color::BLACK),
+            background_color: NORMAL_BUTTON.into(),
+            ..default()
+        });
+        component_commands.insert(DynamicButtonComponent(self.number));
+    }
+
+    fn get_children<'b>(
+        &self,
+        context: &Self::Context<'b>,
+        child_commands: &mut impl ChildCommands,
+    ) {
+        child_commands.add(
+            ChildKey::Left(0),
+            &context.1,
+            TextNode {
+                text: self.number.to_string(),
+            },
+        )
+    }
+
+    fn get_child_deletion_policy<'b>(&self, context: &Self::Context<'b>) -> ChildDeletionPolicy {
+        ChildDeletionPolicy::DeleteImmediately
+    }
+}
 
 // impl StateTreeNode for SimpleNode {
 //     type Args = (UIState, AssetServer);
@@ -305,15 +336,7 @@ impl StateTreeNode for DynamicButton {}
 //     fn create(&self, commands: &mut bevy::ecs::system::EntityCommands, args: &Self::Args) {
 //         match self {
 //             SimpleNode::Root => {
-//                 commands.insert(NodeBundle {
-//                     style: Style {
-//                         width: Val::Percent(100.0),
-//                         align_items: AlignItems::Center,
-//                         justify_content: JustifyContent::Center,
-//                         ..default()
-//                     },
-//                     ..default()
-//                 });
+
 //             }
 //             SimpleNode::CommandButton(command) => {
 //                 let left = match command {
