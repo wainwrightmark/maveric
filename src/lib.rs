@@ -123,7 +123,7 @@ fn update_recursive<'c,R: StateTreeRoot, N: StateTreeNode>(
 
     node.get_children(&context, &mut child_commands);
     let child_deletion_policy = node.get_child_deletion_policy(&context);
-    child_commands.finish(children, child_deletion_policy);
+    child_commands.finish( child_deletion_policy);
 
     ec.insert(HierarchyNode::new(node));
 
