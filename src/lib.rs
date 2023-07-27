@@ -1,4 +1,4 @@
-use std::{rc::Rc, time::Duration};
+use std::{rc::Rc};
 
 use bevy::{
     ecs::system::{EntityCommands, StaticSystemParam},
@@ -14,6 +14,7 @@ pub mod state_tree_context;
 pub mod state_tree_node;
 pub mod has_detect_changes;
 pub mod child_deletion_policy;
+pub mod child_key;
 
 pub mod prelude {
     pub use crate::child_commands::*;
@@ -23,6 +24,7 @@ pub mod prelude {
     pub use crate::state_tree_node::*;
     pub use crate::has_detect_changes::*;
     pub use crate::child_deletion_policy::*;
+    pub use crate::child_key::*;
 }
 
 

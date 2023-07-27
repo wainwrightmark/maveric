@@ -175,11 +175,11 @@ impl StateTreeNode for Root {
             CommandButton(Command::Reset),
         ] {
             let key: &'static str = command_button.0.into();
-            child_commands.add(ChildKey::Right(key), &context.1, command_button);
+            child_commands.add(key, &context.1, command_button);
         }
 
         for number in context.0.dynamic_buttons.iter().cloned() {
-            child_commands.add(ChildKey::Left(number), context, DynamicButton { number });
+            child_commands.add(number, context, DynamicButton { number });
         }
     }
 
@@ -236,7 +236,7 @@ impl StateTreeNode for CommandButton {
         child_commands: &mut impl ChildCommands,
     ) {
         child_commands.add(
-            ChildKey::Left(0),
+            0,
             context,
             TextNode {
                 text: self.0.to_string(),
@@ -291,7 +291,7 @@ impl StateTreeNode for DynamicButton {
         child_commands: &mut impl ChildCommands,
     ) {
         child_commands.add(
-            ChildKey::Left(0),
+            0,
             &context.1,
             TextNode {
                 text: self.number.to_string(),
