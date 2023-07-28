@@ -10,7 +10,7 @@ use strum::Display;
 use strum::IntoStaticStr;
 
 const TRANSITION_DURATION: Duration = Duration::from_secs(2);
-const RESET_DURATION: Duration = Duration::from_secs(1);
+const DELETE_DURATION: Duration = Duration::from_secs(1);
 const DYNAMIC_BOX_WIDTH: f32 = 150.0;
 const DYNAMIC_BOX_HEIGHT: f32 = 65.0;
 const BOXES_PER_ROW: usize = 5;
@@ -122,8 +122,8 @@ impl StateTreeNode for TextNode {
         //
     }
 
-    fn get_child_deletion_policy<'c>(&self, context: &Self::Context<'c>) -> ChildDeletionPolicy {
-        ChildDeletionPolicy::DeleteImmediately
+    fn on_deleted(&self, component_commands: &mut impl ComponentCommands) -> DeletionPolicy {
+        DeletionPolicy::DeleteImmediately
     }
 }
 
@@ -138,12 +138,6 @@ impl StateTreeRoot for Root {
     ) -> Self::Context<'c> {
         param.into_inner()
     }
-
-    // fn get_context<'a, 'c : 'a>(
-    //     param: bevy::ecs::system::StaticSystemParam<Self::ContextParam<'a>>,
-    // ) -> Self::Context<'c> {
-    //     param.into_inner()
-    // }
 }
 
 impl StateTreeNode for Root {
@@ -183,14 +177,8 @@ impl StateTreeNode for Root {
         }
     }
 
-    fn get_child_deletion_policy<'b>(&self, context: &Self::Context<'b>) -> ChildDeletionPolicy {
-        let duration = if context.0.next_button == 0 {
-            RESET_DURATION
-        } else {
-            TRANSITION_DURATION
-        };
-
-        ChildDeletionPolicy::Linger(duration)
+    fn on_deleted(&self, component_commands: &mut impl ComponentCommands) -> DeletionPolicy {
+        DeletionPolicy::DeleteImmediately
     }
 }
 
@@ -244,8 +232,8 @@ impl StateTreeNode for CommandButton {
         )
     }
 
-    fn get_child_deletion_policy<'b>(&self, context: &Self::Context<'b>) -> ChildDeletionPolicy {
-        ChildDeletionPolicy::DeleteImmediately
+    fn on_deleted(&self, component_commands: &mut impl ComponentCommands) -> DeletionPolicy {
+        DeletionPolicy::Linger(DELETE_DURATION)
     }
 }
 
@@ -299,8 +287,8 @@ impl StateTreeNode for DynamicButton {
         )
     }
 
-    fn get_child_deletion_policy<'b>(&self, context: &Self::Context<'b>) -> ChildDeletionPolicy {
-        ChildDeletionPolicy::DeleteImmediately
+    fn on_deleted(&self, component_commands: &mut impl ComponentCommands) -> DeletionPolicy {
+        DeletionPolicy::Linger(DELETE_DURATION)
     }
 }
 

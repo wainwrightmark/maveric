@@ -15,6 +15,7 @@ pub mod state_tree_node;
 pub mod has_detect_changes;
 pub mod child_deletion_policy;
 pub mod child_key;
+pub mod desired_transform;
 
 pub mod prelude {
     pub use crate::child_commands::*;
@@ -25,6 +26,7 @@ pub mod prelude {
     pub use crate::has_detect_changes::*;
     pub use crate::child_deletion_policy::*;
     pub use crate::child_key::*;
+    pub use crate::desired_transform::*;
 }
 
 
@@ -34,13 +36,13 @@ pub struct StateTreePlugin;
 
 impl Plugin for StateTreePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(First, handle_scheduled_for_removal);
+        app.add_systems(Last, handle_scheduled_for_removal);
     }
 }
 
 pub fn register_state_tree<R: StateTreeRoot>(app: &mut App) {
     app.add_plugins(StateTreePlugin);
-    app.add_systems(Update, sync_state::<R>);
+    app.add_systems(First, sync_state::<R>);
 }
 
 fn handle_scheduled_for_removal(
@@ -70,8 +72,8 @@ fn sync_state<'a, R: StateTreeRoot>(
 
     let root_node = R::default();
 
-    let all_child_nodes: HashMap<Entity, (EntityRef, ChildKey)> =
-        tree.iter().map(|(e, c)| (e.id(), (e, c.key))).collect();
+    let all_child_nodes: HashMap<Entity, (EntityRef, HierarchyChild<R>)> =
+        tree.iter().map(|(e, c)| (e.id(), (e, c.clone()))).collect();
 
     let all_child_nodes = Rc::new(all_child_nodes);
 
@@ -111,7 +113,7 @@ fn update_recursive<'c,R: StateTreeRoot, N: StateTreeNode>(
     entity_ref: EntityRef,
     node: N,
     context: &N::Context<'c>,
-    all_child_nodes: Rc<HashMap<Entity, (EntityRef<'_>, ChildKey)>>,
+    all_child_nodes: Rc<HashMap<Entity, (EntityRef, HierarchyChild<R>)>>,
 ) {
     let mut ec = commands.entity(entity_ref.id());
     let mut component_commands = ComponentUpdateCommands::new(entity_ref, &mut ec);
@@ -122,8 +124,7 @@ fn update_recursive<'c,R: StateTreeRoot, N: StateTreeNode>(
         UnorderedChildCommands::<R>::new(&mut ec, children, all_child_nodes.clone());
 
     node.get_children(&context, &mut child_commands);
-    let child_deletion_policy = node.get_child_deletion_policy(&context);
-    child_commands.finish( child_deletion_policy);
+    child_commands.finish();
 
     ec.insert(HierarchyNode::new(node));
 

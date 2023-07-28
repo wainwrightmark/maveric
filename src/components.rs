@@ -13,17 +13,34 @@ pub(crate) struct HierarchyNode<N: StateTreeNode> {
 }
 
 impl<N: StateTreeNode> HierarchyNode<N> {
-    pub(crate) fn new(node: N) -> Self { Self { node } }
+    pub(crate) fn new(node: N) -> Self {
+        Self { node }
+    }
 }
 
-#[derive(Debug,  Component)]
+#[derive( Component)]
 pub(crate) struct HierarchyChild<R: StateTreeRoot> {
     pub key: ChildKey,
-    phantom: PhantomData<R>
+    pub deleter: &'static dyn Deleter,
+    phantom: PhantomData<R>,
 }
 
+impl<R: StateTreeRoot> Clone for HierarchyChild<R> {
+    fn clone(&self) -> Self {
+        Self { key: self.key.clone(), deleter: self.deleter.clone(), phantom: self.phantom.clone() }
+    }
+}
+
+
+
 impl<R: StateTreeRoot> HierarchyChild<R> {
-    pub(crate) fn new(key: ChildKey) -> Self { Self { key, phantom: PhantomData } }
+    pub(crate) fn new<N: StateTreeNode>(key: ChildKey) -> Self {
+        Self {
+            key,
+            phantom: PhantomData,
+            deleter: N::DELETER
+        }
+    }
 }
 
 #[derive(Debug, Component)]

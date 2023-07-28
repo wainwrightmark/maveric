@@ -29,7 +29,7 @@ impl<'w, 's, 'a, 'b> ComponentCommands for ComponentCreationCommands<'w, 's, 'a,
 }
 
 //#[derive(Debug)]
-pub(crate) struct ComponentUpdateCommands<'w_e, 'w, 's, 'a, 'b> {
+pub (crate) struct ComponentUpdateCommands<'w_e, 'w, 's, 'a, 'b> {
     entity_ref: EntityRef<'w_e>,
     ec: &'b mut EntityCommands<'w, 's, 'a>,
 }

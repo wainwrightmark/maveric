@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ChildDeletionPolicy {
+pub enum DeletionPolicy {
     DeleteImmediately,
     Linger(Duration),
 }
