@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, rc::Rc};
+use std::{any::type_name, marker::PhantomData, rc::Rc};
 
 use crate::{create_recursive, prelude::*, update_recursive, DeletionPolicy};
 
@@ -71,7 +71,7 @@ impl<'w, 's, 'a, 'b, 'w1, R: StateTreeRoot> ChildCommands
 
                         if child_context.has_changed() || existing.node != child_node {
                             //state has changed
-                            info!("Child with key '{key}' has changed");
+                            //info!("Child {} with key '{key}' has changed", type_name::<N>());
 
                             update_recursive::<R, N>(
                                 &mut self.ec.commands(),
@@ -83,15 +83,18 @@ impl<'w, 's, 'a, 'b, 'w1, R: StateTreeRoot> ChildCommands
                         } else {
                             //state has not changed - do nothing
                             if entity_ref.contains::<ScheduledForDeletion>() {
-                                self.ec
-                                    .commands()
-                                    .entity(entity_ref.id())
-                                    .remove::<ScheduledForDeletion>();
+                                let mut cec = self.ec.commands().entity(entity_ref.id());
+                                cec.remove::<ScheduledForDeletion>();
+                                let mut cc = ComponentUpdateCommands::new(entity_ref, &mut cec);
+                                child_node.get_components(child_context, &mut cc);
                             }
                         }
                     }
                     None => {
-                        warn!("Child with key '{key}' has had node type changed");
+                        warn!(
+                            "Child with key '{key}' has had node type changed to {}",
+                            type_name::<N>()
+                        );
                         // The node type has changed - delete this entity and readd
                         self.ec
                             .commands()
@@ -107,6 +110,7 @@ impl<'w, 's, 'a, 'b, 'w1, R: StateTreeRoot> ChildCommands
             }
             None => {
                 self.ec.with_children(|cb| {
+                    //info!("Creating new Child {} with key '{key}'", type_name::<N>());
                     let mut cec = cb.spawn(HierarchyChild::<R>::new::<N>(key));
                     create_recursive::<R, N>(&mut cec, child_node, &child_context);
                 });
@@ -119,7 +123,7 @@ impl<'w, 's, 'a, 'b, 'w1, R: StateTreeRoot> UnorderedChildCommands<'w, 's, 'a, '
     pub fn new(
         ec: &'b mut EntityCommands<'w, 's, 'a>,
         children: Option<&Children>,
-        all_child_nodes: Rc<HashMap<Entity, (EntityRef<'w1> , HierarchyChild<R>)>>,
+        all_child_nodes: Rc<HashMap<Entity, (EntityRef<'w1>, HierarchyChild<R>)>>,
     ) -> Self {
         //let tree = tree.clone();
         match children {
@@ -159,17 +163,17 @@ impl<'w, 's, 'a, 'b, 'w1, R: StateTreeRoot> UnorderedChildCommands<'w, 's, 'a, '
         for (key, (er, child)) in self.remaining_old_entities {
             let mut child_ec = ec.commands().entity(er.id());
             let mut update_commands = ComponentUpdateCommands::new(er, &mut child_ec);
-            let deletion_policy = child.deleter.on_deleted(&er, &mut update_commands);
+            let deletion_policy = child.deleter.on_deleted(&mut update_commands);
 
             match deletion_policy {
                 DeletionPolicy::DeleteImmediately => {
-                    info!("Despawning Child with key '{key}'");
+                    //info!("Despawning Child with key '{key}'");
                     //do nothing
                     child_ec.despawn_recursive();
                 }
                 DeletionPolicy::Linger(duration) => {
                     if !er.contains::<ScheduledForDeletion>() {
-                        info!("Scheduling deletion of Child with key '{key}'");
+                        //info!("Scheduling deletion of Child with key '{key}'");
                         child_ec.insert(ScheduledForDeletion {
                             timer: Timer::new(duration, TimerMode::Once),
                         });

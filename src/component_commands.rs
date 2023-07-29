@@ -2,9 +2,10 @@ use bevy::{ecs::system::EntityCommands, prelude::*};
 
 pub trait ComponentCommands {
     fn insert<T: Bundle>(&mut self, bundle: T);
+
     fn remove<T: Bundle>(&mut self);
 
-    // todo insert or update component
+    fn get<T: Component>(&self)-> Option<&T>;
 }
 
 //#[derive(Debug)]
@@ -26,13 +27,19 @@ impl<'w, 's, 'a, 'b> ComponentCommands for ComponentCreationCommands<'w, 's, 'a,
     fn remove<T: Bundle>(&mut self) {
         //Do nothing
     }
+
+    fn get<T: Component>(&self)-> Option<&T> {
+        None
+    }
+
+
 }
 
-//#[derive(Debug)]
 pub (crate) struct ComponentUpdateCommands<'w_e, 'w, 's, 'a, 'b> {
-    entity_ref: EntityRef<'w_e>,
+    pub entity_ref: EntityRef<'w_e>,
     ec: &'b mut EntityCommands<'w, 's, 'a>,
 }
+
 
 impl<'w_e, 'w, 's, 'a, 'b> ComponentUpdateCommands<'w_e, 'w, 's, 'a, 'b> {
     pub(crate) fn new(entity_ref: EntityRef<'w_e>, ec: &'b mut EntityCommands<'w, 's, 'a>) -> Self {
@@ -47,5 +54,9 @@ impl<'w_e, 'w, 's, 'a, 'b> ComponentCommands for ComponentUpdateCommands<'w_e, '
 
     fn remove<T: Bundle>(&mut self) {
         self.ec.remove::<T>();
+    }
+
+    fn get<T: Component>(&self)-> Option<&T> {
+        self.entity_ref.get::<T>()
     }
 }

@@ -1,4 +1,4 @@
-use std::{rc::Rc};
+use std::{rc::Rc, any::type_name};
 
 use bevy::{
     ecs::system::{EntityCommands, StaticSystemParam},
@@ -16,6 +16,8 @@ pub mod has_detect_changes;
 pub mod child_deletion_policy;
 pub mod child_key;
 pub mod desired_transform;
+pub mod widgets;
+pub mod transition;
 
 pub mod prelude {
     pub use crate::child_commands::*;
@@ -27,6 +29,8 @@ pub mod prelude {
     pub use crate::child_deletion_policy::*;
     pub use crate::child_key::*;
     pub use crate::desired_transform::*;
+    pub use crate::widgets::*;
+    pub use crate::transition::*;
 }
 
 
@@ -99,6 +103,8 @@ fn create_recursive<'c, R: StateTreeRoot, N: StateTreeNode>(
     node: N,
     context: &N::Context<'c>,
 ) {
+
+    //info!("Creating Node {}", type_name::<N>());
     let mut creation_commands = ComponentCreationCommands::new(&mut cec);
     node.get_components(&context, &mut creation_commands);
     let mut child_commands = ChildCreationCommands::<R>::new(&mut cec);
@@ -120,7 +126,7 @@ fn update_recursive<'c,R: StateTreeRoot, N: StateTreeNode>(
     node.get_components(&context, &mut component_commands);
     let children = entity_ref.get::<Children>();
 
-    let mut child_commands =
+    let mut child_commands: UnorderedChildCommands<'_, '_, '_, '_, '_, R> =
         UnorderedChildCommands::<R>::new(&mut ec, children, all_child_nodes.clone());
 
     node.get_children(&context, &mut child_commands);

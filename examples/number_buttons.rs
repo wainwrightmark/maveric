@@ -1,11 +1,13 @@
-use bevy::{ecs::system::EntityCommands, prelude::*};
-use bevy_tweening::{
-    lens::{TransformRotateZLens, TransformScaleLens, UiPositionLens},
-    Animator, EaseMethod, Tween, TweeningPlugin,
-};
-use state_hierarchy::{prelude::*, register_state_tree};
-use std::string::ToString;
+use bevy::prelude::*;
+// use bevy_tweening::{
+//     lens::{TransformRotateZLens, TransformScaleLens, UiPositionLens},
+//     Animator, EaseMethod, Tween, TweeningPlugin,
+// };
+use lazy_static::lazy_static;
+use state_hierarchy::prelude::TransitionPlugin;
+use state_hierarchy::{prelude::*, register_state_tree, widgets::prelude::*};
 use std::{f32::consts, time::Duration};
+use std::{string::ToString, sync::Arc};
 use strum::Display;
 use strum::IntoStaticStr;
 
@@ -15,16 +17,42 @@ const DYNAMIC_BOX_WIDTH: f32 = 150.0;
 const DYNAMIC_BOX_HEIGHT: f32 = 65.0;
 const BOXES_PER_ROW: usize = 5;
 
+lazy_static! {
+ static ref  BUTTON_NODE_STYLE: Arc<ButtonNodeStyle> = Arc::new(ButtonNodeStyle {
+    style: Style {
+        width: Val::Px(DYNAMIC_BOX_WIDTH),
+        height: Val::Px(DYNAMIC_BOX_HEIGHT),
+        border: UiRect::all(Val::Px(5.0)),
+        position_type: PositionType::Relative,
+        // horizontally center child text
+        justify_content: JustifyContent::Center,
+        // vertically center child text
+        align_items: AlignItems::Center,
+        ..Default::default()
+    },
+    visibility: Visibility::Visible,
+    border_color: Color::BLUE,
+    background_color: Color::WHITE,
+});
+}
+
+lazy_static! {
+    static ref TEXT_NODE_STYLE: Arc<TextNodeStyle> = Arc::new(TextNodeStyle {
+        font_size: 32.0,
+        color: Color::WHITE,
+        font: "fonts/FiraSans-Bold.ttf",
+    });
+}
+
 fn main() {
     let mut app = App::new();
 
     app.add_plugins(DefaultPlugins)
         .init_resource::<UIState>()
-        .add_plugins(TweeningPlugin)
         .add_systems(Startup, setup)
         .add_systems(Update, button_system);
 
-    //app.add_systems(Update, text_node_parents);
+    app.add_plugins(TransitionPlugin);
 
     register_state_tree::<Root>(&mut app);
     app.run();
@@ -92,42 +120,6 @@ pub enum Command {
 pub struct DynamicButtonComponent(u32);
 
 #[derive(Eq, PartialEq, Debug, Default)]
-pub struct TextNode {
-    text: String,
-}
-
-impl StateTreeNode for TextNode {
-    type Context<'c> = Res<'c, AssetServer>;
-
-    fn get_components<'c>(
-        &self,
-        context: &Self::Context<'c>,
-        component_commands: &mut impl ComponentCommands,
-    ) {
-        component_commands.insert(TextBundle::from_section(
-            self.text.clone(),
-            TextStyle {
-                font: context.load("fonts/FiraSans-Bold.ttf"),
-                font_size: 40.0,
-                color: Color::rgb(0.9, 0.9, 0.9),
-            },
-        ));
-    }
-
-    fn get_children<'c>(
-        &self,
-        context: &Self::Context<'c>,
-        child_commands: &mut impl ChildCommands,
-    ) {
-        //
-    }
-
-    fn on_deleted(&self, component_commands: &mut impl ComponentCommands) -> DeletionPolicy {
-        DeletionPolicy::DeleteImmediately
-    }
-}
-
-#[derive(Eq, PartialEq, Debug, Default)]
 pub struct Root;
 
 impl StateTreeRoot for Root {
@@ -139,13 +131,15 @@ impl StateTreeRoot for Root {
         param.into_inner()
     }
 }
+#[derive(Eq, PartialEq, Debug, Default)]
+pub struct CommandGrid;
 
-impl StateTreeNode for Root {
-    type Context<'c> = (Res<'c, UIState>, Res<'c, AssetServer>);
+impl StateTreeNode for CommandGrid {
+    type Context<'c> = Res<'c, AssetServer>;
 
-    fn get_components<'b>(
+    fn get_components<'c>(
         &self,
-        context: &Self::Context<'b>,
+        _context: &Self::Context<'c>,
         component_commands: &mut impl ComponentCommands,
     ) {
         component_commands.insert(NodeBundle {
@@ -153,124 +147,127 @@ impl StateTreeNode for Root {
                 width: Val::Percent(100.0),
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
+                display: Display::Flex,
+                flex_direction: FlexDirection::Row,
                 ..default()
             },
             ..default()
         });
     }
 
-    fn get_children<'b>(
+    fn get_children<'c>(
         &self,
-        context: &Self::Context<'b>,
+        context: &Self::Context<'c>,
         child_commands: &mut impl ChildCommands,
     ) {
-        for command_button in [
-            CommandButton(Command::AddNew),
-            CommandButton(Command::Reset),
-        ] {
-            let key: &'static str = command_button.0.into();
-            child_commands.add(key, &context.1, command_button);
-        }
+        for command in [Command::AddNew, Command::Reset] {
+            let key: &'static str = command.into();
 
-        for number in context.0.dynamic_buttons.iter().cloned() {
-            child_commands.add(number, context, DynamicButton { number });
+            let node = ButtonNode {
+                text: command.to_string(),
+                text_node_style: TEXT_NODE_STYLE.clone(),
+                button_node_style: BUTTON_NODE_STYLE.clone(),
+                marker: command,
+            };
+
+            child_commands.add(key, context, node);
         }
     }
 
-    fn on_deleted(&self, component_commands: &mut impl ComponentCommands) -> DeletionPolicy {
+    fn on_deleted(
+        &self,
+        _component_commands: &mut impl ComponentCommands,
+    ) -> DeletionPolicy {
         DeletionPolicy::DeleteImmediately
     }
 }
 
-#[derive(Eq, PartialEq, Debug, Hash)]
-pub struct CommandButton(Command);
+#[derive(Eq, PartialEq, Debug, Default)]
+pub struct DynamicGrid;
 
-impl StateTreeNode for CommandButton {
-    type Context<'c> = Res<'c, AssetServer>;
+impl StateTreeNode for DynamicGrid {
+    type Context<'c> = (Res<'c, UIState>, Res<'c, AssetServer>);
 
-    fn get_components<'b>(
+    fn get_components<'c>(
         &self,
-        context: &Self::Context<'b>,
+        _context: &Self::Context<'c>,
         component_commands: &mut impl ComponentCommands,
     ) {
-        let left = match self.0 {
-            Command::AddNew => Val::Percent(30.),
-            Command::Reset => Val::Percent(70.),
-        };
-        component_commands.insert(ButtonBundle {
+        component_commands.insert(NodeBundle {
             style: Style {
-                width: Val::Px(DYNAMIC_BOX_WIDTH),
-                height: Val::Px(DYNAMIC_BOX_HEIGHT),
-                border: UiRect::all(Val::Px(5.0)),
-                position_type: PositionType::Absolute,
-                left,
-                top: Val::Px(100.),
-                // horizontally center child text
-                justify_content: JustifyContent::Center,
-                // vertically center child text
+                width: Val::Percent(100.0),
                 align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                display: Display::Flex,
+                flex_direction: FlexDirection::Row,
                 ..default()
             },
-            border_color: BorderColor(Color::BLACK),
-            background_color: NORMAL_BUTTON.into(),
             ..default()
         });
-        component_commands.insert(self.0);
     }
 
-    fn get_children<'b>(
+    fn get_children<'c>(
         &self,
-        context: &Self::Context<'b>,
+        context: &Self::Context<'c>,
         child_commands: &mut impl ChildCommands,
     ) {
-        child_commands.add(
-            0,
-            context,
-            TextNode {
-                text: self.0.to_string(),
-            },
-        )
+        for number in context.0.dynamic_buttons.iter().cloned() {
+            let node = ButtonNode {
+                text: number.to_string(),
+                text_node_style: TEXT_NODE_STYLE.clone(),
+                button_node_style: BUTTON_NODE_STYLE.clone(),
+                marker: DynamicButtonComponent(number),
+            };
+
+            let node = WithTransformTransition {
+                node,
+                inserted_transform: Transform::from_scale(Vec3::ONE * 0.25),
+
+                path: TransformStep {
+                    destination: Transform::default(),
+                    velocity: Velocity::from_scale(1.0),
+                }
+                .into(),
+                deletion_path: Some(
+                    TransformStep {
+                        destination: Transform::from_rotation(Quat::from_rotation_z(consts::FRAC_PI_2)),
+                        velocity: Velocity::from_angular(consts::FRAC_PI_2),
+                    }
+                    .into(),
+                ),
+            };
+
+            child_commands.add(number, &context.1, node);
+        }
     }
 
-    fn on_deleted(&self, component_commands: &mut impl ComponentCommands) -> DeletionPolicy {
-        DeletionPolicy::Linger(DELETE_DURATION)
+    fn on_deleted(
+        &self,
+        _component_commands: &mut impl ComponentCommands,
+    ) -> DeletionPolicy {
+        DeletionPolicy::DeleteImmediately
     }
 }
 
-#[derive(Eq, PartialEq, Debug, Hash)]
-pub struct DynamicButton {
-    number: u32,
-}
-
-impl StateTreeNode for DynamicButton {
+impl StateTreeNode for Root {
     type Context<'c> = (Res<'c, UIState>, Res<'c, AssetServer>);
 
     fn get_components<'b>(
         &self,
-        context: &Self::Context<'b>,
+        _context: &Self::Context<'b>,
         component_commands: &mut impl ComponentCommands,
     ) {
-        let (left, top) = get_button_left_top(&context.0, &self.number);
-
-        component_commands.insert(ButtonBundle {
+        component_commands.insert(NodeBundle {
             style: Style {
-                width: Val::Px(DYNAMIC_BOX_WIDTH),
-                height: Val::Px(DYNAMIC_BOX_HEIGHT),
-                border: UiRect::all(Val::Px(5.0)),
-                position_type: PositionType::Absolute,
-                left,
-                top,
-                // horizontally center child text
-                justify_content: JustifyContent::Center,
-                // vertically center child text
+                width: Val::Percent(100.0),
                 align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                display: Display::Flex,
+                flex_direction: FlexDirection::Column,
                 ..default()
             },
-            border_color: BorderColor(Color::BLACK),
-            background_color: NORMAL_BUTTON.into(),
             ..default()
         });
-        component_commands.insert(DynamicButtonComponent(self.number));
     }
 
     fn get_children<'b>(
@@ -278,17 +275,15 @@ impl StateTreeNode for DynamicButton {
         context: &Self::Context<'b>,
         child_commands: &mut impl ChildCommands,
     ) {
-        child_commands.add(
-            0,
-            &context.1,
-            TextNode {
-                text: self.number.to_string(),
-            },
-        )
+        child_commands.add(0, &context.1, CommandGrid);
+        child_commands.add(1, context, DynamicGrid);
     }
 
-    fn on_deleted(&self, component_commands: &mut impl ComponentCommands) -> DeletionPolicy {
-        DeletionPolicy::Linger(DELETE_DURATION)
+    fn on_deleted(
+        &self,
+        _component_commands: &mut impl ComponentCommands,
+    ) -> DeletionPolicy {
+        DeletionPolicy::DeleteImmediately
     }
 }
 

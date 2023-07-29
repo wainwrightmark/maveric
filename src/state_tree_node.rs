@@ -1,10 +1,7 @@
 use std::marker::PhantomData;
 
 use crate::{prelude::*, DeletionPolicy};
-use bevy::{
-    ecs::system::{StaticSystemParam, SystemParam},
-    prelude::*,
-};
+use bevy::ecs::system::{StaticSystemParam, SystemParam};
 
 pub trait StateTreeRoot: StateTreeNode + Default {
     type ContextParam<'c>: SystemParam;
@@ -14,7 +11,7 @@ pub trait StateTreeRoot: StateTreeNode + Default {
     ) -> Self::Context<'c>;
 }
 
-pub trait StateTreeNode: Eq + Send + Sync + 'static  {
+pub trait StateTreeNode: PartialEq + Send + Sync + 'static {
     type Context<'c>: HasDetectChanges;
 
     fn get_components<'c>(
@@ -53,12 +50,8 @@ impl<N: StateTreeNode> NodeDeleter<N> {
 }
 
 impl<N: StateTreeNode> Deleter for NodeDeleter<N> {
-    fn on_deleted(
-        &self,
-        er: &EntityRef,
-        component_commands: &mut ComponentUpdateCommands,
-    ) -> DeletionPolicy {
-        if let Some(node) = er.get::<HierarchyNode<N>>() {
+    fn on_deleted(&self, component_commands: &mut ComponentUpdateCommands) -> DeletionPolicy {
+        if let Some(node) = component_commands.entity_ref.get::<HierarchyNode<N>>() {
             node.node.on_deleted(component_commands)
         } else {
             DeletionPolicy::DeleteImmediately
@@ -67,9 +60,5 @@ impl<N: StateTreeNode> Deleter for NodeDeleter<N> {
 }
 
 pub(crate) trait Deleter: Send + Sync + 'static {
-    fn on_deleted(
-        &self,
-        er: &EntityRef,
-        component_commands: &mut ComponentUpdateCommands,
-    ) -> DeletionPolicy;
+    fn on_deleted(&self, component_commands: &mut ComponentUpdateCommands) -> DeletionPolicy;
 }
