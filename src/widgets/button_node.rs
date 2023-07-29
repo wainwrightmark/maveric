@@ -6,8 +6,8 @@ pub use bevy::prelude::*;
 use self::text_node::{TextNode, TextNodeStyle};
 
 #[derive(PartialEq, Debug)]
-pub struct ButtonNode<Marker: Component + PartialEq + Clone> {
-    pub text: String,
+pub struct ButtonNode<Marker: Component + PartialEq + Clone, V : Into<String> + Clone + PartialEq + Send + Sync + 'static> {
+    pub value: V,
     pub text_node_style: Arc<TextNodeStyle>,
     pub button_node_style: Arc<ButtonNodeStyle>,
 
@@ -22,7 +22,7 @@ pub struct ButtonNodeStyle {
     pub background_color: Color,
 }
 
-impl<M: Component + PartialEq + Clone> HierarchyNode for ButtonNode<M> {
+impl<M: Component + PartialEq + Clone, V : Into<String> + Clone + PartialEq + Send + Sync + 'static> HierarchyNode for ButtonNode<M, V> {
     type Context<'c> = Res<'c, AssetServer>;
 
     fn get_components<'b>(
@@ -49,7 +49,7 @@ impl<M: Component + PartialEq + Clone> HierarchyNode for ButtonNode<M> {
             context,
             TextNode {
                 style: self.text_node_style.clone(),
-                text: self.text.clone()
+                value: self.value.clone()
             },
         )
     }

@@ -147,7 +147,7 @@ impl HierarchyNode for CommandGrid {
             let key: &'static str = command.into();
 
             let node = ButtonNode {
-                text: command.to_string(),
+                value: command.to_string(),
                 text_node_style: TEXT_NODE_STYLE.clone(),
                 button_node_style: BUTTON_NODE_STYLE.clone(),
                 marker: command,
@@ -193,7 +193,7 @@ impl HierarchyNode for DynamicGrid {
     ) {
         for number in context.0.dynamic_buttons.iter().cloned() {
             let node = ButtonNode {
-                text: number.to_string(),
+                value: number.to_string(),
                 text_node_style: TEXT_NODE_STYLE.clone(),
                 button_node_style: BUTTON_NODE_STYLE.clone(),
                 marker: DynamicButtonComponent(number),

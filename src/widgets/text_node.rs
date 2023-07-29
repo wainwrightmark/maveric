@@ -4,8 +4,8 @@ pub use crate::prelude::*;
 pub use bevy::prelude::*;
 
 #[derive(PartialEq, Debug)]
-pub struct TextNode {
-    pub text: String,
+pub struct TextNode<V : Into<String> + Clone + PartialEq + Send + Sync + 'static> {
+    pub value: V,
     pub style: Arc<TextNodeStyle>
 }
 
@@ -17,7 +17,7 @@ pub struct TextNodeStyle{
     pub font: &'static str,
 }
 
-impl HierarchyNode for TextNode {
+impl<V: Into<String> + PartialEq + Clone + Send + Sync + 'static> HierarchyNode for TextNode<V> {
     type Context<'c> = Res<'c, AssetServer>;
 
     fn get_components<'c>(
@@ -28,7 +28,7 @@ impl HierarchyNode for TextNode {
         let font =context.load(self.style.font);
 
         component_commands.insert(TextBundle::from_section(
-            self.text.clone(),
+            self.value.clone(),
             TextStyle {
                 font,
                 font_size: self.style.font_size,
