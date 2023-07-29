@@ -160,7 +160,7 @@ impl<'w, 's, 'a, 'b, 'w1, R: StateTreeRoot> UnorderedChildCommands<'w, 's, 'a, '
         let ec = self.ec;
 
         //remove all remaining old entities
-        for (key, (er, child)) in self.remaining_old_entities {
+        for (_key, (er, child)) in self.remaining_old_entities {
             let mut child_ec = ec.commands().entity(er.id());
             let mut update_commands = ComponentUpdateCommands::new(er, &mut child_ec);
             let deletion_policy = child.deleter.on_deleted(&mut update_commands);

@@ -1,42 +1,56 @@
-use std::{ops::Add, time::Duration};
+use std::{marker::PhantomData, ops::Add, time::Duration};
 
 use crate::prelude::*;
 use bevy::prelude::*;
 
-pub struct TransitionPlugin;
+#[derive(Default)]
+pub struct TransitionPlugin<V: ComponentVelocity> {
+    phantom: PhantomData<V>,
+}
 
-impl Plugin for TransitionPlugin {
+impl<V: ComponentVelocity> Plugin for TransitionPlugin<V> {
     fn build(&self, app: &mut App) {
-        app.add_systems(PreUpdate, step_transition);
+        app.add_systems(PreUpdate, step_transition::<V>);
     }
 }
 
-fn step_transition(
+fn step_transition<V: ComponentVelocity>(
     time: Res<Time>,
-    mut query: Query<(&mut TransformPathComponent, &mut Transform)>,
+    mut query: Query<(&mut TransitionPathComponent<V>, &mut V::C)>,
 ) {
-    let delta = time.delta_seconds();
+    let delta_seconds = time.delta_seconds();
 
     for (mut tp, mut t) in query.iter_mut() {
         let Some(step) = tp.current_step() else {continue;};
-        let transform = t.as_mut();
-        step.advance_transform(transform, delta);
+        let component = t.as_mut();
+        step.velocity
+            .advance(&step.destination, delta_seconds, component);
         if step.destination == *t {
             tp.go_to_next_step();
         }
     }
 }
 
-/// This required the animation plugin
-#[derive(Debug, PartialEq)]
-pub struct WithTransformTransition<N: StateTreeNode> {
-    pub node: N,
-    pub inserted_transform: Transform,
-    pub path: TransformPath,
-    pub deletion_path: Option<TransformPath>,
+pub trait ComponentVelocity: PartialEq + Clone + Send + Sync + 'static {
+    type C: Component + PartialEq + Clone;
+
+    /// Advance the component towards the destination
+    fn advance(&self, destination: &Self::C, delta_seconds: f32, component: &mut Self::C);
+
+    /// How long it will take to get from the start to the destination
+    fn duration(&self, destination: &Self::C, start: &Self::C) -> Duration;
 }
 
-impl<N: StateTreeNode> StateTreeNode for WithTransformTransition<N> {
+/// This required the animation plugin
+#[derive(PartialEq)]
+pub struct WithTransformTransition<N: StateTreeNode, V: ComponentVelocity> {
+    pub node: N,
+    pub initial: V::C,
+    pub path: TransitionPath<V>,
+    pub deletion_path: Option<TransitionPath<V>>,
+}
+
+impl<N: StateTreeNode, V: ComponentVelocity> StateTreeNode for WithTransformTransition<N, V> {
     type Context<'c> = N::Context<'c>;
 
     fn get_components<'c>(
@@ -46,34 +60,37 @@ impl<N: StateTreeNode> StateTreeNode for WithTransformTransition<N> {
     ) {
         self.node.get_components(context, component_commands);
 
-        if component_commands.get::<Transform>().is_none() {
-            component_commands.insert(self.inserted_transform);
+        if let Some(previous) = component_commands.get::<V::C>() {
+            component_commands.insert(previous.clone()); //prevent this being overwritten by component_commands
+        } else {
+            component_commands.insert(self.initial.clone());
         }
 
-        let new_path_index: Option<usize> =
-            if let Some(suspended_path) = component_commands.get::<SuspendedPathComponent>() {
-                let i = suspended_path
-                    .index
-                    .min(self.path.steps.len().saturating_sub(1));
+        let new_path_index: Option<usize> = if let Some(suspended_path) =
+            component_commands.get::<SuspendedPathComponent<V>>()
+        {
+            let i = suspended_path
+                .index
+                .min(self.path.steps.len().saturating_sub(1));
 
-                //info!("Restoring suspended path index {i}");
-                component_commands.remove::<SuspendedPathComponent>();
-                Some(i)
-            } else if let Some(previous_path) = component_commands.get::<TransformPathComponent>() {
-                if previous_path.path != self.path {
-                    //info!("New path found");
-                    Some(0)
-                } else {
-                    //info!("Same path found");
-                    None
-                }
-            } else {
-                //info!("No preexisting path found");
+            //info!("Restoring suspended path index {i}");
+            component_commands.remove::<SuspendedPathComponent<V>>();
+            Some(i)
+        } else if let Some(previous_path) = component_commands.get::<TransitionPathComponent<V>>() {
+            if previous_path.path != self.path {
+                //info!("New path found");
                 Some(0)
-            };
+            } else {
+                //info!("Same path found");
+                None
+            }
+        } else {
+            //info!("No preexisting path found");
+            Some(0)
+        };
 
         if let Some(index) = new_path_index {
-            component_commands.insert(TransformPathComponent {
+            component_commands.insert(TransitionPathComponent {
                 path: self.path.clone(),
                 index,
             });
@@ -93,24 +110,23 @@ impl<N: StateTreeNode> StateTreeNode for WithTransformTransition<N> {
 
         let Some(deletion_path) = &self.deletion_path else{return  base;};
 
-        let transform = component_commands
-            .get::<Transform>()
-            .unwrap_or(&self.inserted_transform);
+        let transform = component_commands.get::<V::C>().unwrap_or(&self.initial);
         let duration = deletion_path.remaining_duration(transform);
 
         let duration = match base {
             DeletionPolicy::DeleteImmediately => duration,
             DeletionPolicy::Linger(d) => duration.max(d),
         };
-        let current_path = component_commands.get::<TransformPathComponent>();
+        let current_path = component_commands.get::<TransitionPathComponent<V>>();
 
         if let Some(current_path) = current_path {
-            component_commands.insert(SuspendedPathComponent {
+            component_commands.insert(SuspendedPathComponent::<V> {
                 index: current_path.index,
+                phantom: PhantomData,
             })
         }
 
-        component_commands.insert(TransformPathComponent {
+        component_commands.insert(TransitionPathComponent {
             path: deletion_path.clone(),
             index: 0,
         });
@@ -119,14 +135,14 @@ impl<N: StateTreeNode> StateTreeNode for WithTransformTransition<N> {
     }
 }
 
-#[derive(Debug, Component)]
-pub(crate) struct TransformPathComponent {
-    pub path: TransformPath,
+#[derive(Component)]
+pub(crate) struct TransitionPathComponent<V: ComponentVelocity> {
+    pub path: TransitionPath<V>,
     pub index: usize,
 }
 
-impl TransformPathComponent {
-    pub fn current_step(&self) -> Option<&TransformStep> {
+impl<V: ComponentVelocity> TransitionPathComponent<V> {
+    pub fn current_step(&self) -> Option<&TransitionStep<V>> {
         self.path.steps.get(self.index)
     }
 
@@ -136,28 +152,29 @@ impl TransformPathComponent {
 }
 
 #[derive(Debug, Component)]
-pub(crate) struct SuspendedPathComponent {
+pub(crate) struct SuspendedPathComponent<V: ComponentVelocity> {
     pub index: usize,
+    phantom: PhantomData<V>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct TransformPath {
-    pub steps: Vec<TransformStep>,
+#[derive(Clone, PartialEq)]
+pub struct TransitionPath<V: ComponentVelocity> {
+    pub steps: Vec<TransitionStep<V>>,
 }
 
-impl From<TransformStep> for TransformPath {
-    fn from(value: TransformStep) -> Self {
+impl<V: ComponentVelocity> From<TransitionStep<V>> for TransitionPath<V> {
+    fn from(value: TransitionStep<V>) -> Self {
         Self { steps: vec![value] }
     }
 }
 
-impl TransformPath {
-    pub fn remaining_duration(&self, start: &Transform) -> Duration {
+impl<V: ComponentVelocity> TransitionPath<V> {
+    pub fn remaining_duration(&self, start: &V::C) -> Duration {
         let mut total: Duration = Duration::default();
-        let mut current: &Transform = start;
+        let mut current: &V::C = start;
 
         for step in self.steps.iter() {
-            total += step.duration(current);
+            total += step.velocity.duration(&step.destination, current);
             current = &step.destination;
         }
 
@@ -166,19 +183,55 @@ impl TransformPath {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct TransformStep {
-    pub destination: Transform,
-    pub velocity: Velocity,
+pub struct TransitionStep<V: ComponentVelocity> {
+    pub destination: V::C,
+    pub velocity: V,
 }
 
-impl TransformStep {
-    pub fn duration(&self, start: &Transform) -> Duration {
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct TransformVelocity {
+    max_linear: f32,
+    max_angular: f32,
+    max_scale: f32,
+}
+
+impl ComponentVelocity for TransformVelocity {
+    type C = Transform;
+
+    fn advance(&self, destination: &Self::C, delta_seconds: f32, component: &mut Self::C) {
+        if destination.translation != component.translation {
+            let t = destination.translation - component.translation;
+            let change = t.clamp_length_max(delta_seconds * self.max_linear);
+            component.translation += change;
+        }
+
+        // rotation
+        if destination.rotation != component.rotation {
+            let change = quat_clamp_length_max(
+                destination.rotation - component.rotation,
+                self.max_angular * delta_seconds,
+            );
+
+            //info!("Updating rotation {} + {}", transform.rotation, change);
+            component.rotation = component.rotation.add(change);
+        }
+
+        // scale
+        if destination.scale != component.scale {
+            let change = (destination.scale - component.scale)
+                .clamp_length_max(delta_seconds * self.max_scale);
+
+            //info!("Updating scale {} + {}", transform.scale, change);
+            component.scale += change;
+        }
+    }
+
+    fn duration(&self, destination: &Self::C, start: &Self::C) -> Duration {
         let translate_seconds =
-            (self.destination.translation - start.translation).length() / self.velocity.max_linear;
+            (destination.translation - start.translation).length() / self.max_linear;
         let angular_seconds =
-            (self.destination.rotation.angle_between(start.rotation)) / self.velocity.max_angular;
-        let scale_seconds =
-            (self.destination.scale.distance(start.scale)) / self.velocity.max_scale;
+            (destination.rotation.angle_between(start.rotation)) / self.max_angular;
+        let scale_seconds = (destination.scale.distance(start.scale)) / self.max_scale;
 
         let seconds = [translate_seconds, angular_seconds, scale_seconds]
             .into_iter()
@@ -188,64 +241,19 @@ impl TransformStep {
 
         Duration::from_secs_f32(seconds)
     }
-
-    pub fn advance_transform(&self, transform: &mut Transform, delta_seconds: f32) {
-        // info!(
-        //     "Advance transform {transform:?} {vel:?}",
-        //     vel = self.velocity
-        // );
-
-        // translation
-        if self.destination.translation != transform.translation {
-            let t = self.destination.translation - transform.translation;
-            let change = t.clamp_length_max(delta_seconds * self.velocity.max_linear);
-            transform.translation += change;
-        }
-
-        // rotation
-        if self.destination.rotation != transform.rotation {
-            let change = quat_clamp_length_max(
-                self.destination.rotation - transform.rotation,
-                self.velocity.max_angular * delta_seconds,
-            );
-
-            //info!("Updating rotation {} + {}", transform.rotation, change);
-            transform.rotation = transform.rotation.add(change);
-        }
-
-        // scale
-        if self.destination.scale != transform.scale {
-            let change = (self.destination.scale - transform.scale)
-                .clamp_length_max(delta_seconds * self.velocity.max_scale);
-
-            //info!("Updating scale {} + {}", transform.scale, change);
-            transform.scale += change;
-        }
-    }
 }
 
-pub fn quat_clamp_length_max(q: Quat, max: f32) -> Quat {
-    let length_sq = q.length_squared();
-    if length_sq > max * max {
-        (q / f32::sqrt(length_sq)) * max
-    } else {
-        q
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Default)]
-pub struct Velocity {
-    max_linear: f32,
-    max_angular: f32,
-    max_scale: f32,
-}
-
-impl Velocity {
+impl TransformVelocity {
     pub fn from_linear(max_linear: f32) -> Self {
         Self {
             max_linear,
             ..Default::default()
         }
+    }
+
+    pub fn with_linear(mut self, max_linear: f32) -> Self {
+        self.max_linear = max_linear;
+        self
     }
 
     pub fn from_angular(max_angular: f32) -> Self {
@@ -255,10 +263,29 @@ impl Velocity {
         }
     }
 
+    pub fn with_angular(mut self, max_angular: f32) -> Self {
+        self.max_angular = max_angular;
+        self
+    }
+
     pub fn from_scale(max_scale: f32) -> Self {
         Self {
             max_scale,
             ..Default::default()
         }
+    }
+
+    pub fn with_scale(mut self, max_scale: f32) -> Self {
+        self.max_scale = max_scale;
+        self
+    }
+}
+
+fn quat_clamp_length_max(q: Quat, max: f32) -> Quat {
+    let length_sq = q.length_squared();
+    if length_sq > max * max {
+        (q / f32::sqrt(length_sq)) * max
+    } else {
+        q
     }
 }
