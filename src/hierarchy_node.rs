@@ -11,6 +11,7 @@ pub trait HierarchyRoot: HierarchyNode + Default {
     ) -> Self::Context<'c>;
 }
 
+
 pub trait HierarchyNode: PartialEq + Send + Sync + 'static {
     type Context<'c>: HasDetectChanges;
 

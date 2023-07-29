@@ -14,7 +14,7 @@ pub struct ButtonNode<Marker: Component + PartialEq + Clone, V : Into<String> + 
     pub marker: Marker,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Default)]
 pub struct ButtonNodeStyle {
     pub style: Style,
     pub visibility: Visibility,
