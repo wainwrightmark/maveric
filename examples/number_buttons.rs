@@ -105,7 +105,7 @@ pub struct DynamicButtonComponent(u32);
 #[derive(Eq, PartialEq, Debug, Default)]
 pub struct Root;
 
-impl StateTreeRoot for Root {
+impl HierarchyRoot for Root {
     type ContextParam<'c> = (Res<'c, UIState>, Res<'c, AssetServer>);
 
     fn get_context<'a, 'c, 'w: 'c, 's>(
@@ -117,7 +117,7 @@ impl StateTreeRoot for Root {
 #[derive(Eq, PartialEq, Debug, Default)]
 pub struct CommandGrid;
 
-impl StateTreeNode for CommandGrid {
+impl HierarchyNode for CommandGrid {
     type Context<'c> = Res<'c, AssetServer>;
 
     fn get_components<'c>(
@@ -165,7 +165,7 @@ impl StateTreeNode for CommandGrid {
 #[derive(Eq, PartialEq, Debug, Default)]
 pub struct DynamicGrid;
 
-impl StateTreeNode for DynamicGrid {
+impl HierarchyNode for DynamicGrid {
     type Context<'c> = (Res<'c, UIState>, Res<'c, AssetServer>);
 
     fn get_components<'c>(
@@ -228,7 +228,7 @@ impl StateTreeNode for DynamicGrid {
     }
 }
 
-impl StateTreeNode for Root {
+impl HierarchyNode for Root {
     type Context<'c> = (Res<'c, UIState>, Res<'c, AssetServer>);
 
     fn get_components<'b>(

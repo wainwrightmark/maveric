@@ -22,7 +22,7 @@ pub struct ButtonNodeStyle {
     pub background_color: Color,
 }
 
-impl<M: Component + PartialEq + Clone> StateTreeNode for ButtonNode<M> {
+impl<M: Component + PartialEq + Clone> HierarchyNode for ButtonNode<M> {
     type Context<'c> = Res<'c, AssetServer>;
 
     fn get_components<'b>(

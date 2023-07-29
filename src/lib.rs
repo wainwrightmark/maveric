@@ -10,7 +10,7 @@ use prelude::*;
 pub mod child_commands;
 pub mod component_commands;
 pub mod components;
-pub mod state_tree_node;
+pub mod hierarchy_node;
 pub mod has_detect_changes;
 pub mod child_deletion_policy;
 pub mod child_key;
@@ -23,7 +23,7 @@ pub mod prelude {
     pub use crate::component_commands::*;
     pub(crate) use crate::components::*;
 
-    pub use crate::state_tree_node::*;
+    pub use crate::hierarchy_node::*;
     pub use crate::has_detect_changes::*;
     pub use crate::child_deletion_policy::*;
     pub use crate::child_key::*;
@@ -43,7 +43,7 @@ impl Plugin for StateTreePlugin {
     }
 }
 
-pub fn register_state_tree<R: StateTreeRoot>(app: &mut App) {
+pub fn register_state_tree<R: HierarchyRoot>(app: &mut App) {
     app.add_plugins(StateTreePlugin);
     app.add_systems(First, sync_state::<R>);
 }
@@ -61,11 +61,11 @@ fn handle_scheduled_for_removal(
     }
 }
 
-fn sync_state<'a, R: StateTreeRoot>(
+fn sync_state<'a, R: HierarchyRoot>(
     mut commands: Commands,
     param: StaticSystemParam<R::ContextParam<'a>>,
-    root_query: Query<EntityRef, With<HierarchyRoot<R>>>,
-    tree: Query<(EntityRef, &HierarchyChild<R>)>,
+    root_query: Query<EntityRef, With<HierarchyRootComponent<R>>>,
+    tree: Query<(EntityRef, &HierarchyChildComponent<R>)>,
 ) {
     let context = R::get_context(param);
 
@@ -75,7 +75,7 @@ fn sync_state<'a, R: StateTreeRoot>(
 
     let root_node = R::default();
 
-    let all_child_nodes: HashMap<Entity, (EntityRef, HierarchyChild<R>)> =
+    let all_child_nodes: HashMap<Entity, (EntityRef, HierarchyChildComponent<R>)> =
         tree.iter().map(|(e, c)| (e.id(), (e, c.clone()))).collect();
 
     let all_child_nodes = Rc::new(all_child_nodes);
@@ -91,13 +91,13 @@ fn sync_state<'a, R: StateTreeRoot>(
             );
         }
         None => {
-            let mut ec = commands.spawn(HierarchyRoot::<R>::default());
+            let mut ec = commands.spawn(HierarchyRootComponent::<R>::default());
             create_recursive::<R, R>(&mut ec, root_node, &context);
         }
     }
 }
 
-fn create_recursive<'c, R: StateTreeRoot, N: StateTreeNode>(
+fn create_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     mut cec: &mut EntityCommands,
     node: N,
     context: &N::Context<'c>,
@@ -110,15 +110,15 @@ fn create_recursive<'c, R: StateTreeRoot, N: StateTreeNode>(
 
     node.get_children(&context, &mut child_commands);
 
-    cec.insert(HierarchyNode::new(node));
+    cec.insert(HierarchyNodeComponent::new(node));
 }
 
-fn update_recursive<'c,R: StateTreeRoot, N: StateTreeNode>(
+fn update_recursive<'c,R: HierarchyRoot, N: HierarchyNode>(
     commands: &mut Commands,
     entity_ref: EntityRef,
     node: N,
     context: &N::Context<'c>,
-    all_child_nodes: Rc<HashMap<Entity, (EntityRef, HierarchyChild<R>)>>,
+    all_child_nodes: Rc<HashMap<Entity, (EntityRef, HierarchyChildComponent<R>)>>,
 ) {
     let mut ec = commands.entity(entity_ref.id());
     let mut component_commands = ComponentUpdateCommands::new(entity_ref, &mut ec);
@@ -131,7 +131,7 @@ fn update_recursive<'c,R: StateTreeRoot, N: StateTreeNode>(
     node.get_children(&context, &mut child_commands);
     child_commands.finish();
 
-    ec.insert(HierarchyNode::new(node));
+    ec.insert(HierarchyNodeComponent::new(node));
 
     if entity_ref.contains::<ScheduledForDeletion>() {
         ec.remove::<ScheduledForDeletion>();

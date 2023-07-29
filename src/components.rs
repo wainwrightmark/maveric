@@ -5,27 +5,27 @@ use bevy::prelude::*;
 use crate::prelude::*;
 
 #[derive(Debug, Default, Component)]
-pub(crate) struct HierarchyRoot<R: StateTreeRoot>(PhantomData<R>);
+pub(crate) struct HierarchyRootComponent<R: HierarchyRoot>(PhantomData<R>);
 
 #[derive(Debug, Default, Component)]
-pub(crate) struct HierarchyNode<N: StateTreeNode> {
+pub(crate) struct HierarchyNodeComponent<N: HierarchyNode> {
     pub node: N,
 }
 
-impl<N: StateTreeNode> HierarchyNode<N> {
+impl<N: HierarchyNode> HierarchyNodeComponent<N> {
     pub(crate) fn new(node: N) -> Self {
         Self { node }
     }
 }
 
 #[derive( Component)]
-pub(crate) struct HierarchyChild<R: StateTreeRoot> {
+pub(crate) struct HierarchyChildComponent<R: HierarchyRoot> {
     pub key: ChildKey,
     pub deleter: &'static dyn Deleter,
     phantom: PhantomData<R>,
 }
 
-impl<R: StateTreeRoot> Clone for HierarchyChild<R> {
+impl<R: HierarchyRoot> Clone for HierarchyChildComponent<R> {
     fn clone(&self) -> Self {
         Self { key: self.key.clone(), deleter: self.deleter.clone(), phantom: self.phantom.clone() }
     }
@@ -33,8 +33,8 @@ impl<R: StateTreeRoot> Clone for HierarchyChild<R> {
 
 
 
-impl<R: StateTreeRoot> HierarchyChild<R> {
-    pub(crate) fn new<N: StateTreeNode>(key: ChildKey) -> Self {
+impl<R: HierarchyRoot> HierarchyChildComponent<R> {
+    pub(crate) fn new<N: HierarchyNode>(key: ChildKey) -> Self {
         Self {
             key,
             phantom: PhantomData,

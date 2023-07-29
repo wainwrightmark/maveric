@@ -5,7 +5,7 @@ use crate::{create_recursive, prelude::*, update_recursive, DeletionPolicy};
 use bevy::{ecs::system::EntityCommands, prelude::*, utils::hashbrown::HashMap};
 
 pub trait ChildCommands {
-    fn add<'c, N: StateTreeNode>(
+    fn add<'c, N: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
         child_context: &N::Context<'c>,
@@ -15,26 +15,26 @@ pub trait ChildCommands {
 
 //todo ordered child commands
 
-pub(crate) struct ChildCreationCommands<'w, 's, 'a, 'b, R: StateTreeRoot> {
+pub(crate) struct ChildCreationCommands<'w, 's, 'a, 'b, R: HierarchyRoot> {
     ec: &'b mut EntityCommands<'w, 's, 'a>,
     phantom: PhantomData<R>,
 }
 
-impl<'w, 's, 'a, 'b, R: StateTreeRoot> ChildCommands for ChildCreationCommands<'w, 's, 'a, 'b, R> {
-    fn add<'c, N: StateTreeNode>(
+impl<'w, 's, 'a, 'b, R: HierarchyRoot> ChildCommands for ChildCreationCommands<'w, 's, 'a, 'b, R> {
+    fn add<'c, N: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
         child_context: &N::Context<'c>,
         child_node: N,
     ) {
         self.ec.with_children(|cb| {
-            let mut cec = cb.spawn(HierarchyChild::<R>::new::<N>(key.into()));
+            let mut cec = cb.spawn(HierarchyChildComponent::<R>::new::<N>(key.into()));
             create_recursive::<R, N>(&mut cec, child_node, &child_context);
         });
     }
 }
 
-impl<'w, 's, 'a, 'b, R: StateTreeRoot> ChildCreationCommands<'w, 's, 'a, 'b, R> {
+impl<'w, 's, 'a, 'b, R: HierarchyRoot> ChildCreationCommands<'w, 's, 'a, 'b, R> {
     pub(crate) fn new(ec: &'b mut EntityCommands<'w, 's, 'a>) -> Self {
         Self {
             ec,
@@ -43,18 +43,18 @@ impl<'w, 's, 'a, 'b, R: StateTreeRoot> ChildCreationCommands<'w, 's, 'a, 'b, R> 
     }
 }
 
-pub(crate) struct UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, R: StateTreeRoot> {
+pub(crate) struct UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, R: HierarchyRoot> {
     ec: &'b mut EntityCommands<'w, 's, 'a>,
     //new_child_entities: Vec<Entity>,
-    remaining_old_entities: HashMap<ChildKey, (EntityRef<'w1>, HierarchyChild<R>)>,
-    all_child_nodes: Rc<HashMap<Entity, (EntityRef<'w1>, HierarchyChild<R>)>>,
+    remaining_old_entities: HashMap<ChildKey, (EntityRef<'w1>, HierarchyChildComponent<R>)>,
+    all_child_nodes: Rc<HashMap<Entity, (EntityRef<'w1>, HierarchyChildComponent<R>)>>,
     phantom: PhantomData<R>,
 }
 
-impl<'w, 's, 'a, 'b, 'w1, R: StateTreeRoot> ChildCommands
+impl<'w, 's, 'a, 'b, 'w1, R: HierarchyRoot> ChildCommands
     for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, R>
 {
-    fn add<'c, N: StateTreeNode>(
+    fn add<'c, N: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
         child_context: &N::Context<'c>,
@@ -65,7 +65,7 @@ impl<'w, 's, 'a, 'b, 'w1, R: StateTreeRoot> ChildCommands
             Some((entity_ref, _)) => {
                 //check if this node has changed
 
-                match entity_ref.get::<HierarchyNode<N>>() {
+                match entity_ref.get::<HierarchyNodeComponent<N>>() {
                     Some(existing) => {
                         // unschedule it for deletion if necessary
 
@@ -102,7 +102,7 @@ impl<'w, 's, 'a, 'b, 'w1, R: StateTreeRoot> ChildCommands
                             .despawn_recursive();
 
                         self.ec.with_children(|cb| {
-                            let mut cec = cb.spawn(HierarchyChild::<R>::new::<N>(key));
+                            let mut cec = cb.spawn(HierarchyChildComponent::<R>::new::<N>(key));
                             create_recursive::<R, N>(&mut cec, child_node, &child_context);
                         });
                     }
@@ -111,7 +111,7 @@ impl<'w, 's, 'a, 'b, 'w1, R: StateTreeRoot> ChildCommands
             None => {
                 self.ec.with_children(|cb| {
                     //info!("Creating new Child {} with key '{key}'", type_name::<N>());
-                    let mut cec = cb.spawn(HierarchyChild::<R>::new::<N>(key));
+                    let mut cec = cb.spawn(HierarchyChildComponent::<R>::new::<N>(key));
                     create_recursive::<R, N>(&mut cec, child_node, &child_context);
                 });
             }
@@ -119,16 +119,16 @@ impl<'w, 's, 'a, 'b, 'w1, R: StateTreeRoot> ChildCommands
     }
 }
 
-impl<'w, 's, 'a, 'b, 'w1, R: StateTreeRoot> UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, R> {
+impl<'w, 's, 'a, 'b, 'w1, R: HierarchyRoot> UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, R> {
     pub fn new(
         ec: &'b mut EntityCommands<'w, 's, 'a>,
         children: Option<&Children>,
-        all_child_nodes: Rc<HashMap<Entity, (EntityRef<'w1>, HierarchyChild<R>)>>,
+        all_child_nodes: Rc<HashMap<Entity, (EntityRef<'w1>, HierarchyChildComponent<R>)>>,
     ) -> Self {
         //let tree = tree.clone();
         match children {
             Some(children) => {
-                let remaining_old_entities: HashMap<ChildKey, (EntityRef<'w1>, HierarchyChild<R>)> =
+                let remaining_old_entities: HashMap<ChildKey, (EntityRef<'w1>, HierarchyChildComponent<R>)> =
                     children
                         .iter()
                         .flat_map(|x| match all_child_nodes.get(x) {

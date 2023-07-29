@@ -43,14 +43,14 @@ pub trait ComponentVelocity: PartialEq + Clone + Send + Sync + 'static {
 
 /// This required the animation plugin
 #[derive(PartialEq)]
-pub struct WithTransformTransition<N: StateTreeNode, V: ComponentVelocity> {
+pub struct WithTransformTransition<N: HierarchyNode, V: ComponentVelocity> {
     pub node: N,
     pub initial: V::C,
     pub path: TransitionPath<V>,
     pub deletion_path: Option<TransitionPath<V>>,
 }
 
-impl<N: StateTreeNode, V: ComponentVelocity> StateTreeNode for WithTransformTransition<N, V> {
+impl<N: HierarchyNode, V: ComponentVelocity> HierarchyNode for WithTransformTransition<N, V> {
     type Context<'c> = N::Context<'c>;
 
     fn get_components<'c>(

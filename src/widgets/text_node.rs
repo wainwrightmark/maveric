@@ -17,7 +17,7 @@ pub struct TextNodeStyle{
     pub font: &'static str,
 }
 
-impl StateTreeNode for TextNode {
+impl HierarchyNode for TextNode {
     type Context<'c> = Res<'c, AssetServer>;
 
     fn get_components<'c>(
