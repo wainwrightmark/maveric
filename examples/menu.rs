@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use lazy_static::lazy_static;
-use state_hierarchy::prelude::TransitionPlugin;
+use state_hierarchy::transition::prelude::*;
 use state_hierarchy::{prelude::*, register_state_tree, widgets::prelude::*};
 use std::f32::consts;
 use std::{string::ToString, sync::Arc};

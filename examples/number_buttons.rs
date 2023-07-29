@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use lazy_static::lazy_static;
-use state_hierarchy::prelude::TransitionPlugin;
+use state_hierarchy::transition::prelude::*;
 use state_hierarchy::{prelude::*, register_state_tree, widgets::prelude::*};
 use std::f32::consts;
 use std::{string::ToString, sync::Arc};
@@ -199,7 +199,7 @@ impl HierarchyNode for DynamicGrid {
                 marker: DynamicButtonComponent(number),
             };
 
-            let node = WithTransformTransition {
+            let node = WithTransition {
                 node,
                 initial: Transform::from_scale(Vec3::ONE * 0.25).with_rotation(Quat::from_rotation_z(-consts::FRAC_PI_8)),
 
