@@ -2,9 +2,9 @@ use bevy::prelude::*;
 use lazy_static::lazy_static;
 use state_hierarchy::transition::prelude::*;
 use state_hierarchy::{prelude::*, register_state_tree, widgets::prelude::*};
+use std::time::Duration;
 use std::{string::ToString, sync::Arc};
 use strum::{Display, EnumIs};
-
 
 fn main() {
     let mut app = App::new();
@@ -14,7 +14,7 @@ fn main() {
         .add_systems(Startup, setup)
         .add_systems(Update, button_system);
 
-    app.add_plugins(TransitionPlugin::<Prism2<TransformRotationLens, QuatXLens>>::default());
+    app.add_plugins(TransitionPlugin::<TransformScaleLens>::default());
 
     register_state_tree::<Root>(&mut app);
     app.run();
@@ -26,39 +26,35 @@ fn setup(mut commands: Commands) {
 
 fn button_system(
     mut interaction_query: Query<
-        (
-            &Interaction,
-            &ButtonAction
-        ),
+        (&Interaction, &ButtonAction),
         (Changed<Interaction>, With<Button>),
     >,
     mut state: ResMut<MenuState>,
 ) {
-    for (interaction, action) in
-        &mut interaction_query
-    {
-        if *interaction != Interaction::Pressed{
+    for (interaction, action) in &mut interaction_query {
+        if *interaction != Interaction::Pressed {
             continue;
         }
 
-        match action{
+        match action {
             ButtonAction::OpenMenu => *state = MenuState::ShowMainMenu,
             ButtonAction::ChooseLevel => *state = MenuState::ShowLevelsPage(0),
             ButtonAction::NextLevelsPage => {
-                 match state.as_ref() {
+                match state.as_ref() {
                     MenuState::ShowLevelsPage(x) => *state = MenuState::ShowLevelsPage(x + 1),
-                    _=>{}
+                    _ => {}
                 };
-            },
+            }
             ButtonAction::PreviousLevelsPage => {
                 match state.as_ref() {
-
-                    MenuState::ShowLevelsPage(x) => *state = MenuState::ShowLevelsPage(x.saturating_sub(1)),
-                    _=>{}
+                    MenuState::ShowLevelsPage(x) => {
+                        *state = MenuState::ShowLevelsPage(x.saturating_sub(1))
+                    }
+                    _ => {}
                 };
-            },
-            ButtonAction::None =>{},
-            _=> *state = MenuState::Closed
+            }
+            ButtonAction::None => {}
+            _ => *state = MenuState::Closed,
         }
     }
 }
@@ -93,7 +89,7 @@ impl HierarchyNode for Root {
         component_commands: &mut impl ComponentCommands,
     ) {
         component_commands.insert(NodeBundle {
-            style: Style{
+            style: Style {
                 width: Val::Percent(100.0),
                 height: Val::Percent(100.0),
                 ..Default::default()
@@ -120,7 +116,17 @@ impl HierarchyNode for Root {
                 child_commands.add("main_menu", context, MainMenu);
             }
             MenuState::ShowLevelsPage(n) => {
-                child_commands.add("level_menu", context, LevelMenu(*n));
+                child_commands.add(
+                    *n as u32,
+                    context,
+                    LevelMenu(*n).with_transition_in_out::<TransformScaleLens>(
+                        Transform::from_scale(Vec3::ZERO),
+                        Vec3::ONE,
+                        Vec3::ZERO,
+                        Duration::from_secs_f32(0.2),
+                        Duration::from_secs_f32(0.2),
+                    ),
+                );
             }
         }
     }
@@ -287,14 +293,9 @@ impl HierarchyNode for LevelMenuArrows {
         child_commands: &mut impl ChildCommands,
     ) {
         if let MenuState::ShowLevelsPage(page) = context.0.as_ref() {
-            if *page == 0{
-                child_commands.add(
-                    "left",
-                    &context.1,
-                    icon_button_node(ButtonAction::OpenMenu),
-                )
-            }
-            else{
+            if *page == 0 {
+                child_commands.add("left", &context.1, icon_button_node(ButtonAction::OpenMenu))
+            } else {
                 child_commands.add(
                     "left",
                     &context.1,
@@ -302,19 +303,14 @@ impl HierarchyNode for LevelMenuArrows {
                 )
             }
 
-            if *page < 4{
+            if *page < 4 {
                 child_commands.add(
                     "right",
                     &context.1,
                     icon_button_node(ButtonAction::NextLevelsPage),
                 )
-            }
-            else{
-                child_commands.add(
-                    "right",
-                    &context.1,
-                    icon_button_node(ButtonAction::None),
-                )
+            } else {
+                child_commands.add("right", &context.1, icon_button_node(ButtonAction::None))
             }
         }
     }
@@ -450,7 +446,7 @@ pub enum ButtonAction {
     Apple,
     Steam,
 
-    None
+    None,
 }
 
 impl ButtonAction {
@@ -498,7 +494,7 @@ impl ButtonAction {
             GooglePlay => "\u{f1a0}".to_string(),
             Apple => "\u{f179}".to_string(),
             Steam => "\u{f1b6}".to_string(),
-            None=>"".to_string()
+            None => "".to_string(),
         }
     }
 
@@ -529,7 +525,7 @@ impl ButtonAction {
             GooglePlay => "Google Play".to_string(),
             Apple => "Apple".to_string(),
             Steam => "Steam".to_string(),
-            None=>"".to_string()
+            None => "".to_string(),
         }
     }
 }

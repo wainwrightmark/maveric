@@ -30,7 +30,7 @@ pub trait HierarchyNode: PartialEq + Send + Sync + 'static {
     );
 
     #[allow(clippy::unused_variables)]
-    fn on_deleted(&self, component_commands: &mut impl ComponentCommands) -> DeletionPolicy{
+    fn on_deleted(&self, _component_commands: &mut impl ComponentCommands) -> DeletionPolicy{
         DeletionPolicy::DeleteImmediately
     }
 }

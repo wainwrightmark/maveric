@@ -1,9 +1,99 @@
 use std::marker::PhantomData;
+use std::time::Duration;
 
 use bevy::prelude::*;
 
 use crate::prelude::*;
 use crate::transition::prelude::*;
+
+use super::speed::calculate_speed;
+
+pub trait CanHaveTransition: HierarchyNode + Sized {
+    fn with_transition_in<L: Lens + GetValueLens>(
+        self,
+        initial: L::Object,
+        destination: L::Value,
+        duration: Duration,
+    )-> WithTransition<Self, L> where
+        L::Value: Tweenable,
+        L::Object: Clone + PartialEq + Component,
+    {
+        let initial_value = L::get_value(&initial);
+        let speed = calculate_speed(&initial_value, &destination, duration);
+
+        self.with_transition(
+            initial,
+            TransitionStep::new(destination, speed).into(),
+            None,
+        )
+    }
+
+    fn with_transition_in_out<L: Lens + GetValueLens>(
+        self,
+        initial: L::Object,
+        destination: L::Value,
+        out_destination: L::Value,
+        in_duration: Duration,
+        out_duration: Duration,
+    )-> WithTransition<Self, L> where
+        L::Value: Tweenable,
+        L::Object: Clone + PartialEq + Component,
+    {
+        let initial_value = L::get_value(&initial);
+        let in_speed = calculate_speed(&initial_value, &destination, in_duration);
+
+        let out_speed = calculate_speed(&destination, &out_destination, out_duration);
+
+        self.with_transition(
+            initial,
+            TransitionStep::new(destination, in_speed).into(),
+            Some(TransitionStep::new(out_destination, out_speed).into()),
+        )
+    }
+
+    // fn with_entry_transition<L: Lens>(
+    //     self,
+    //     initial: L::Object,
+    //     path:  impl Into<TransitionPath<L>>,
+    // ) -> WithTransition<Self, L>
+    // where
+    //     L::Value: Tweenable,
+    //     L::Object: Clone + PartialEq + Component{
+    //         self.with_transition(initial, path.into(), None)
+    //     }
+
+    // fn with_both_transitions<L: Lens>(
+    //     self,
+    //     initial: L::Object,
+    //     path: impl Into<TransitionPath<L>>,
+    //     deletion_path:  impl Into<TransitionPath<L>>,
+    // ) -> WithTransition<Self, L>
+    // where
+    //     L::Value: Tweenable,
+    //     L::Object: Clone + PartialEq + Component{
+    //         self.with_transition(initial, path.into(), Some(deletion_path.into()))
+    //     }
+
+    fn with_transition<L: Lens>(
+        self,
+        initial: L::Object,
+        path: TransitionPath<L>,
+        deletion_path: Option<TransitionPath<L>>,
+    ) -> WithTransition<Self, L>
+    where
+        L::Value: Tweenable,
+        L::Object: Clone + PartialEq + Component,
+    {
+        WithTransition {
+            node: self,
+            initial,
+            path,
+            deletion_path,
+        }
+    }
+}
+
+impl<N: HierarchyNode> CanHaveTransition for N {}
 
 /// This required the animation plugin
 
@@ -100,7 +190,9 @@ impl<
         let Some(deletion_path) = &self.deletion_path else{return  base;};
 
         let transform = component_commands.get::<C>().unwrap_or(&self.initial);
-        let duration = deletion_path.remaining_duration(&L::get_value(transform)).unwrap_or_default();
+        let duration = deletion_path
+            .remaining_duration(&L::get_value(transform))
+            .unwrap_or_default();
 
         let duration = match base {
             DeletionPolicy::DeleteImmediately => duration,

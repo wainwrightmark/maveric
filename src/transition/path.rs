@@ -1,6 +1,9 @@
 use crate::transition::prelude::*;
 use bevy::prelude::*;
-use std::{marker::PhantomData, time::{Duration, TryFromFloatSecsError}};
+use std::{
+    marker::PhantomData,
+    time::{Duration, TryFromFloatSecsError},
+};
 
 #[derive(Debug, Clone)]
 pub struct TransitionStep<L: Lens>
@@ -12,7 +15,10 @@ where
     phantom: PhantomData<L>,
 }
 
-impl<L: Lens> PartialEq for TransitionStep<L> where L::Value: Tweenable {
+impl<L: Lens> PartialEq for TransitionStep<L>
+where
+    L::Value: Tweenable,
+{
     fn eq(&self, other: &Self) -> bool {
         self.destination.approx_eq(&other.destination)
             && self.speed == other.speed
@@ -20,7 +26,10 @@ impl<L: Lens> PartialEq for TransitionStep<L> where L::Value: Tweenable {
     }
 }
 
-impl<L: Lens> TransitionStep<L> where L::Value: Tweenable {
+impl<L: Lens> TransitionStep<L>
+where
+    L::Value: Tweenable,
+{
     pub fn new(destination: L::Value, speed: <L::Value as Tweenable>::Speed) -> Self {
         Self {
             destination,
@@ -31,12 +40,18 @@ impl<L: Lens> TransitionStep<L> where L::Value: Tweenable {
 }
 
 #[derive(Component)]
-pub(crate) struct TransitionPathComponent<L: Lens> where L::Value: Tweenable {
+pub(crate) struct TransitionPathComponent<L: Lens>
+where
+    L::Value: Tweenable,
+{
     pub path: TransitionPath<L>,
     pub index: usize,
 }
 
-impl<L: Lens> TransitionPathComponent<L> where L::Value: Tweenable {
+impl<L: Lens> TransitionPathComponent<L>
+where
+    L::Value: Tweenable,
+{
     pub fn current_step(&self) -> Option<&TransitionStep<L>> {
         self.path.steps.get(self.index)
     }
@@ -88,6 +103,7 @@ where
 
         for step in self.steps.iter() {
             let step_duration = current.duration_to(&step.destination, &step.speed)?;
+
             total += step_duration;
             current = &step.destination;
         }

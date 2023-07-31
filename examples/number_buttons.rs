@@ -1,8 +1,10 @@
 use bevy::prelude::*;
 use lazy_static::lazy_static;
 use state_hierarchy::transition::prelude::*;
+use state_hierarchy::transition::speed::{AngularSpeed, LinearSpeed};
 use state_hierarchy::{prelude::*, register_state_tree, widgets::prelude::*};
 use std::f32::consts;
+use std::time::Duration;
 use std::{string::ToString, sync::Arc};
 use strum::Display;
 use strum::IntoStaticStr;
@@ -47,7 +49,10 @@ fn main() {
         .add_systems(Update, button_system);
 
     //app.add_plugins(TransitionPlugin::<Prism2<TransformRotationLens, QuatZLens>>::default());
-    app.add_plugins(TransitionPlugin::<IdentityLens<Transform>>::default());
+    app.add_plugins(TransitionPlugin::<(
+        TransformRotationLens,
+        TransformScaleLens,
+    )>::default());
 
     register_state_tree::<Root>(&mut app);
     app.run();
@@ -200,24 +205,13 @@ impl HierarchyNode for DynamicGrid {
                 marker: DynamicButtonComponent(number),
             };
 
-            let node = WithTransition {
-                node,
-                //initial: Transform::from_scale(Vec3::ONE * 0.25).with_rotation(Quat::from_rotation_z(-consts::FRAC_PI_8)),
-                initial: Transform::from_rotation(Quat::from_rotation_z(-consts::FRAC_PI_8)),
-
-                path: TransitionStep::<IdentityLens<Transform>> ::new(Transform::default(),
-                transform_speed(1.0, consts::FRAC_PI_2, 0.25)).into(),
-                deletion_path:
-
-                 Some(
-                    TransitionStep::<IdentityLens<Transform>>::new(
-                        Transform::from_rotation(Quat::from_rotation_z(
-                            consts::FRAC_PI_2,
-
-                        )), transform_speed(0.0, consts::FRAC_PI_2, 0.25))
-                    .into(),
-                ),
-            };
+            let node = node.with_transition_in_out::<(TransformRotationLens, TransformScaleLens)>(
+                Transform::from_rotation(Quat::from_rotation_z(-consts::FRAC_PI_8)),
+                (Quat::default(), Vec3::ONE),
+                (Quat::from_rotation_z(consts::FRAC_PI_2), Vec3::ONE * 0.0),
+                Duration::from_secs_f32(0.5),
+                Duration::from_secs_f32(2.0),
+            );
 
             child_commands.add(number, &context.1, node);
         }

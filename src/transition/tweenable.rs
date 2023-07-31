@@ -5,10 +5,10 @@ use std::{
 
 use bevy::prelude::*;
 
-use super::speed::{AngularSpeed, LinearSpeed, ScalarSpeed};
+use super::speed::{AngularSpeed, LinearSpeed, ScalarSpeed, Speed};
 
 pub trait Tweenable: Debug + Clone + Send + Sync + 'static {
-    type Speed: core::fmt::Debug + Clone + PartialEq + Send + Sync + 'static;
+    type Speed: Speed;
     fn duration_to(
         &self,
         rhs: &Self,
@@ -75,7 +75,9 @@ impl Tweenable for Vec3 {
 
     fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, delta_seconds: &f32) -> Self {
         let diff = *rhs - *self;
-        *self + diff.clamp_length_max(speed.units_per_second * delta_seconds)
+        let clamped = diff.clamp_length_max(speed.units_per_second * delta_seconds);
+        //info!("From: {self:?} to {rhs:?} {diff} {clamped:?} {speed} * {delta_seconds}");
+        *self + clamped
     }
 
     fn approx_eq(&self, rhs: &Self) -> bool {

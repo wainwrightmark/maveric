@@ -55,7 +55,7 @@ fn step_transition<L: Lens + GetValueLens + SetValueLens>(
             tp.go_to_next_step();
         }
 
-        info!("Stepped transition of {lens} from {from:?} to {new_value:?}", lens = std::any::type_name::<L>());
+        //info!("Stepped transition of {lens} from {from:?} to {new_value:?}", lens = std::any::type_name::<L>());
 
         <L as SetValueLens>::set(component, new_value);
     }
