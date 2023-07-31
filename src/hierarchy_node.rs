@@ -15,6 +15,8 @@ pub trait HierarchyRoot: HierarchyNode + Default {
 pub trait HierarchyNode: PartialEq + Send + Sync + 'static {
     type Context<'c>: HasDetectChanges;
 
+
+    //todo combine these two methods
     fn get_components<'c>(
         &self,
         context: &Self::Context<'c>,
@@ -27,7 +29,10 @@ pub trait HierarchyNode: PartialEq + Send + Sync + 'static {
         child_commands: &mut impl ChildCommands,
     );
 
-    fn on_deleted(&self, component_commands: &mut impl ComponentCommands) -> DeletionPolicy;
+    #[allow(clippy::unused_variables)]
+    fn on_deleted(&self, component_commands: &mut impl ComponentCommands) -> DeletionPolicy{
+        DeletionPolicy::DeleteImmediately
+    }
 }
 
 pub(crate) trait CanDelete {

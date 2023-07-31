@@ -1,18 +1,45 @@
 use std::marker::PhantomData;
 
+use bevy::prelude::*;
+
 use crate::prelude::*;
 use crate::transition::prelude::*;
 
 /// This required the animation plugin
-#[derive(PartialEq)]
-pub struct WithTransition<N: HierarchyNode, V: ComponentVelocity> {
+
+pub struct WithTransition<N: HierarchyNode, L: Lens>
+where
+    L::Value: Tweenable,
+    L::Object: Clone + PartialEq + Component,
+{
     pub node: N,
-    pub initial: V::C,
-    pub path: TransitionPath<V>,
-    pub deletion_path: Option<TransitionPath<V>>,
+    pub initial: L::Object,
+    pub path: TransitionPath<L>,
+    pub deletion_path: Option<TransitionPath<L>>,
 }
 
-impl<N: HierarchyNode, V: ComponentVelocity> HierarchyNode for WithTransition<N, V> {
+impl<
+        N: HierarchyNode,
+        L: Lens<Value = V, Object = C>,
+        V: Tweenable,
+        C: Clone + PartialEq + Component,
+    > PartialEq for WithTransition<N, L>
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.node == other.node
+            && self.initial == other.initial
+            && self.path == other.path
+            && self.deletion_path == other.deletion_path
+    }
+}
+
+impl<
+        N: HierarchyNode,
+        C: Component + Clone + PartialEq,
+        V: Tweenable,
+        L: Lens<Object = C, Value = V> + GetValueLens,
+    > HierarchyNode for WithTransition<N, L>
+{
     type Context<'c> = N::Context<'c>;
 
     fn get_components<'c>(
@@ -22,23 +49,23 @@ impl<N: HierarchyNode, V: ComponentVelocity> HierarchyNode for WithTransition<N,
     ) {
         self.node.get_components(context, component_commands);
 
-        if let Some(previous) = component_commands.get::<V::C>() {
-            component_commands.insert(previous.clone()); //prevent this being overwritten by component_commands
+        if let Some(previous) = component_commands.get::<C>() {
+            component_commands.insert(previous.clone()); //prevent this being overwritten by node::get_components
         } else {
             component_commands.insert(self.initial.clone());
         }
 
         let new_path_index: Option<usize> = if let Some(suspended_path) =
-            component_commands.get::<SuspendedPathComponent<V>>()
+            component_commands.get::<SuspendedPathComponent<L>>()
         {
             let i = suspended_path
                 .index
                 .min(self.path.steps.len().saturating_sub(1));
 
             //info!("Restoring suspended path index {i}");
-            component_commands.remove::<SuspendedPathComponent<V>>();
+            component_commands.remove::<SuspendedPathComponent<L>>();
             Some(i)
-        } else if let Some(previous_path) = component_commands.get::<TransitionPathComponent<V>>() {
+        } else if let Some(previous_path) = component_commands.get::<TransitionPathComponent<L>>() {
             if previous_path.path != self.path {
                 //info!("New path found");
                 Some(0)
@@ -72,17 +99,17 @@ impl<N: HierarchyNode, V: ComponentVelocity> HierarchyNode for WithTransition<N,
 
         let Some(deletion_path) = &self.deletion_path else{return  base;};
 
-        let transform = component_commands.get::<V::C>().unwrap_or(&self.initial);
-        let duration = deletion_path.remaining_duration(transform);
+        let transform = component_commands.get::<C>().unwrap_or(&self.initial);
+        let duration = deletion_path.remaining_duration(&L::get_value(transform)).unwrap_or_default();
 
         let duration = match base {
             DeletionPolicy::DeleteImmediately => duration,
             DeletionPolicy::Linger(d) => duration.max(d),
         };
-        let current_path = component_commands.get::<TransitionPathComponent<V>>();
+        let current_path = component_commands.get::<TransitionPathComponent<L>>();
 
         if let Some(current_path) = current_path {
-            component_commands.insert(SuspendedPathComponent::<V> {
+            component_commands.insert(SuspendedPathComponent::<L> {
                 index: current_path.index,
                 phantom: PhantomData,
             })

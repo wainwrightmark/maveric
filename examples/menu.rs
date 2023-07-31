@@ -2,9 +2,7 @@ use bevy::prelude::*;
 use lazy_static::lazy_static;
 use state_hierarchy::transition::prelude::*;
 use state_hierarchy::{prelude::*, register_state_tree, widgets::prelude::*};
-use std::f32::consts;
 use std::{string::ToString, sync::Arc};
-use strum::IntoStaticStr;
 use strum::{Display, EnumIs};
 
 
@@ -16,7 +14,7 @@ fn main() {
         .add_systems(Startup, setup)
         .add_systems(Update, button_system);
 
-    app.add_plugins(TransitionPlugin::<TransformVelocity>::default());
+    app.add_plugins(TransitionPlugin::<Prism2<TransformRotationLens, QuatXLens>>::default());
 
     register_state_tree::<Root>(&mut app);
     app.run();

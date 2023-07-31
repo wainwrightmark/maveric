@@ -46,7 +46,8 @@ fn main() {
         .add_systems(Startup, setup)
         .add_systems(Update, button_system);
 
-    app.add_plugins(TransitionPlugin::<TransformVelocity>::default());
+    //app.add_plugins(TransitionPlugin::<Prism2<TransformRotationLens, QuatZLens>>::default());
+    app.add_plugins(TransitionPlugin::<IdentityLens<Transform>>::default());
 
     register_state_tree::<Root>(&mut app);
     app.run();
@@ -201,20 +202,19 @@ impl HierarchyNode for DynamicGrid {
 
             let node = WithTransition {
                 node,
-                initial: Transform::from_scale(Vec3::ONE * 0.25).with_rotation(Quat::from_rotation_z(-consts::FRAC_PI_8)),
+                //initial: Transform::from_scale(Vec3::ONE * 0.25).with_rotation(Quat::from_rotation_z(-consts::FRAC_PI_8)),
+                initial: Transform::from_rotation(Quat::from_rotation_z(-consts::FRAC_PI_8)),
 
-                path: TransitionStep {
-                    destination: Transform::default(),
-                    velocity: TransformVelocity::from_scale(1.0).with_angular(consts::FRAC_PI_2),
-                }
-                .into(),
-                deletion_path: Some(
-                    TransitionStep {
-                        destination: Transform::from_rotation(Quat::from_rotation_z(
+                path: TransitionStep::<IdentityLens<Transform>> ::new(Transform::default(),
+                transform_speed(1.0, consts::FRAC_PI_2, 0.25)).into(),
+                deletion_path:
+
+                 Some(
+                    TransitionStep::<IdentityLens<Transform>>::new(
+                        Transform::from_rotation(Quat::from_rotation_z(
                             consts::FRAC_PI_2,
-                        )),
-                        velocity: TransformVelocity::from_angular(consts::FRAC_PI_2).with_scale(1.0),
-                    }
+
+                        )), transform_speed(0.0, consts::FRAC_PI_2, 0.25))
                     .into(),
                 ),
             };

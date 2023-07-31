@@ -1,24 +1,43 @@
-use std::{marker::PhantomData, ops::Add, time::Duration};
-
-use crate::prelude::*;
 use crate::transition::prelude::*;
 use bevy::prelude::*;
+use std::{marker::PhantomData, time::{Duration, TryFromFloatSecsError}};
 
+#[derive(Debug, Clone)]
+pub struct TransitionStep<L: Lens>
+where
+    L::Value: Tweenable,
+{
+    pub destination: L::Value,
+    pub speed: <L::Value as Tweenable>::Speed,
+    phantom: PhantomData<L>,
+}
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct TransitionStep<V: ComponentVelocity> {
-    pub destination: V::C,
-    pub velocity: V,
+impl<L: Lens> PartialEq for TransitionStep<L> where L::Value: Tweenable {
+    fn eq(&self, other: &Self) -> bool {
+        self.destination.approx_eq(&other.destination)
+            && self.speed == other.speed
+            && self.phantom == other.phantom
+    }
+}
+
+impl<L: Lens> TransitionStep<L> where L::Value: Tweenable {
+    pub fn new(destination: L::Value, speed: <L::Value as Tweenable>::Speed) -> Self {
+        Self {
+            destination,
+            speed,
+            phantom: PhantomData,
+        }
+    }
 }
 
 #[derive(Component)]
-pub(crate) struct TransitionPathComponent<V: ComponentVelocity> {
-    pub path: TransitionPath<V>,
+pub(crate) struct TransitionPathComponent<L: Lens> where L::Value: Tweenable {
+    pub path: TransitionPath<L>,
     pub index: usize,
 }
 
-impl<V: ComponentVelocity> TransitionPathComponent<V> {
-    pub fn current_step(&self) -> Option<&TransitionStep<V>> {
+impl<L: Lens> TransitionPathComponent<L> where L::Value: Tweenable {
+    pub fn current_step(&self) -> Option<&TransitionStep<L>> {
         self.path.steps.get(self.index)
     }
 
@@ -28,32 +47,51 @@ impl<V: ComponentVelocity> TransitionPathComponent<V> {
 }
 
 #[derive(Debug, Component)]
-pub(crate) struct SuspendedPathComponent<V: ComponentVelocity> {
+pub(crate) struct SuspendedPathComponent<L: Lens> {
     pub index: usize,
-    pub phantom: PhantomData<V>,
+    pub phantom: PhantomData<L>,
 }
 
-#[derive(Clone, PartialEq)]
-pub struct TransitionPath<V: ComponentVelocity> {
-    pub steps: Vec<TransitionStep<V>>,
+#[derive(Clone)]
+pub struct TransitionPath<L: Lens>
+where
+    L::Value: Tweenable,
+{
+    pub steps: Vec<TransitionStep<L>>,
 }
 
-impl<V: ComponentVelocity> From<TransitionStep<V>> for TransitionPath<V> {
-    fn from(value: TransitionStep<V>) -> Self {
+impl<L: Lens> PartialEq for TransitionPath<L>
+where
+    L::Value: Tweenable,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.steps == other.steps
+    }
+}
+
+impl<L: Lens> From<TransitionStep<L>> for TransitionPath<L>
+where
+    L::Value: Tweenable,
+{
+    fn from(value: TransitionStep<L>) -> Self {
         Self { steps: vec![value] }
     }
 }
 
-impl<V: ComponentVelocity> TransitionPath<V> {
-    pub fn remaining_duration(&self, start: &V::C) -> Duration {
+impl<L: Lens> TransitionPath<L>
+where
+    L::Value: Tweenable,
+{
+    pub fn remaining_duration(&self, start: &L::Value) -> Result<Duration, TryFromFloatSecsError> {
         let mut total: Duration = Duration::default();
-        let mut current: &V::C = start;
+        let mut current: &L::Value = start;
 
         for step in self.steps.iter() {
-            total += step.velocity.duration(&step.destination, current);
+            let step_duration = current.duration_to(&step.destination, &step.speed)?;
+            total += step_duration;
             current = &step.destination;
         }
 
-        total
+        Ok(total)
     }
 }
