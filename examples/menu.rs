@@ -14,6 +14,8 @@ fn main() {
         .add_systems(Startup, setup)
         .add_systems(Update, button_system);
 
+    //app.add_plugins(TransitionPlugin::<StyleLeftLens>::default());
+    app.add_plugins(TransitionPlugin::<StyleTopLens>::default());
     app.add_plugins(TransitionPlugin::<TransformScaleLens>::default());
 
     register_state_tree::<Root>(&mut app);
@@ -116,17 +118,35 @@ impl HierarchyNode for Root {
                 child_commands.add("main_menu", context, MainMenu);
             }
             MenuState::ShowLevelsPage(n) => {
-                child_commands.add(
-                    *n as u32,
-                    context,
-                    LevelMenu(*n).with_transition_in_out::<TransformScaleLens>(
-                        Transform::from_scale(Vec3::ZERO),
+
+
+
+                let child_node = LevelMenu(*n)
+                    .with_transition_in_out::<StyleTopLens>(
+                        Style {
+                            position_type: PositionType::Absolute,
+                            left: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
+                            right: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
+                            top: Val::Px(MENU_OFFSET - 700.0),
+                            display: Display::Flex,
+                            flex_direction: FlexDirection::Column,
+
+                            ..Default::default()
+                        },
+                        Val::Px(MENU_OFFSET),
+                        Val::Px(MENU_OFFSET + 700.0),
+                        Duration::from_secs_f32(0.2),
+                        Duration::from_secs_f32(0.2),
+                    )
+                    .with_transition_in_out::<TransformScaleLens>(
+                        Transform::from_scale(Vec3::new(1.0, 1.0, 1.0)),
                         Vec3::ONE,
-                        Vec3::ZERO,
+                        Vec3::new(1.0, 1.0, 1.0),
                         Duration::from_secs_f32(0.2),
                         Duration::from_secs_f32(0.2),
-                    ),
-                );
+                    );
+
+                child_commands.add(*n as u32, context, child_node);
             }
         }
     }

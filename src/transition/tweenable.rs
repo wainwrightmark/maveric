@@ -157,6 +157,89 @@ impl Tweenable for Transform {
     }
 }
 
+impl Tweenable for Val {
+    type Speed = <f32 as Tweenable>::Speed;
+
+    fn duration_to(
+        &self,
+        rhs: &Self,
+        speed: &Self::Speed,
+    ) -> Result<Duration, TryFromFloatSecsError> {
+        match (self, rhs) {
+            (Val::Px(l), Val::Px(r))
+            | (Val::Percent(l), Val::Percent(r))
+            | (Val::Vw(l), Val::Vw(r))
+            | (Val::Vh(l), Val::Vh(r))
+            | (Val::VMin(l), Val::VMin(r))
+            | (Val::VMax(l), Val::VMax(r)) => <f32 as Tweenable>::duration_to(&l, r, speed),
+            _ => Ok(Duration::ZERO),
+        }
+    }
+
+    fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, delta_seconds: &f32) -> Self {
+        match (self, rhs) {
+            (Val::Px(l), Val::Px(r)) => Val::Px(<f32 as Tweenable>::transition_towards(
+                &l,
+                r,
+                speed,
+                delta_seconds,
+            )),
+            (Val::Percent(l), Val::Percent(r)) => Val::Percent(
+                <f32 as Tweenable>::transition_towards(&l, r, speed, delta_seconds),
+            ),
+            (Val::Vw(l), Val::Vw(r)) => Val::Vw(<f32 as Tweenable>::transition_towards(
+                &l,
+                r,
+                speed,
+                delta_seconds,
+            )),
+            (Val::Vh(l), Val::Vh(r)) => Val::Vh(<f32 as Tweenable>::transition_towards(
+                &l,
+                r,
+                speed,
+                delta_seconds,
+            )),
+            (Val::VMin(l), Val::VMin(r)) => Val::VMin(<f32 as Tweenable>::transition_towards(
+                &l,
+                r,
+                speed,
+                delta_seconds,
+            )),
+            (Val::VMax(l), Val::VMax(r)) => Val::VMax(<f32 as Tweenable>::transition_towards(
+                &l,
+                r,
+                speed,
+                delta_seconds,
+            )),
+            _ => *rhs,
+        }
+    }
+
+    fn approx_eq(&self, rhs: &Self) -> bool {
+        self.eq(rhs)
+    }
+}
+
+// impl Tweenable for Color{
+//     type Speed;
+
+//     fn duration_to(
+//         &self,
+//         rhs: &Self,
+//         speed: &Self::Speed,
+//     ) -> Result<Duration, TryFromFloatSecsError> {
+//         todo!()
+//     }
+
+//     fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, delta_seconds: &f32) -> Self {
+//         self.f32
+//     }
+
+//     fn approx_eq(&self, rhs: &Self) -> bool {
+//         self.eq(rhs)
+//     }
+// }
+
 fn quat_clamp_length_max(q: Quat, max: f32) -> Quat {
     let length_sq = q.length_squared();
     if length_sq > max * max {

@@ -46,6 +46,14 @@ define_lens!(Vec3XLens, Vec3, f32, x);
 define_lens!(Vec3YLens, Vec3, f32, y);
 define_lens!(Vec3ZLens, Vec3, f32, z);
 
+define_lens!(StyleWidthLens, Style,Val, width );
+define_lens!(StyleHeightLens, Style,Val, height );
+
+define_lens!(StyleTopLens, Style,Val, top );
+define_lens!(StyleBottomLens, Style,Val, bottom );
+define_lens!(StyleLeftLens, Style,Val, left );
+define_lens!(StyleRightLens, Style,Val, right );
+
 
 
 pub fn transform_speed(
