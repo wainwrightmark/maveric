@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 use std::time::Duration;
 
 use bevy::prelude::*;
+use bevy::utils::HashSet;
 
 use crate::prelude::*;
 use crate::transition::prelude::*;
@@ -14,7 +15,8 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
         initial: L::Object,
         destination: L::Value,
         duration: Duration,
-    )-> WithTransition<Self, L> where
+    ) -> WithTransition<Self, L>
+    where
         L::Value: Tweenable,
         L::Object: Clone + PartialEq + Component,
     {
@@ -35,7 +37,8 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
         out_destination: L::Value,
         in_duration: Duration,
         out_duration: Duration,
-    )-> WithTransition<Self, L> where
+    ) -> WithTransition<Self, L>
+    where
         L::Value: Tweenable,
         L::Object: Clone + PartialEq + Component,
     {
@@ -132,12 +135,12 @@ impl<
 {
     type Context<'c> = N::Context<'c>;
 
-    fn get_components<'c>(
+    fn update<'c>(
         &self,
         context: &Self::Context<'c>,
-        component_commands: &mut impl ComponentCommands,
+        component_commands: &mut impl HierarchyCommands,
     ) {
-        self.node.get_components(context, component_commands);
+        self.node.update(context, component_commands);
 
         if let Some(previous) = component_commands.get::<C>() {
             component_commands.insert(previous.clone()); //prevent this being overwritten by node::get_components
@@ -145,17 +148,7 @@ impl<
             component_commands.insert(self.initial.clone());
         }
 
-        let new_path_index: Option<usize> = if let Some(suspended_path) =
-            component_commands.get::<SuspendedPathComponent<L>>()
-        {
-            let i = suspended_path
-                .index
-                .min(self.path.steps.len().saturating_sub(1));
-
-            //info!("Restoring suspended path index {i}");
-            component_commands.remove::<SuspendedPathComponent<L>>();
-            Some(i)
-        } else if let Some(previous_path) = component_commands.get::<TransitionPathComponent<L>>() {
+        let new_path_index: Option<usize> =if let Some(previous_path) = component_commands.get::<TransitionPathComponent<L>>() {
             if previous_path.path != self.path {
                 //info!("New path found");
                 Some(0)
@@ -176,16 +169,38 @@ impl<
         }
     }
 
-    fn get_children<'c>(
-        &self,
-        context: &Self::Context<'c>,
-        child_commands: &mut impl ChildCommands,
-    ) {
-        self.node.get_children(context, child_commands)
+    fn on_undeleted<'c>(&self, context: &Self::Context<'c>, commands: &mut impl ComponentCommands) {
+
+        self.node.on_undeleted(context, commands);
+
+        let new_path_index: Option<usize> =
+            if let Some(suspended_path) = commands.get::<SuspendedPathComponent<L>>() {
+                let i = suspended_path
+                    .index
+                    .min(self.path.steps.len().saturating_sub(1));
+
+                //info!("Restoring suspended path index {i}");
+                commands.remove::<SuspendedPathComponent<L>>();
+                Some(i)
+            } else {
+                //info!("No preexisting path found");
+                Some(0)
+            };
+
+        if let Some(index) = new_path_index {
+            commands.insert(TransitionPathComponent {
+                path: self.path.clone(),
+                index,
+            });
+        }
     }
 
-    fn on_deleted(&self, component_commands: &mut impl ComponentCommands) -> DeletionPolicy {
-        let base = self.node.on_deleted(component_commands);
+    fn on_deleted(
+        &self,
+        component_commands: &mut impl ComponentCommands,
+        new_sibling_keys: &HashSet<ChildKey>,
+    ) -> DeletionPolicy {
+        let base = self.node.on_deleted(component_commands, new_sibling_keys);
 
         let Some(deletion_path) = &self.deletion_path else{return  base;};
 

@@ -20,7 +20,7 @@ pub struct TextNodeStyle{
 impl<V: Into<String> + PartialEq + Clone + Send + Sync + 'static> HierarchyNode for TextNode<V> {
     type Context<'c> = Res<'c, AssetServer>;
 
-    fn get_components<'c>(
+    fn update<'c>(
         &self,
         context: &Self::Context<'c>,
         component_commands: &mut impl ComponentCommands,
@@ -35,16 +35,5 @@ impl<V: Into<String> + PartialEq + Clone + Send + Sync + 'static> HierarchyNode 
                 color: self.style.color,
             },
         ));
-    }
-
-    fn get_children<'c>(
-        &self,
-        _context: &Self::Context<'c>,
-        _child_commands: &mut impl ChildCommands,
-    ) {
-    }
-
-    fn on_deleted(&self, _component_commands: &mut impl ComponentCommands) -> DeletionPolicy {
-        DeletionPolicy::DeleteImmediately
     }
 }

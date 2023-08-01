@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use lazy_static::lazy_static;
 use state_hierarchy::transition::prelude::*;
-use state_hierarchy::{prelude::*, register_state_tree, widgets::prelude::*};
+use state_hierarchy::{prelude::*, register_state_tree};
 use std::time::Duration;
 use std::{string::ToString, sync::Arc};
 use strum::{Display, EnumIs};
@@ -14,8 +14,8 @@ fn main() {
         .add_systems(Startup, setup)
         .add_systems(Update, button_system);
 
-    //app.add_plugins(TransitionPlugin::<StyleLeftLens>::default());
-    app.add_plugins(TransitionPlugin::<StyleTopLens>::default());
+    app.add_plugins(TransitionPlugin::<StyleLeftLens>::default());
+    //app.add_plugins(TransitionPlugin::<StyleTopLens>::default());
     app.add_plugins(TransitionPlugin::<TransformScaleLens>::default());
 
     register_state_tree::<Root>(&mut app);
@@ -82,15 +82,14 @@ impl HierarchyRoot for Root {
     }
 }
 
+#[derive(Component, Debug, Clone, Copy, Deref)]
+pub struct RootPage(MenuState);
+
 impl HierarchyNode for Root {
     type Context<'c> = (Res<'c, MenuState>, Res<'c, AssetServer>);
 
-    fn get_components<'c>(
-        &self,
-        _context: &Self::Context<'c>,
-        component_commands: &mut impl ComponentCommands,
-    ) {
-        component_commands.insert(NodeBundle {
+    fn update<'c>(&self, context: &Self::Context<'c>, commands: &mut impl HierarchyCommands) {
+        commands.insert(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
                 height: Val::Percent(100.0),
@@ -98,61 +97,64 @@ impl HierarchyNode for Root {
             },
             background_color: BACKGROUND_COLOR.into(),
             ..Default::default()
-        })
-    }
+        });
 
-    fn get_children<'c>(
-        &self,
-        context: &Self::Context<'c>,
-        child_commands: &mut impl ChildCommands,
-    ) {
+        commands.insert(RootPage(context.0.clone()));
+
         match context.0.as_ref() {
             MenuState::Closed => {
-                child_commands.add(
+                commands.child(
                     "open_icon",
                     &context.1,
                     icon_button_node(ButtonAction::OpenMenu),
                 );
             }
             MenuState::ShowMainMenu => {
-                child_commands.add("main_menu", context, MainMenu);
+                commands.child("main_menu", context, MainMenu);
             }
             MenuState::ShowLevelsPage(n) => {
+                let duration: Duration = Duration::from_secs_f32(2.0);
 
-
+                let initial_left = match commands.get::<RootPage>(){
+                    Some(RootPage(MenuState::ShowLevelsPage(prev_page))) =>
+                    match prev_page.cmp(n){
+                        std::cmp::Ordering::Less => Val::Percent(00.0),
+                        std::cmp::Ordering::Equal => Val::Percent(50.0),
+                        std::cmp::Ordering::Greater => Val::Percent(100.0),
+                    },
+                    _ => Val::Percent(0.0),
+                };
 
                 let child_node = LevelMenu(*n)
-                    .with_transition_in_out::<StyleTopLens>(
+                    .with_transition_in_out::<StyleLeftLens>(
                         Style {
                             position_type: PositionType::Absolute,
-                            left: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
+                            left: initial_left,
                             right: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
-                            top: Val::Px(MENU_OFFSET - 700.0),
+                            top: Val::Px(MENU_OFFSET),
                             display: Display::Flex,
                             flex_direction: FlexDirection::Column,
 
                             ..Default::default()
                         },
-                        Val::Px(MENU_OFFSET),
-                        Val::Px(MENU_OFFSET + 700.0),
-                        Duration::from_secs_f32(0.2),
-                        Duration::from_secs_f32(0.2),
+                        Val::Percent(50.0),
+                        Val::Percent(100.0),
+                        duration,
+                        duration,
                     )
-                    .with_transition_in_out::<TransformScaleLens>(
-                        Transform::from_scale(Vec3::new(1.0, 1.0, 1.0)),
-                        Vec3::ONE,
-                        Vec3::new(1.0, 1.0, 1.0),
-                        Duration::from_secs_f32(0.2),
-                        Duration::from_secs_f32(0.2),
-                    );
 
-                child_commands.add(*n as u32, context, child_node);
+                    // .with_transition_in_out::<TransformScaleLens>(
+                    //     Transform::from_scale(Vec3::new(1.0, 0.0, 1.0)),
+                    //     Vec3::ONE,
+                    //     Vec3::new(1.0, 0.0, 1.0),
+                    //     duration,
+                    //     duration,
+                    // )
+                    ;
+
+                commands.child(*n as u32, context, child_node);
             }
         }
-    }
-
-    fn on_deleted(&self, _component_commands: &mut impl ComponentCommands) -> DeletionPolicy {
-        DeletionPolicy::DeleteImmediately
     }
 }
 
@@ -180,12 +182,12 @@ pub struct MainMenu;
 impl HierarchyNode for MainMenu {
     type Context<'c> = (Res<'c, MenuState>, Res<'c, AssetServer>);
 
-    fn get_components<'c>(
+    fn update<'c>(
         &self,
-        _context: &Self::Context<'c>,
-        component_commands: &mut impl ComponentCommands,
+        context: &Self::Context<'c>,
+        commands: &mut impl HierarchyCommands,
     ) {
-        component_commands.insert(NodeBundle {
+        commands.insert(NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
                 left: Val::Percent(50.0),  // Val::Px(MENU_OFFSET),
@@ -198,21 +200,11 @@ impl HierarchyNode for MainMenu {
             },
             z_index: ZIndex::Global(10),
             ..Default::default()
-        })
-    }
+        });
 
-    fn get_children<'c>(
-        &self,
-        context: &Self::Context<'c>,
-        child_commands: &mut impl ChildCommands,
-    ) {
         for (key, action) in ButtonAction::main_buttons().into_iter().enumerate() {
-            child_commands.add(key as u32, &context.1, text_button_node(*action))
+            commands.child(key as u32, &context.1, text_button_node(*action))
         }
-    }
-
-    fn on_deleted(&self, _component_commands: &mut impl ComponentCommands) -> DeletionPolicy {
-        DeletionPolicy::DeleteImmediately
     }
 }
 
@@ -222,12 +214,12 @@ pub struct LevelMenu(u8);
 impl HierarchyNode for LevelMenu {
     type Context<'c> = (Res<'c, MenuState>, Res<'c, AssetServer>);
 
-    fn get_components<'c>(
+    fn update<'c>(
         &self,
-        _context: &Self::Context<'c>,
-        component_commands: &mut impl ComponentCommands,
+        context: &Self::Context<'c>,
+        commands: &mut impl HierarchyCommands,
     ) {
-        component_commands.insert(NodeBundle {
+        commands.insert(NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
                 left: Val::Percent(50.0),  // Val::Px(MENU_OFFSET),
@@ -240,30 +232,20 @@ impl HierarchyNode for LevelMenu {
             },
             z_index: ZIndex::Global(10),
             ..Default::default()
-        })
-    }
+        });
 
-    fn get_children<'c>(
-        &self,
-        context: &Self::Context<'c>,
-        child_commands: &mut impl ChildCommands,
-    ) {
         let start = self.0 * LEVELS_PER_PAGE;
         let end = start + LEVELS_PER_PAGE;
 
         for (key, level) in (start..end).enumerate() {
-            child_commands.add(
+            commands.child(
                 key as u32,
                 &context.1,
                 text_button_node(ButtonAction::GotoLevel { level }),
             )
         }
 
-        child_commands.add("buttons", context, LevelMenuArrows);
-    }
-
-    fn on_deleted(&self, _component_commands: &mut impl ComponentCommands) -> DeletionPolicy {
-        DeletionPolicy::DeleteImmediately
+        commands.child("buttons", context, LevelMenuArrows);
     }
 }
 
@@ -273,12 +255,12 @@ pub struct LevelMenuArrows;
 impl HierarchyNode for LevelMenuArrows {
     type Context<'c> = (Res<'c, MenuState>, Res<'c, AssetServer>);
 
-    fn get_components<'c>(
+    fn update<'c>(
         &self,
-        _context: &Self::Context<'c>,
-        component_commands: &mut impl ComponentCommands,
+        context: &Self::Context<'c>,
+        commands: &mut impl HierarchyCommands,
     ) {
-        component_commands.insert(NodeBundle {
+        commands.insert(NodeBundle {
             style: Style {
                 position_type: PositionType::Relative,
                 left: Val::Percent(0.0),
@@ -304,19 +286,13 @@ impl HierarchyNode for LevelMenuArrows {
             background_color: BackgroundColor(TEXT_BUTTON_BACKGROUND),
             border_color: BorderColor(BUTTON_BORDER),
             ..Default::default()
-        })
-    }
+        });
 
-    fn get_children<'c>(
-        &self,
-        context: &Self::Context<'c>,
-        child_commands: &mut impl ChildCommands,
-    ) {
         if let MenuState::ShowLevelsPage(page) = context.0.as_ref() {
             if *page == 0 {
-                child_commands.add("left", &context.1, icon_button_node(ButtonAction::OpenMenu))
+                commands.child("left", &context.1, icon_button_node(ButtonAction::OpenMenu))
             } else {
-                child_commands.add(
+                commands.child(
                     "left",
                     &context.1,
                     icon_button_node(ButtonAction::PreviousLevelsPage),
@@ -324,19 +300,15 @@ impl HierarchyNode for LevelMenuArrows {
             }
 
             if *page < 4 {
-                child_commands.add(
+                commands.child(
                     "right",
                     &context.1,
                     icon_button_node(ButtonAction::NextLevelsPage),
                 )
             } else {
-                child_commands.add("right", &context.1, icon_button_node(ButtonAction::None))
+                commands.child("right", &context.1, icon_button_node(ButtonAction::None))
             }
         }
-    }
-
-    fn on_deleted(&self, _component_commands: &mut impl ComponentCommands) -> DeletionPolicy {
-        DeletionPolicy::DeleteImmediately
     }
 }
 

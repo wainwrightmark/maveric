@@ -3,10 +3,11 @@ use std::sync::Arc;
 pub use crate::prelude::*;
 pub use bevy::prelude::*;
 
-use self::text_node::{TextNode, TextNodeStyle};
-
 #[derive(PartialEq, Debug)]
-pub struct ButtonNode<Marker: Component + PartialEq + Clone, V : Into<String> + Clone + PartialEq + Send + Sync + 'static> {
+pub struct ButtonNode<
+    Marker: Component + PartialEq + Clone,
+    V: Into<String> + Clone + PartialEq + Send + Sync + 'static,
+> {
     pub value: V,
     pub text_node_style: Arc<TextNodeStyle>,
     pub button_node_style: Arc<ButtonNodeStyle>,
@@ -22,29 +23,27 @@ pub struct ButtonNodeStyle {
     pub background_color: Color,
 }
 
-impl<M: Component + PartialEq + Clone, V : Into<String> + Clone + PartialEq + Send + Sync + 'static> HierarchyNode for ButtonNode<M, V> {
+impl<
+        M: Component + PartialEq + Clone,
+        V: Into<String> + Clone + PartialEq + Send + Sync + 'static,
+    > HierarchyNode for ButtonNode<M, V>
+{
     type Context<'c> = Res<'c, AssetServer>;
 
-    fn get_components<'b>(
+    fn update<'b>(
         &self,
-        _context: &Self::Context<'b>,
-        component_commands: &mut impl ComponentCommands,
+        context: &Self::Context<'b>,
+        commands: &mut impl HierarchyCommands,
     ) {
-        component_commands.insert(ButtonBundle {
+        commands.insert(ButtonBundle {
             style: self.button_node_style.style.clone(),
             border_color: BorderColor(self.button_node_style.border_color),
             background_color: BackgroundColor(self.button_node_style.background_color),
             ..default()
         });
-        component_commands.insert(self.marker.clone());
-    }
+        commands.insert(self.marker.clone());
 
-    fn get_children<'b>(
-        &self,
-        context: &Self::Context<'b>,
-        child_commands: &mut impl ChildCommands,
-    ) {
-        child_commands.add(
+        commands.child(
             0,
             context,
             TextNode {
@@ -52,9 +51,5 @@ impl<M: Component + PartialEq + Clone, V : Into<String> + Clone + PartialEq + Se
                 value: self.value.clone()
             },
         )
-    }
-
-    fn on_deleted(&self,  _component_commands: &mut impl ComponentCommands) -> DeletionPolicy {
-        DeletionPolicy::DeleteImmediately //You can override this by wrapping in `Animated`
     }
 }

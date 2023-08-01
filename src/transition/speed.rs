@@ -1,4 +1,4 @@
-use std::{clone, fmt::Display, ops::Mul, time::Duration};
+use std::{fmt::Display, time::Duration};
 
 use super::tweenable::Tweenable;
 

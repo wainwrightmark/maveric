@@ -1,8 +1,7 @@
 use bevy::prelude::*;
 use lazy_static::lazy_static;
 use state_hierarchy::transition::prelude::*;
-use state_hierarchy::transition::speed::{AngularSpeed, LinearSpeed};
-use state_hierarchy::{prelude::*, register_state_tree, widgets::prelude::*};
+use state_hierarchy::prelude::*;
 use std::f32::consts;
 use std::time::Duration;
 use std::{string::ToString, sync::Arc};
@@ -126,12 +125,12 @@ pub struct CommandGrid;
 impl HierarchyNode for CommandGrid {
     type Context<'c> = Res<'c, AssetServer>;
 
-    fn get_components<'c>(
+    fn update<'c>(
         &self,
-        _context: &Self::Context<'c>,
-        component_commands: &mut impl ComponentCommands,
+        context: &Self::Context<'c>,
+        commands: &mut impl HierarchyCommands,
     ) {
-        component_commands.insert(NodeBundle {
+        commands.insert(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
                 align_items: AlignItems::Center,
@@ -142,13 +141,7 @@ impl HierarchyNode for CommandGrid {
             },
             ..default()
         });
-    }
 
-    fn get_children<'c>(
-        &self,
-        context: &Self::Context<'c>,
-        child_commands: &mut impl ChildCommands,
-    ) {
         for command in [Command::AddNew, Command::Reset] {
             let key: &'static str = command.into();
 
@@ -159,12 +152,8 @@ impl HierarchyNode for CommandGrid {
                 marker: command,
             };
 
-            child_commands.add(key, context, node);
+            commands.child(key, context, node);
         }
-    }
-
-    fn on_deleted(&self, _component_commands: &mut impl ComponentCommands) -> DeletionPolicy {
-        DeletionPolicy::DeleteImmediately
     }
 }
 
@@ -174,12 +163,12 @@ pub struct DynamicGrid;
 impl HierarchyNode for DynamicGrid {
     type Context<'c> = (Res<'c, UIState>, Res<'c, AssetServer>);
 
-    fn get_components<'c>(
+    fn update<'c>(
         &self,
-        _context: &Self::Context<'c>,
-        component_commands: &mut impl ComponentCommands,
+        context: &Self::Context<'c>,
+        commands: &mut impl HierarchyCommands,
     ) {
-        component_commands.insert(NodeBundle {
+        commands.insert(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
                 align_items: AlignItems::Center,
@@ -190,13 +179,7 @@ impl HierarchyNode for DynamicGrid {
             },
             ..default()
         });
-    }
 
-    fn get_children<'c>(
-        &self,
-        context: &Self::Context<'c>,
-        child_commands: &mut impl ChildCommands,
-    ) {
         for number in context.0.dynamic_buttons.iter().cloned() {
             let node = ButtonNode {
                 value: number.to_string(),
@@ -213,24 +196,20 @@ impl HierarchyNode for DynamicGrid {
                 Duration::from_secs_f32(2.0),
             );
 
-            child_commands.add(number, &context.1, node);
+            commands.child(number, &context.1, node);
         }
-    }
-
-    fn on_deleted(&self, _component_commands: &mut impl ComponentCommands) -> DeletionPolicy {
-        DeletionPolicy::DeleteImmediately
     }
 }
 
 impl HierarchyNode for Root {
     type Context<'c> = (Res<'c, UIState>, Res<'c, AssetServer>);
 
-    fn get_components<'b>(
+    fn update<'b>(
         &self,
-        _context: &Self::Context<'b>,
-        component_commands: &mut impl ComponentCommands,
+        context: &Self::Context<'b>,
+        commands: &mut impl HierarchyCommands,
     ) {
-        component_commands.insert(NodeBundle {
+        commands.insert(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
                 align_items: AlignItems::Center,
@@ -241,19 +220,9 @@ impl HierarchyNode for Root {
             },
             ..default()
         });
-    }
 
-    fn get_children<'b>(
-        &self,
-        context: &Self::Context<'b>,
-        child_commands: &mut impl ChildCommands,
-    ) {
-        child_commands.add(0, &context.1, CommandGrid);
-        child_commands.add(1, context, DynamicGrid);
-    }
-
-    fn on_deleted(&self, _component_commands: &mut impl ComponentCommands) -> DeletionPolicy {
-        DeletionPolicy::DeleteImmediately
+        commands.child(0, &context.1, CommandGrid);
+        commands.child(1, context, DynamicGrid);
     }
 }
 

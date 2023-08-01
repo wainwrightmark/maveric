@@ -8,31 +8,31 @@ use bevy::{
 use prelude::*;
 
 pub mod child_commands;
-pub mod component_commands;
-pub mod components;
-pub mod hierarchy_node;
-pub mod has_detect_changes;
 pub mod child_deletion_policy;
 pub mod child_key;
+pub mod component_commands;
+pub mod components;
 pub mod desired_transform;
-pub mod widgets;
+pub mod has_detect_changes;
+pub mod hierarchy_node;
 pub mod transition;
+pub mod widgets;
 
 pub mod prelude {
     pub use crate::child_commands::*;
     pub use crate::component_commands::*;
     pub(crate) use crate::components::*;
 
-    pub use crate::hierarchy_node::*;
-    pub use crate::has_detect_changes::*;
     pub use crate::child_deletion_policy::*;
     pub use crate::child_key::*;
     pub use crate::desired_transform::*;
-    pub use crate::widgets::*;
-    pub use crate::transition::*;
+    pub use crate::has_detect_changes::*;
+    pub use crate::hierarchy_node::*;
+    pub use crate::transition::prelude::*;
+    pub use crate::widgets::prelude::*;
+
+    pub use crate::register_state_tree;
 }
-
-
 
 #[derive(Debug, Default)]
 pub struct StateTreePlugin;
@@ -102,18 +102,14 @@ fn create_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     node: N,
     context: &N::Context<'c>,
 ) {
-
     //info!("Creating Node {}", type_name::<N>());
-    let mut creation_commands = ComponentCreationCommands::new(&mut cec);
-    node.get_components(&context, &mut creation_commands);
-    let mut child_commands = ChildCreationCommands::<R>::new(&mut cec);
-
-    node.get_children(&context, &mut child_commands);
+    let mut commands = CreationHierarchyCommands::<R>::new(&mut cec);
+    node.update(&context, &mut commands);
 
     cec.insert(HierarchyNodeComponent::new(node));
 }
 
-fn update_recursive<'c,R: HierarchyRoot, N: HierarchyNode>(
+fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     commands: &mut Commands,
     entity_ref: EntityRef,
     node: N,
@@ -121,15 +117,14 @@ fn update_recursive<'c,R: HierarchyRoot, N: HierarchyNode>(
     all_child_nodes: Rc<HashMap<Entity, (EntityRef, HierarchyChildComponent<R>)>>,
 ) {
     let mut ec = commands.entity(entity_ref.id());
-    let mut component_commands = ComponentUpdateCommands::new(entity_ref, &mut ec);
-    node.get_components(&context, &mut component_commands);
+
     let children = entity_ref.get::<Children>();
 
-    let mut child_commands: UnorderedChildCommands<'_, '_, '_, '_, '_, R> =
-        UnorderedChildCommands::<R>::new(&mut ec, children, all_child_nodes.clone());
+    let mut commands =
+        UnorderedChildCommands::<R>::new(&mut ec, entity_ref, children, all_child_nodes.clone());
 
-    node.get_children(&context, &mut child_commands);
-    child_commands.finish();
+    node.update(&context, &mut commands);
+    commands.finish();
 
     ec.insert(HierarchyNodeComponent::new(node));
 
