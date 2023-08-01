@@ -160,6 +160,22 @@ impl HierarchyNode for CommandGrid {
 #[derive(Eq, PartialEq, Debug, Default)]
 pub struct DynamicGrid;
 
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct MenuSlideDeletionPathMaker{page: u8}
+
+impl DeletionPathMaker<StyleLeftLens> for MenuSlideDeletionPathMaker {
+    fn get_path(
+        &self,
+        previous: &<StyleLeftLens as Lens>::Value,
+        sibling_keys: &bevy::utils::HashSet<ChildKey>,
+    ) -> Option<TransitionPath<StyleLeftLens>> {
+        todo!()
+    }
+}
+
+
+
 impl HierarchyNode for DynamicGrid {
     type Context<'c> = (Res<'c, UIState>, Res<'c, AssetServer>);
 

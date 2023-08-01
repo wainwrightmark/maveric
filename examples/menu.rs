@@ -141,7 +141,7 @@ impl HierarchyNode for Root {
                         Val::Percent(100.0),
                         duration,
                         duration,
-                    )
+                    )//.with_transition_in_out(initial, destination, out_destination, in_duration, out_duration)
 
                     // .with_transition_in_out::<TransformScaleLens>(
                     //     Transform::from_scale(Vec3::new(1.0, 0.0, 1.0)),
@@ -157,6 +157,25 @@ impl HierarchyNode for Root {
         }
     }
 }
+
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct CarouselDeletionPathMaker{
+    pub page: u8,
+    pub duration: Duration
+}
+
+// impl DeletionPathMaker for CarouselDeletionPathMaker {
+//     fn get_path(
+//         &self,
+//         previous: &L::Value,
+//         sibling_keys: &bevy::utils::HashSet<ChildKey>,
+//     ) -> Option<TransitionPath<L>> {
+//         todo!()
+//     }
+// }
+
+
 
 fn icon_button_node(button_action: ButtonAction) -> ButtonNode<ButtonAction, String> {
     ButtonNode {
