@@ -40,7 +40,7 @@ fn sync_state<'a, R: HierarchyRoot>(
     mut commands: Commands,
     param: StaticSystemParam<R::ContextParam<'a>>,
     root_query: Query<Entity, (Without<Parent>, With<HierarchyChildComponent<R>>)>,
-    tree: Query<(EntityRef, &HierarchyChildComponent<R>)>,
+    tree: Query<(EntityRef, &HierarchyChildComponent<R>)>, //TODO just pass in all entities
 ) {
     let context = R::get_context(param);
 
@@ -57,9 +57,9 @@ fn sync_state<'a, R: HierarchyRoot>(
     let mut root_commands =
         RootCommands::new(&mut commands, &context, all_child_nodes, root_query);
 
-    let context_ref = <<R as NodeBase>::Context as NodeContext>::from_wrapper(&context);
 
-    R::set_children(&R::default(),&context_ref, &mut root_commands);
+
+    R::set_children(&R::default(),&context, &mut root_commands);
     root_commands.finish();
 }
 

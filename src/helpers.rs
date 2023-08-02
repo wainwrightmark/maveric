@@ -15,12 +15,6 @@ pub(crate) fn create_recursive<'c, R: HierarchyRoot, P: HasChild<N>, N: Hierarch
     let ancestor_context = N::ancestor_context(context);
     let component_context = N::components_context(context);
 
-    let c_context_ref = <<N::ComponentsAspect as NodeBase>::Context as NodeContext>::from_wrapper(
-        component_context,
-    );
-    let a_context_ref =
-        <<N::AncestorAspect as NodeBase>::Context as NodeContext>::from_wrapper(ancestor_context);
-
     let mut child_commands =
         CreationCommands::<R, N::AncestorAspect>::new(&mut cec, ancestor_context);
 
@@ -29,13 +23,13 @@ pub(crate) fn create_recursive<'c, R: HierarchyRoot, P: HasChild<N>, N: Hierarch
 
     <N::ComponentsAspect as ComponentsAspect>::set_components(
         component_args,
-        &c_context_ref,
+        &component_context,
         &mut child_commands,
         SetComponentsEvent::Created,
     );
     <N::AncestorAspect as AncestorAspect>::set_children(
         ancestor_args,
-        &a_context_ref,
+        &ancestor_context,
         &mut child_commands,
     );
 
@@ -115,14 +109,9 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     if components_hot {
         let mut component_commands = ConcreteComponentCommands::new(entity_ref, &mut ec);
 
-        let c_context_ref =
-            <<N::ComponentsAspect as NodeBase>::Context as NodeContext>::from_wrapper(
-                component_context,
-            );
-
         <N::ComponentsAspect as ComponentsAspect>::set_components(
             component_args,
-            &c_context_ref,
+            &component_context,
             &mut component_commands,
             if undeleted {
                 SetComponentsEvent::Undeleted
@@ -145,13 +134,9 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
             all_child_nodes.clone(),
         );
 
-        let a_context_ref = <<N::AncestorAspect as NodeBase>::Context as NodeContext>::from_wrapper(
-            ancestor_context,
-        );
-
         <N::AncestorAspect as AncestorAspect>::set_children(
             ancestor_args,
-            &a_context_ref,
+            &ancestor_context,
             &mut ancestor_commands,
         );
         ancestor_commands.finish();

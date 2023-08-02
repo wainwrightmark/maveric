@@ -1,10 +1,12 @@
+use std::sync::Arc;
+
 pub use crate::prelude::*;
 pub use bevy::prelude::*;
 
 #[derive(PartialEq, Debug)]
 pub struct TextNode {
-    text: String,
-    style: TextNodeStyle,
+    pub text: String,
+    pub style: Arc<TextNodeStyle>,
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -21,7 +23,7 @@ impl NodeBase for TextNode {
 impl ComponentsAspect for TextNode {
     fn set_components<'r>(
         &self,
-        context: &<Self::Context as NodeContext>::Ref<'r>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ComponentCommands,
         _event: SetComponentsEvent,
     ) {

@@ -11,7 +11,7 @@ pub enum SetComponentsEvent {
 
 pub trait HasChild<NChild: HierarchyNode>: AncestorAspect {
     fn convert_context<'a, 'r>(
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        context: &'a <Self::Context as NodeContext>::Wrapper<'r>,
     ) -> &'a <<NChild as NodeBase>::Context as NodeContext>::Wrapper<'r>;
 
     const DELETER: &'static dyn ChildDeleter<Self> = &NodeDeleter::<Self, NChild>::new();
@@ -19,13 +19,12 @@ pub trait HasChild<NChild: HierarchyNode>: AncestorAspect {
 
 pub trait NodeBase: PartialEq + Sized + Send + Sync + 'static {
     type Context: NodeContext;
-    //type Args: PartialEq + Send + Sync + 'static;
 }
 
 pub trait AncestorAspect: NodeBase {
     fn set_children<'r>(
         &self,
-        context: &<Self::Context as NodeContext>::Ref<'r>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ChildCommands<Self>,
     );
 }
@@ -33,7 +32,7 @@ pub trait AncestorAspect: NodeBase {
 pub trait ComponentsAspect: NodeBase {
     fn set_components<'r>(
         &self,
-        context: &<Self::Context as NodeContext>::Ref<'r>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ComponentCommands,
         event: SetComponentsEvent,
     );
@@ -41,7 +40,7 @@ pub trait ComponentsAspect: NodeBase {
     #[allow(clippy::unused_variables)]
     fn on_deleted<'r>(
         &self,
-        _context: &<Self::Context as NodeContext>::Ref<'r>,
+        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
         _commands: &mut impl ComponentCommands,
     ) -> DeletionPolicy {
         DeletionPolicy::DeleteImmediately
@@ -49,6 +48,7 @@ pub trait ComponentsAspect: NodeBase {
 }
 
 pub trait HierarchyNode: NodeBase {
+    //TODO split into two traits HasComponentsAspect and HasAncestorAspect
     type ComponentsAspect: ComponentsAspect;
     type AncestorAspect: AncestorAspect;
 
@@ -59,12 +59,8 @@ pub trait HierarchyNode: NodeBase {
         context: &'a <<Self as NodeBase>::Context as NodeContext>::Wrapper<'r>,
     ) -> &'a <<Self::AncestorAspect as NodeBase>::Context as NodeContext>::Wrapper<'r>;
 
-    fn as_component_aspect<'a>(
-        &'a self,
-    ) -> &'a Self::ComponentsAspect;
-    fn as_ancestor_aspect<'a>(
-        &'a self,
-    ) -> &'a Self::AncestorAspect;
+    fn as_component_aspect<'a>(&'a self) -> &'a Self::ComponentsAspect;
+    fn as_ancestor_aspect<'a>(&'a self) -> &'a Self::AncestorAspect;
 }
 
 impl<N: NodeBase + AncestorAspect + ComponentsAspect> HierarchyNode for N {
@@ -84,27 +80,15 @@ impl<N: NodeBase + AncestorAspect + ComponentsAspect> HierarchyNode for N {
         context
     }
 
-    fn as_component_aspect<'a>(
-        &'a self,
-    ) -> &'a Self::ComponentsAspect {
+    fn as_component_aspect<'a>(&'a self) -> &'a Self::ComponentsAspect {
         self
     }
 
-    fn as_ancestor_aspect<'a>(
-        &'a self,
-    ) -> &'a Self::AncestorAspect {
+    fn as_ancestor_aspect<'a>(&'a self) -> &'a Self::AncestorAspect {
         self
     }
-
 }
 
-// pub(crate) trait CanDelete {
-//     const DELETER: &'static dyn Deleter;
-// }
-
-// impl<N: HierarchyNode> CanDelete for N {
-//     const DELETER: &'static dyn Deleter = &NodeDeleter::<Self>::new();
-// }
 
 #[derive(Debug)]
 struct NodeDeleter<NParent: AncestorAspect + HasChild<NChild>, NChild: HierarchyNode> {
@@ -134,13 +118,9 @@ impl<NParent: AncestorAspect + HasChild<NChild>, NChild: HierarchyNode> ChildDel
             let child_context = NParent::convert_context(parent_context);
             let component_context = NChild::components_context(child_context);
 
-            let context_ref =
-                <<NChild::ComponentsAspect as NodeBase>::Context as NodeContext>::from_wrapper(
-                    component_context,
-                );
 
             let previous_args = NChild::as_component_aspect(&hierarchy_node_component.node);
-            <NChild::ComponentsAspect>::on_deleted(previous_args, &context_ref, commands)
+            <NChild::ComponentsAspect>::on_deleted(previous_args, &component_context, commands)
         } else {
             warn!(
                 "Deleted entity of type {t} did not have HierarchyNodeComponent",
