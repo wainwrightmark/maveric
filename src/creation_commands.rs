@@ -15,14 +15,14 @@ pub(crate) struct CreationCommands<
     'd,
     'r,
     R: HierarchyRoot,
-    NParent: AncestorAspect,
+    NParent: ChildrenAspect,
 > {
     ec: &'b mut EntityCommands<'w, 's, 'a>,
     context: &'d <NParent::Context as NodeContext>::Wrapper<'r>,
     phantom: PhantomData<R>,
 }
 
-impl<'w, 's, 'a, 'b, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspect> ChildCommands<NParent>
+impl<'w, 's, 'a, 'b, 'd, 'r, R: HierarchyRoot, NParent: ChildrenAspect> ChildCommands<NParent>
     for CreationCommands<'w, 's, 'a, 'b, 'd, 'r, R, NParent>
 {
     fn add_child<'c, NChild: HierarchyNode>(
@@ -42,7 +42,7 @@ impl<'w, 's, 'a, 'b, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspect> ChildCom
     }
 }
 
-impl<'w, 's, 'a, 'b, 'c, 'r, R: HierarchyRoot, NParent: AncestorAspect>
+impl<'w, 's, 'a, 'b, 'c, 'r, R: HierarchyRoot, NParent: ChildrenAspect>
     CreationCommands<'w, 's, 'a, 'b, 'c, 'r, R, NParent>
 {
     pub(crate) fn new(
@@ -57,7 +57,7 @@ impl<'w, 's, 'a, 'b, 'c, 'r, R: HierarchyRoot, NParent: AncestorAspect>
     }
 }
 
-impl<'w, 's, 'a, 'b, 'c, 'r, R: HierarchyRoot, NParent: AncestorAspect> ComponentCommands
+impl<'w, 's, 'a, 'b, 'c, 'r, R: HierarchyRoot, NParent: ChildrenAspect> ComponentCommands
     for CreationCommands<'w, 's, 'a, 'b, 'c, 'r, R, NParent>
 {
     fn insert<T: Bundle>(&mut self, bundle: T) {

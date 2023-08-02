@@ -12,13 +12,13 @@ pub(crate) fn create_recursive<'c, R: HierarchyRoot, P: HasChild<N>, N: Hierarch
 ) {
     //info!("Creating Node {}", type_name::<N>());
 
-    let ancestor_context = N::ancestor_context(context);
+    let children_context = N::children_context(context);
     let component_context = N::components_context(context);
 
     let mut child_commands =
-        CreationCommands::<R, N::AncestorAspect>::new(&mut cec, ancestor_context);
+        CreationCommands::<R, N::ChildrenAspect>::new(&mut cec, children_context);
 
-    let ancestor_args = N::as_ancestor_aspect(&node);
+    let children_args = N::as_children_aspect(&node);
     let component_args = N::as_component_aspect(&node);
 
     <N::ComponentsAspect as ComponentsAspect>::set_components(
@@ -27,20 +27,20 @@ pub(crate) fn create_recursive<'c, R: HierarchyRoot, P: HasChild<N>, N: Hierarch
         &mut child_commands,
         SetComponentsEvent::Created,
     );
-    <N::AncestorAspect as AncestorAspect>::set_children(
-        ancestor_args,
-        &ancestor_context,
+    <N::ChildrenAspect as ChildrenAspect>::set_children(
+        children_args,
+        &children_context,
         &mut child_commands,
     );
 
     let hnc = HierarchyNodeComponent::<N> { node };
     let hcc = HierarchyChildComponent::<R>::new::<N>(key.into());
-    let ac = AncestorComponent::<P>::new::<N>();
+    let ac = ChildrenComponent::<P>::new::<N>();
 
     cec.insert((hnc, hcc, ac));
 }
 
-pub(crate) fn delete_recursive<'c, P: AncestorAspect>(
+pub(crate) fn delete_recursive<'c, P: ChildrenAspect>(
     commands: &mut Commands,
     entity_ref: EntityRef,
     parent_context: &<<P as NodeBase>::Context as NodeContext>::Wrapper<'c>,
@@ -52,7 +52,7 @@ pub(crate) fn delete_recursive<'c, P: AncestorAspect>(
     let mut ec = commands.entity(entity_ref.id());
     let mut cc = ConcreteComponentCommands::new(entity_ref, &mut ec);
 
-    let dp: DeletionPolicy = if let Some(ac) = entity_ref.get::<AncestorComponent<P>>() {
+    let dp: DeletionPolicy = if let Some(ac) = entity_ref.get::<ChildrenComponent<P>>() {
         ac.deleter.on_deleted(entity_ref, &mut cc, parent_context)
     } else {
         DeletionPolicy::DeleteImmediately
@@ -96,8 +96,8 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
 
     let component_context = N::components_context(context);
     let component_args = N::as_component_aspect(&node);
-    let ancestor_args = N::as_ancestor_aspect(&node);
-    let ancestor_context = N::ancestor_context(context);
+    let children_args = N::as_children_aspect(&node);
+    let children_context = N::children_context(context);
 
     let components_hot = undeleted
         || <<N::ComponentsAspect as NodeBase>::Context as NodeContext>::has_changed(
@@ -121,25 +121,25 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
         );
     }
 
-    let ancestors_hot =
-        <<N::AncestorAspect as NodeBase>::Context as NodeContext>::has_changed(ancestor_context)
+    let childrens_hot =
+        <<N::ChildrenAspect as NodeBase>::Context as NodeContext>::has_changed(children_context)
             || (args_changed
-                && old_args.is_some_and(|oa| N::as_ancestor_aspect(&oa) == ancestor_args));
+                && old_args.is_some_and(|oa| N::as_children_aspect(&oa) == children_args));
 
-    if ancestors_hot {
-        let mut ancestor_commands = UnorderedChildCommands::<R, N::AncestorAspect>::new(
+    if childrens_hot {
+        let mut children_commands = UnorderedChildCommands::<R, N::ChildrenAspect>::new(
             &mut ec,
             children,
-            ancestor_context,
+            children_context,
             all_child_nodes.clone(),
         );
 
-        <N::AncestorAspect as AncestorAspect>::set_children(
-            ancestor_args,
-            &ancestor_context,
-            &mut ancestor_commands,
+        <N::ChildrenAspect as ChildrenAspect>::set_children(
+            children_args,
+            &children_context,
+            &mut children_commands,
         );
-        ancestor_commands.finish();
+        children_commands.finish();
     }
 
     if args_changed {

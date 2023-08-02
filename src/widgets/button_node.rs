@@ -34,7 +34,7 @@ impl<Marker: Component + PartialEq + Clone> NodeBase for ButtonNode<Marker> {
     type Context = AssetServer;
 }
 
-impl<Marker: Component + PartialEq + Clone> AncestorAspect for ButtonNode<Marker> {
+impl<Marker: Component + PartialEq + Clone> ChildrenAspect for ButtonNode<Marker> {
     fn set_children<'r>(
         &self,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,

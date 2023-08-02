@@ -9,7 +9,7 @@ pub enum SetComponentsEvent {
     Undeleted,
 }
 
-pub trait HasChild<NChild: HierarchyNode>: AncestorAspect {
+pub trait HasChild<NChild: HierarchyNode>: ChildrenAspect {
     fn convert_context<'a, 'r>(
         context: &'a <Self::Context as NodeContext>::Wrapper<'r>,
     ) -> &'a <<NChild as NodeBase>::Context as NodeContext>::Wrapper<'r>;
@@ -21,7 +21,7 @@ pub trait NodeBase: PartialEq + Sized + Send + Sync + 'static {
     type Context: NodeContext;
 }
 
-pub trait AncestorAspect: NodeBase {
+pub trait ChildrenAspect: NodeBase {
     fn set_children<'r>(
         &self,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
@@ -57,27 +57,27 @@ pub trait HasComponentsAspect: NodeBase {
     fn as_component_aspect<'a>(&'a self) -> &'a Self::ComponentsAspect;
 }
 
-pub trait HasAncestorAspect: NodeBase {
-    type AncestorAspect: AncestorAspect;
+pub trait HasChildrenAspect: NodeBase {
+    type ChildrenAspect: ChildrenAspect;
 
-    fn ancestor_context<'a, 'r>(
+    fn children_context<'a, 'r>(
         context: &'a <<Self as NodeBase>::Context as NodeContext>::Wrapper<'r>,
-    ) -> &'a <<Self::AncestorAspect as NodeBase>::Context as NodeContext>::Wrapper<'r>;
+    ) -> &'a <<Self::ChildrenAspect as NodeBase>::Context as NodeContext>::Wrapper<'r>;
 
-    fn as_ancestor_aspect<'a>(&'a self) -> &'a Self::AncestorAspect;
+    fn as_children_aspect<'a>(&'a self) -> &'a Self::ChildrenAspect;
 }
 
-pub trait HierarchyNode: HasAncestorAspect + HasComponentsAspect {}
+pub trait HierarchyNode: HasChildrenAspect + HasComponentsAspect {}
 
-impl<N: AncestorAspect> HasAncestorAspect for N {
-    type AncestorAspect = Self;
-    fn ancestor_context<'a, 'r>(
+impl<N: ChildrenAspect> HasChildrenAspect for N {
+    type ChildrenAspect = Self;
+    fn children_context<'a, 'r>(
         context: &'a <<Self as NodeBase>::Context as NodeContext>::Wrapper<'r>,
-    ) -> &'a <<Self::AncestorAspect as NodeBase>::Context as NodeContext>::Wrapper<'r> {
+    ) -> &'a <<Self::ChildrenAspect as NodeBase>::Context as NodeContext>::Wrapper<'r> {
         context
     }
 
-    fn as_ancestor_aspect<'a>(&'a self) -> &'a Self::AncestorAspect {
+    fn as_children_aspect<'a>(&'a self) -> &'a Self::ChildrenAspect {
         self
     }
 }
@@ -96,15 +96,15 @@ impl<N: ComponentsAspect> HasComponentsAspect for N {
     }
 }
 
-impl<N: HasAncestorAspect + HasComponentsAspect> HierarchyNode for N {}
+impl<N: HasChildrenAspect + HasComponentsAspect> HierarchyNode for N {}
 
 
 #[derive(Debug)]
-struct NodeDeleter<NParent: AncestorAspect + HasChild<NChild>, NChild: HierarchyNode> {
+struct NodeDeleter<NParent: ChildrenAspect + HasChild<NChild>, NChild: HierarchyNode> {
     phantom: PhantomData<(NParent, NChild)>,
 }
 
-impl<NParent: AncestorAspect + HasChild<NChild>, NChild: HierarchyNode>
+impl<NParent: ChildrenAspect + HasChild<NChild>, NChild: HierarchyNode>
     NodeDeleter<NParent, NChild>
 {
     const fn new() -> Self {
@@ -114,7 +114,7 @@ impl<NParent: AncestorAspect + HasChild<NChild>, NChild: HierarchyNode>
     }
 }
 
-impl<NParent: AncestorAspect + HasChild<NChild>, NChild: HierarchyNode> ChildDeleter<NParent>
+impl<NParent: ChildrenAspect + HasChild<NChild>, NChild: HierarchyNode> ChildDeleter<NParent>
     for NodeDeleter<NParent, NChild>
 {
     fn on_deleted<'r>(
@@ -139,7 +139,7 @@ impl<NParent: AncestorAspect + HasChild<NChild>, NChild: HierarchyNode> ChildDel
     }
 }
 
-pub trait ChildDeleter<NParent: AncestorAspect>: Send + Sync + 'static {
+pub trait ChildDeleter<NParent: ChildrenAspect>: Send + Sync + 'static {
     fn on_deleted<'r>(
         &self,
         entity_ref: EntityRef,
@@ -152,7 +152,7 @@ impl NodeBase for () {
     type Context = NoContext;
 }
 
-impl AncestorAspect for () {
+impl ChildrenAspect for () {
     fn set_children<'r>(
         &self,
         _context: &<Self::Context as NodeContext>::Wrapper<'r>,

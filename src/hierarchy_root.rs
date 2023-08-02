@@ -6,7 +6,7 @@ use bevy::{
     utils::HashSet,
 };
 
-pub trait HierarchyRoot: AncestorAspect + Default + Send + Sync + 'static {
+pub trait HierarchyRoot: ChildrenAspect + Default + Send + Sync + 'static {
     type ContextParam<'c>: SystemParam;
 
     fn get_context<'a, 'c, 'w: 'c, 's>(

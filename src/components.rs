@@ -10,11 +10,11 @@ pub(crate) struct HierarchyNodeComponent<N: NodeBase> {
 }
 
 #[derive(Component)]
-pub(crate) struct AncestorComponent<N: AncestorAspect> {
+pub(crate) struct ChildrenComponent<N: ChildrenAspect> {
     pub deleter: &'static dyn ChildDeleter<N>,
 }
 
-impl<NParent: AncestorAspect> AncestorComponent<NParent> {
+impl<NParent: ChildrenAspect> ChildrenComponent<NParent> {
     pub(crate) fn new<NChild: HierarchyNode>() -> Self
     where
         NParent: HasChild<NChild>,

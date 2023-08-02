@@ -4,7 +4,7 @@ use bevy::{
     utils::{hashbrown::HashMap, HashSet},
 };
 
-pub trait ChildCommands<NParent: AncestorAspect> {
+pub trait ChildCommands<NParent: ChildrenAspect> {
     fn add_child<'c, NChild: HierarchyNode>(&mut self, key: impl Into<ChildKey>, child: NChild)
     where
         NParent: HasChild<NChild>;

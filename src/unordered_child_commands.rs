@@ -16,7 +16,7 @@ pub(crate) struct UnorderedChildCommands<
     'd,
     'r,
     R: HierarchyRoot,
-    NParent: AncestorAspect,
+    NParent: ChildrenAspect,
 > {
     ec: &'b mut EntityCommands<'w, 's, 'a>,
     context: &'d <NParent::Context as NodeContext>::Wrapper<'r>,
@@ -26,7 +26,7 @@ pub(crate) struct UnorderedChildCommands<
     phantom: PhantomData<R>,
 }
 
-impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspect>
+impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: ChildrenAspect>
     ChildCommands<NParent>
     for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'd, 'r, R, NParent>
 {
@@ -90,7 +90,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspec
     }
 }
 
-impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspect>
+impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: ChildrenAspect>
     UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'd, 'r, R, NParent>
 {
     pub(crate) fn new(
