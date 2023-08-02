@@ -105,9 +105,10 @@ impl HierarchyNode for Root {
                 commands.child("main_menu", context, MainMenu);
             }
             MenuState::ShowLevelsPage(n) => {
-                let carousel = Carousel::new(*n as u32, |x| Some(LevelMenu(x)));
+                let duration: Duration = Duration::from_secs_f32(2.0);
+                let carousel = Carousel::new(*n as u32, |x| Some(LevelMenu(x)), duration);
                 commands.child("levels", context, carousel);
-                // let duration: Duration = Duration::from_secs_f32(2.0);
+                // 
 
                 // let initial_left = match commands.get::<RootPage>(){
                 //     Some(RootPage(MenuState::ShowLevelsPage(prev_page))) =>

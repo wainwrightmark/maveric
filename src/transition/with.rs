@@ -7,7 +7,7 @@ use bevy::utils::HashSet;
 use crate::prelude::*;
 use crate::transition::prelude::*;
 
-use super::speed::calculate_speed;
+use super::speed::{calculate_speed, Speed};
 
 pub trait DeletionPathMaker<L: Lens + GetValueLens>: PartialEq + Send + Sync + 'static
 where
@@ -51,7 +51,6 @@ where
         previous: &<L as Lens>::Value,
         _sibling_keys: &HashSet<ChildKey>,
     ) -> Option<TransitionPath<L>> {
-
         let out_speed = calculate_speed(previous, &self.destination, self.duration);
 
         Some(TransitionStep::new(self.destination.clone(), out_speed).into())
@@ -116,7 +115,7 @@ where
 pub trait CanHaveTransition: HierarchyNode + Sized {
     fn with_transition_in<L: Lens + GetValueLens>(
         self,
-        initial: L::Object,
+        initial: L::Value,
         destination: L::Value,
         duration: Duration,
     ) -> WithTransition<Self, L, ()>
@@ -124,15 +123,19 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
         L::Value: Tweenable,
         L::Object: Clone + PartialEq + Component,
     {
-        let initial_value = L::get_value(&initial);
-        let speed = calculate_speed(&initial_value, &destination, duration);
+        let in_speed = calculate_speed(&initial, &destination, duration);
+        let first_step =
+            TransitionStep::<L>::new(initial, <<L::Value as Tweenable>::Speed as Speed>::INFINITE);
+        let path = TransitionPath {
+            steps: vec![first_step, TransitionStep::new(destination, in_speed)],
+        };
 
-        self.with_transition(initial, TransitionStep::new(destination, speed).into(), ())
+        self.with_transition(path, ())
     }
 
     fn with_transition_in_out<L: Lens + GetValueLens>(
         self,
-        initial: L::Object,
+        initial: L::Value,
         destination: L::Value,
         out_destination: L::Value,
         in_duration: Duration,
@@ -142,12 +145,15 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
         L::Value: Tweenable,
         L::Object: Clone + PartialEq + Component,
     {
-        let initial_value = L::get_value(&initial);
-        let in_speed = calculate_speed(&initial_value, &destination, in_duration);
+        let in_speed = calculate_speed(&initial, &destination, in_duration);
+        let first_step =
+            TransitionStep::<L>::new(initial, <<L::Value as Tweenable>::Speed as Speed>::INFINITE);
+        let path = TransitionPath {
+            steps: vec![first_step, TransitionStep::new(destination, in_speed)],
+        };
 
         self.with_transition(
-            initial,
-            TransitionStep::new(destination, in_speed).into(),
+            path,
             DurationDeletionPathMaker::new(out_duration, out_destination),
         )
     }
@@ -177,7 +183,6 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
 
     fn with_transition<L: Lens + GetValueLens, P: DeletionPathMaker<L>>(
         self,
-        initial: L::Object,
         path: TransitionPath<L>,
         deletion: P,
     ) -> WithTransition<Self, L, P>
@@ -187,7 +192,6 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
     {
         WithTransition {
             node: self,
-            initial,
             path,
             deletion,
         }
@@ -204,7 +208,7 @@ where
     L::Object: Clone + PartialEq + Component,
 {
     pub node: N,
-    pub initial: L::Object,
+    //pub initial: L::Object,
     pub path: TransitionPath<L>,
     pub deletion: P,
 }
@@ -217,7 +221,7 @@ where
 {
     fn eq(&self, other: &Self) -> bool {
         self.node == other.node
-            && self.initial == other.initial
+            //&& self.initial == other.initial
             && self.path == other.path
             && self.deletion == other.deletion
     }
@@ -238,11 +242,11 @@ where
     ) {
         self.node.update(context, component_commands);
 
-        if let Some(previous) = component_commands.get::<L::Object>() {
-            component_commands.insert(previous.clone()); //prevent this being overwritten by node::get_components
-        } else {
-            component_commands.insert(self.initial.clone());
-        }
+        // if let Some(previous) = component_commands.get::<L::Object>() {
+        //     component_commands.insert(previous.clone()); //prevent this being overwritten by node::get_components
+        // } else {
+        //     component_commands.insert(self.initial.clone());
+        // }
 
         let new_path_index: Option<usize> =
             if let Some(previous_path) = component_commands.get::<TransitionPathComponent<L>>() {
@@ -266,7 +270,11 @@ where
         }
     }
 
-    fn on_undeleted<'c>(&self, context: &<Self::Context as NodeContext>::Wrapper<'c>, commands: &mut impl ComponentCommands) {
+    fn on_undeleted<'c>(
+        &self,
+        context: &<Self::Context as NodeContext>::Wrapper<'c>,
+        commands: &mut impl ComponentCommands,
+    ) {
         self.node.on_undeleted(context, commands);
 
         let new_path_index: Option<usize> =
@@ -298,9 +306,8 @@ where
     ) -> DeletionPolicy {
         let base = self.node.on_deleted(component_commands, new_sibling_keys);
 
-        let component = component_commands
-            .get::<L::Object>()
-            .unwrap_or(&self.initial);
+        let Some(component) = component_commands
+            .get::<L::Object>() else {return base;};
 
         let previous = &<L as GetValueLens>::get_value(component);
 

@@ -5,6 +5,8 @@ use super::tweenable::Tweenable;
 pub trait Speed: std::fmt::Debug + Copy + Clone + PartialEq + Send + Sync + 'static {
     const ONE_PER_SECOND: Self;
 
+    const INFINITE: Self;
+
     fn mul(self, rhs: f32) -> Self;
 }
 
@@ -23,6 +25,10 @@ impl Display for ScalarSpeed {
 impl Speed for ScalarSpeed {
     const ONE_PER_SECOND: Self = Self {
         amount_per_second: 1.0,
+    };
+
+    const INFINITE: Self = Self {
+        amount_per_second: f32::INFINITY,
     };
 
     fn mul(self, rhs: f32) -> Self {
@@ -55,6 +61,10 @@ impl Speed for LinearSpeed {
         units_per_second: 1.0,
     };
 
+    const INFINITE: Self = Self {
+        units_per_second: f32::INFINITY,
+    };
+
     fn mul(self, rhs: f32) -> Self {
         Self {
             units_per_second: self.units_per_second * rhs,
@@ -85,6 +95,10 @@ impl Speed for AngularSpeed {
         radians_per_second: 1.0,
     };
 
+    const INFINITE: Self = Self {
+        radians_per_second: f32::INFINITY,
+    };
+
     fn mul(self, rhs: f32) -> Self {
         Self {
             radians_per_second: self.radians_per_second * rhs,
@@ -103,6 +117,10 @@ macro_rules! impl_speed {
         impl<$($T : Speed,)*> Speed for ($($T,)*) {
 
             const ONE_PER_SECOND: Self =($($T::ONE_PER_SECOND,)*);
+
+            const INFINITE: Self =($($T::INFINITE,)*);
+
+
 
             fn mul(self, _rhs: f32) -> Self {
                 let ($($t,)*)= self;

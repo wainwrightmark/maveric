@@ -191,7 +191,7 @@ impl HierarchyNode for DynamicGrid {
             };
 
             let node = node.with_transition_in_out::<(TransformRotationLens, TransformScaleLens)>(
-                Transform::from_rotation(Quat::from_rotation_z(-consts::FRAC_PI_8)),
+                (Quat::from_rotation_z(-consts::FRAC_PI_8), Vec3::ONE),
                 (Quat::default(), Vec3::ONE),
                 (Quat::from_rotation_z(consts::FRAC_PI_2), Vec3::ONE * 0.0),
                 Duration::from_secs_f32(0.5),
