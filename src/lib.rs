@@ -13,11 +13,11 @@ pub mod child_key;
 pub mod component_commands;
 pub mod components;
 pub mod desired_transform;
-pub mod node_context;
 pub mod hierarchy_node;
+pub mod hierarchy_root;
+pub mod node_context;
 pub mod transition;
 pub mod widgets;
-pub mod hierarchy_root;
 
 pub mod prelude {
     pub use crate::child_commands::*;
@@ -27,9 +27,9 @@ pub mod prelude {
     pub use crate::child_deletion_policy::*;
     pub use crate::child_key::*;
     pub use crate::desired_transform::*;
-    pub use crate::node_context::*;
     pub use crate::hierarchy_node::*;
     pub use crate::hierarchy_root::*;
+    pub use crate::node_context::*;
     pub use crate::transition::prelude::*;
     pub use crate::widgets::prelude::*;
 
@@ -66,7 +66,7 @@ fn handle_scheduled_for_removal(
 fn sync_state<'a, R: HierarchyRoot>(
     mut commands: Commands,
     param: StaticSystemParam<R::ContextParam<'a>>,
-    root_query: Query<EntityRef, With<HierarchyRootComponent<R>>>,
+    root_query: Query<Entity, (Without<Parent>, With<HierarchyChildComponent<R>>)>,
     tree: Query<(EntityRef, &HierarchyChildComponent<R>)>,
 ) {
     let context = R::get_context(param);
@@ -76,49 +76,54 @@ fn sync_state<'a, R: HierarchyRoot>(
         return;
     }
 
-    let root_node = R::default();
-
     let all_child_nodes: HashMap<Entity, (EntityRef, HierarchyChildComponent<R>)> =
         tree.iter().map(|(e, c)| (e.id(), (e, c.clone()))).collect();
 
     let all_child_nodes = Rc::new(all_child_nodes);
 
-    match root_query.get_single().ok() {
-        Some(entity_ref) => {
-            update_recursive::<R, R>(
-                &mut commands,
-                entity_ref,
-                root_node,
-                &context,
-                all_child_nodes,
-            );
-        }
-        None => {
-            let mut ec = commands.spawn(HierarchyRootComponent::<R>::default());
-            create_recursive::<R, R>(&mut ec, root_node, &context);
-        }
-    }
+    let mut root_commands =
+        RootCommands::new(&mut commands, all_child_nodes, root_query);
+
+    R::set_children(&(),&context, &mut root_commands);
+    root_commands.finish();
 }
 
 fn create_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     mut cec: &mut EntityCommands,
-    node: N,
-    context: &<N::Context as NodeContext>::Wrapper<'c>,
+    args: <N as NodeBase>::Args,
+    context: &<<N as NodeBase>::Context as NodeContext>::Wrapper<'c>,
 ) {
     //info!("Creating Node {}", type_name::<N>());
     let mut commands = CreationCommands::<R>::new(&mut cec);
-    node.set_components(&context, &mut commands, SetComponentsEvent::Created);
-    node.set_children(&context, &mut commands);
 
-    cec.insert(HierarchyNodeComponent::new(node));
+    let ancestor_context = N::ancestor_context(context);
+    let component_context = N::components_context(context);
+
+    let ancestor_args = N::ancestor_aspect(&args);
+    let component_args = N::component_args(&args);
+
+    <N::ComponentsAspect as ComponentsAspect>::set_components(
+        component_args,
+        &component_context,
+        &mut commands,
+        SetComponentsEvent::Created,
+    );
+    <N::AncestorAspect as AncestorAspect>::set_children(
+        ancestor_args,
+        &ancestor_context,
+        &mut commands,
+    );
+
+    cec.insert(HierarchyNodeComponent::<N> { args });
 }
 
 fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     commands: &mut Commands,
     entity_ref: EntityRef,
-    node: N,
-    context: &<N::Context as NodeContext>::Wrapper<'c>,
+    args: <N as NodeBase>::Args,
+    context: &<<N as NodeBase>::Context as NodeContext>::Wrapper<'c>,
     all_child_nodes: Rc<HashMap<Entity, (EntityRef, HierarchyChildComponent<R>)>>,
+    undeleted: bool,
 ) {
     let mut ec = commands.entity(entity_ref.id());
 
@@ -127,11 +132,33 @@ fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     let mut commands =
         UnorderedChildCommands::<R>::new(&mut ec, entity_ref, children, all_child_nodes.clone());
 
-    node.set_components(&context, &mut commands, SetComponentsEvent::Updated);
-    node.set_children(&context, &mut commands);
+    //todo check for changes
+
+    let ancestor_context = N::ancestor_context(context);
+    let component_context = N::components_context(context);
+
+    let ancestor_args = N::ancestor_aspect(&args);
+    let component_args = N::component_args(&args);
+
+    <N::ComponentsAspect as ComponentsAspect>::set_components(
+        component_args,
+        &component_context,
+        &mut commands,
+        if undeleted {
+            SetComponentsEvent::Undeleted
+        } else {
+            SetComponentsEvent::Updated
+        },
+    );
+    <N::AncestorAspect as AncestorAspect>::set_children(
+        ancestor_args,
+        &ancestor_context,
+        &mut commands,
+    );
+
     commands.finish();
 
-    ec.insert(HierarchyNodeComponent::new(node));
+    ec.insert(HierarchyNodeComponent::<N> { args });
 
     if entity_ref.contains::<ScheduledForDeletion>() {
         ec.remove::<ScheduledForDeletion>();
