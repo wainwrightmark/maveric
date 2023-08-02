@@ -7,7 +7,13 @@ pub enum SetComponentsEvent {
     Undeleted,
 }
 
-pub trait NodeBase: Send + Sync + 'static {
+pub trait HasChild<NChild: HierarchyNode>: AncestorAspect {
+    fn convert_context<'a, 'r>(
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+    ) -> &'a <<NChild as NodeBase>::Context as NodeContext>::Wrapper<'r>;
+}
+
+pub trait NodeBase: Sized + Send + Sync + 'static {
     type Context: NodeContext;
     type Args: PartialEq + Send + Sync + 'static;
 }
@@ -16,7 +22,7 @@ pub trait AncestorAspect: NodeBase {
     fn set_children<'r>(
         args: &Self::Args,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands,
+        commands: &mut impl ChildCommands<Self>,
     );
 }
 
@@ -43,7 +49,7 @@ pub trait HierarchyNode: NodeBase {
     fn component_args<'a>(
         args: &'a <Self as NodeBase>::Args,
     ) -> &'a <Self::ComponentsAspect as NodeBase>::Args;
-    fn ancestor_aspect<'a>(
+    fn ancestor_args<'a>(
         args: &'a <Self as NodeBase>::Args,
     ) -> &'a <Self::AncestorAspect as NodeBase>::Args;
 
@@ -90,7 +96,7 @@ impl<N: NodeBase + AncestorAspect + ComponentsAspect> HierarchyNode for N {
         args
     }
 
-    fn ancestor_aspect<'a>(
+    fn ancestor_args<'a>(
         args: &'a <Self as NodeBase>::Args,
     ) -> &'a <Self::AncestorAspect as NodeBase>::Args {
         args
