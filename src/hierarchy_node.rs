@@ -47,26 +47,43 @@ pub trait ComponentsAspect: NodeBase {
     }
 }
 
-pub trait HierarchyNode: NodeBase {
-    //TODO split into two traits HasComponentsAspect and HasAncestorAspect
+pub trait HasComponentsAspect: NodeBase {
     type ComponentsAspect: ComponentsAspect;
-    type AncestorAspect: AncestorAspect;
 
     fn components_context<'a, 'r>(
         context: &'a <<Self as NodeBase>::Context as NodeContext>::Wrapper<'r>,
     ) -> &'a <<Self::ComponentsAspect as NodeBase>::Context as NodeContext>::Wrapper<'r>;
+
+    fn as_component_aspect<'a>(&'a self) -> &'a Self::ComponentsAspect;
+}
+
+pub trait HasAncestorAspect: NodeBase {
+    type AncestorAspect: AncestorAspect;
+
     fn ancestor_context<'a, 'r>(
         context: &'a <<Self as NodeBase>::Context as NodeContext>::Wrapper<'r>,
     ) -> &'a <<Self::AncestorAspect as NodeBase>::Context as NodeContext>::Wrapper<'r>;
 
-    fn as_component_aspect<'a>(&'a self) -> &'a Self::ComponentsAspect;
     fn as_ancestor_aspect<'a>(&'a self) -> &'a Self::AncestorAspect;
 }
 
-impl<N: NodeBase + AncestorAspect + ComponentsAspect> HierarchyNode for N {
-    type ComponentsAspect = Self;
+pub trait HierarchyNode: HasAncestorAspect + HasComponentsAspect {}
 
+impl<N: AncestorAspect> HasAncestorAspect for N {
     type AncestorAspect = Self;
+    fn ancestor_context<'a, 'r>(
+        context: &'a <<Self as NodeBase>::Context as NodeContext>::Wrapper<'r>,
+    ) -> &'a <<Self::AncestorAspect as NodeBase>::Context as NodeContext>::Wrapper<'r> {
+        context
+    }
+
+    fn as_ancestor_aspect<'a>(&'a self) -> &'a Self::AncestorAspect {
+        self
+    }
+}
+
+impl<N: ComponentsAspect> HasComponentsAspect for N {
+    type ComponentsAspect = Self;
 
     fn components_context<'a, 'r>(
         context: &'a <<Self as NodeBase>::Context as NodeContext>::Wrapper<'r>,
@@ -74,20 +91,13 @@ impl<N: NodeBase + AncestorAspect + ComponentsAspect> HierarchyNode for N {
         context
     }
 
-    fn ancestor_context<'a, 'r>(
-        context: &'a <<Self as NodeBase>::Context as NodeContext>::Wrapper<'r>,
-    ) -> &'a <<Self::AncestorAspect as NodeBase>::Context as NodeContext>::Wrapper<'r> {
-        context
-    }
-
     fn as_component_aspect<'a>(&'a self) -> &'a Self::ComponentsAspect {
         self
     }
-
-    fn as_ancestor_aspect<'a>(&'a self) -> &'a Self::AncestorAspect {
-        self
-    }
 }
+
+impl<N: HasAncestorAspect + HasComponentsAspect> HierarchyNode for N {}
+
 
 #[derive(Debug)]
 struct NodeDeleter<NParent: AncestorAspect + HasChild<NChild>, NChild: HierarchyNode> {

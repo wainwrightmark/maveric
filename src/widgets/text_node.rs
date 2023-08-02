@@ -41,25 +41,13 @@ impl ComponentsAspect for TextNode {
     }
 }
 
-impl HierarchyNode for TextNode {
-    type ComponentsAspect = Self;
-
+impl HasAncestorAspect for TextNode{
     type AncestorAspect = ();
 
-    fn components_context<'a, 'r>(
-        context: &'a <<Self as NodeBase>::Context as NodeContext>::Wrapper<'r>,
-    ) -> &'a <<Self::ComponentsAspect as NodeBase>::Context as NodeContext>::Wrapper<'r> {
-        context
-    }
-
     fn ancestor_context<'a, 'r>(
-        _context: &'a <<Self as NodeBase>::Context as NodeContext>::Wrapper<'r>,
+        context: &'a <<Self as NodeBase>::Context as NodeContext>::Wrapper<'r>,
     ) -> &'a <<Self::AncestorAspect as NodeBase>::Context as NodeContext>::Wrapper<'r> {
         &()
-    }
-
-    fn as_component_aspect<'a>(&'a self) -> &'a Self::ComponentsAspect {
-        self
     }
 
     fn as_ancestor_aspect<'a>(&'a self) -> &'a Self::AncestorAspect {

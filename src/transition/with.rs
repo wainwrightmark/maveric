@@ -163,30 +163,18 @@ where
     pub deletion: P,
 }
 
-impl<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> HierarchyNode
+impl<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> HasAncestorAspect
     for WithTransition<N, L, P>
 where
     L::Value: Tweenable,
     L::Object: Clone + PartialEq + Component,
 {
-    type ComponentsAspect = Self;
-
     type AncestorAspect = N::AncestorAspect;
-
-    fn components_context<'a, 'r>(
-        context: &'a <<Self as NodeBase>::Context as NodeContext>::Wrapper<'r>,
-    ) -> &'a <<Self::ComponentsAspect as NodeBase>::Context as NodeContext>::Wrapper<'r> {
-        context
-    }
 
     fn ancestor_context<'a, 'r>(
         context: &'a <<Self as NodeBase>::Context as NodeContext>::Wrapper<'r>,
     ) -> &'a <<Self::AncestorAspect as NodeBase>::Context as NodeContext>::Wrapper<'r> {
         N::ancestor_context(context)
-    }
-
-    fn as_component_aspect<'a>(&'a self) -> &'a Self::ComponentsAspect {
-        self
     }
 
     fn as_ancestor_aspect<'a>(&'a self) -> &'a Self::AncestorAspect {
