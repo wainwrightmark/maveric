@@ -167,15 +167,15 @@ pub struct MenuSlideDeletionPathMaker {
     page: u8,
 }
 
-impl DeletionPathMaker<StyleLeftLens> for MenuSlideDeletionPathMaker {
-    fn get_path(
-        &self,
-        previous: &<StyleLeftLens as Lens>::Value,
-        sibling_keys: &bevy::utils::HashSet<ChildKey>,
-    ) -> Option<TransitionPath<StyleLeftLens>> {
-        todo!()
-    }
-}
+// impl DeletionPathMaker<StyleLeftLens> for MenuSlideDeletionPathMaker {
+//     fn get_path(
+//         &self,
+//         previous: &<StyleLeftLens as Lens>::Value,
+//         sibling_keys: &bevy::utils::HashSet<ChildKey>,
+//     ) -> Option<TransitionPath<StyleLeftLens>> {
+//         todo!()
+//     }
+// }
 
 impl HierarchyNode for DynamicGrid {
     type Context = NC2<UIState, AssetServer>;

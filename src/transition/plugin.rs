@@ -34,28 +34,41 @@ where
 }
 
 fn step_transition<L: Lens + GetValueLens + SetValueLens>(
+    mut commands: Commands,
     time: Res<Time>,
-    mut query: Query<(&mut TransitionPathComponent<L>, &mut L::Object)>,
+    mut query: Query<(Entity, &mut TransitionPathComponent<L>, &mut L::Object)>,
 ) where
     L::Object: Component,
     L::Value: Tweenable,
 {
     let delta_seconds = time.delta_seconds();
 
-    for (mut tp, mut t) in query.iter_mut() {
-        let Some(step) = tp.current_step() else {continue;};
+    for (entity, mut tp, mut t) in query.iter_mut() {
         let component = t.as_mut();
 
         let from = L::get_value(&component);
 
-        let new_value =
-            Tweenable::transition_towards(&from, &step.destination, &step.speed, &delta_seconds);
+        let new_value = Tweenable::transition_towards(
+            &from,
+            &tp.step.destination,
+            &tp.step.speed,
+            &delta_seconds,
+        );
 
-        if step.destination.approx_eq(&new_value) {
-            tp.go_to_next_step();
+        if tp.step.destination.approx_eq(&new_value) {
+
+            if tp.step.next.is_some(){
+                let mut empty: Option<Box<TransitionStep<L>>> = None;
+                let component = tp.as_mut();
+                let c_s  = &mut component.step.next;
+                std::mem::swap(&mut empty, c_s);
+                let next = empty.unwrap();
+                component.step = *next;
+            }
+            else{
+                commands.entity(entity).remove::<TransitionPathComponent<L>>();
+            }
         }
-
-        //info!("Stepped transition of {lens} from {from:?} to {new_value:?}", lens = std::any::type_name::<L>());
 
         <L as SetValueLens>::set(component, new_value);
     }

@@ -14,11 +14,11 @@ where
     L::Value: Tweenable,
     L::Object: Clone + PartialEq + Component,
 {
-    fn get_path(
+    fn get_step(
         &self,
         previous: &L::Value,
         sibling_keys: &HashSet<ChildKey>,
-    ) -> Option<TransitionPath<L>>;
+    ) -> Option<TransitionStep<L>>;
 }
 
 #[derive(Debug, Clone)]
@@ -46,14 +46,14 @@ where
     L::Value: Tweenable,
     L::Object: Clone + PartialEq + Component,
 {
-    fn get_path(
+    fn get_step(
         &self,
         previous: &<L as Lens>::Value,
         _sibling_keys: &HashSet<ChildKey>,
-    ) -> Option<TransitionPath<L>> {
+    ) -> Option<TransitionStep<L>> {
         let out_speed = calculate_speed(previous, &self.destination, self.duration);
 
-        Some(TransitionStep::new(self.destination.clone(), out_speed).into())
+        Some(TransitionStep::new(self.destination.clone(), out_speed, None).into())
     }
 }
 
@@ -75,26 +75,12 @@ where
     L::Value: Tweenable,
     L::Object: Clone + PartialEq + Component,
 {
-    fn get_path(
+    fn get_step(
         &self,
-        _previous: &L::Value,
-        _sibling_keys: &HashSet<ChildKey>,
-    ) -> Option<TransitionPath<L>> {
+        previous: &<L as Lens>::Value,
+        sibling_keys: &HashSet<ChildKey>,
+    ) -> Option<TransitionStep<L>> {
         None
-    }
-}
-
-impl<L: Lens + GetValueLens> DeletionPathMaker<L> for TransitionPath<L>
-where
-    L::Value: Tweenable,
-    L::Object: Clone + PartialEq + Component,
-{
-    fn get_path(
-        &self,
-        _previous: &L::Value,
-        _sibling_keys: &HashSet<ChildKey>,
-    ) -> Option<TransitionPath<L>> {
-        Some(self.clone())
     }
 }
 
@@ -103,12 +89,12 @@ where
     L::Value: Tweenable,
     L::Object: Clone + PartialEq + Component,
 {
-    fn get_path(
+    fn get_step(
         &self,
-        _previous: &L::Value,
-        _sibling_keys: &HashSet<ChildKey>,
-    ) -> Option<TransitionPath<L>> {
-        Some(self.clone().into())
+        previous: &<L as Lens>::Value,
+        sibling_keys: &HashSet<ChildKey>,
+    ) -> Option<TransitionStep<L>> {
+        Some(self.clone())
     }
 }
 
@@ -124,13 +110,15 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
         L::Object: Clone + PartialEq + Component,
     {
         let in_speed = calculate_speed(&initial, &destination, duration);
-        let first_step =
-            TransitionStep::<L>::new(initial, <<L::Value as Tweenable>::Speed as Speed>::INFINITE);
-        let path = TransitionPath {
-            steps: vec![first_step, TransitionStep::new(destination, in_speed)],
-        };
+        let real_step = TransitionStep::new(destination, in_speed, None);
 
-        self.with_transition(path, ())
+        let first_step = TransitionStep::<L>::new(
+            initial,
+            <<L::Value as Tweenable>::Speed as Speed>::INFINITE,
+            Some(Box::new(real_step)),
+        );
+
+        self.with_transition(first_step, ())
     }
 
     fn with_transition_in_out<L: Lens + GetValueLens>(
@@ -146,21 +134,23 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
         L::Object: Clone + PartialEq + Component,
     {
         let in_speed = calculate_speed(&initial, &destination, in_duration);
-        let first_step =
-            TransitionStep::<L>::new(initial, <<L::Value as Tweenable>::Speed as Speed>::INFINITE);
-        let path = TransitionPath {
-            steps: vec![first_step, TransitionStep::new(destination, in_speed)],
-        };
+        let real_step = TransitionStep::new(destination, in_speed, None);
+
+        let first_step = TransitionStep::<L>::new(
+            initial,
+            <<L::Value as Tweenable>::Speed as Speed>::INFINITE,
+            Some(Box::new(real_step)),
+        );
 
         self.with_transition(
-            path,
+            first_step,
             DurationDeletionPathMaker::new(out_duration, out_destination),
         )
     }
 
     fn with_transition<L: Lens + GetValueLens, P: DeletionPathMaker<L>>(
         self,
-        path: TransitionPath<L>,
+        step: TransitionStep<L>,
         deletion: P,
     ) -> WithTransition<Self, L, P>
     where
@@ -169,7 +159,7 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
     {
         WithTransition {
             node: self,
-            path,
+            step,
             deletion,
         }
     }
@@ -185,7 +175,7 @@ where
     L::Object: Clone + PartialEq + Component,
 {
     pub node: N,
-    pub path: TransitionPath<L>,
+    pub step: TransitionStep<L>,
     pub deletion: P,
 }
 
@@ -196,9 +186,7 @@ where
     L::Object: Clone + PartialEq + Component,
 {
     fn eq(&self, other: &Self) -> bool {
-        self.node == other.node
-            && self.path == other.path
-            && self.deletion == other.deletion
+        self.node == other.node && self.step == other.step && self.deletion == other.deletion
     }
 }
 
@@ -221,43 +209,42 @@ where
         match event {
             SetComponentsEvent::Created => {
                 commands.insert(TransitionPathComponent {
-                    path: self.path.clone(),
-                    index: 0,
+                    step: self.step.clone(),
                 });
             }
             SetComponentsEvent::Updated => {
                 if let Some(previous_path) = commands.get::<TransitionPathComponent<L>>() {
-                    if previous_path.path != self.path {
+                    if previous_path.step != self.step {
                         //info!("New path found");
                         commands.insert(TransitionPathComponent {
-                            path: self.path.clone(),
-                            index: 0,
+                            step: self.step.clone(),
                         });
                     }
                 }
             }
             SetComponentsEvent::Undeleted => {
-                let new_path_index: Option<usize> =
-                    if let Some(suspended_path) = commands.get::<SuspendedPathComponent<L>>() {
-                        let i = suspended_path
-                            .index
-                            .min(self.path.steps.len().saturating_sub(1));
+                commands.insert(TransitionPathComponent {
+                    step: self.step.clone(),
+                });
 
-                        //let step = &self.path.steps[i];
-                        //info!("Restoring suspended path index {i} len {l} step {step:?}", l = self.path.steps.len());
-                        commands.remove::<SuspendedPathComponent<L>>();
-                        Some(i)
-                    } else {
-                        //info!("No preexisting path found");
-                        Some(0)
-                    };
+                // let new_path_index: Option<usize> =
+                //     if let Some(suspended_path) = commands.get::<SuspendedPathComponent<L>>() {
+                //         let i = suspended_path
+                //             .index
+                //             .min(self.step.steps.len().saturating_sub(1));
 
-                if let Some(index) = new_path_index {
-                    commands.insert(TransitionPathComponent {
-                        path: self.path.clone(),
-                        index,
-                    });
-                }
+                //         //let step = &self.path.steps[i];
+                //         //info!("Restoring suspended path index {i} len {l} step {step:?}", l = self.path.steps.len());
+                //         commands.remove::<SuspendedPathComponent<L>>();
+                //         Some(i)
+                //     } else {
+                //         //info!("No preexisting path found");
+                //         Some(0)
+                //     };
+
+                // if let Some(index) = new_path_index {
+
+                // }
             }
         }
     }
@@ -282,7 +269,7 @@ where
 
         let previous = &<L as GetValueLens>::get_value(component);
 
-        let Some(deletion_path) = self.deletion.get_path(previous, new_sibling_keys) else{return  base;};
+        let Some(deletion_path) = self.deletion.get_step(previous, new_sibling_keys) else{return  base;};
 
         let duration = deletion_path
             .remaining_duration(previous)
@@ -292,18 +279,9 @@ where
             DeletionPolicy::DeleteImmediately => duration,
             DeletionPolicy::Linger(d) => duration.max(d),
         };
-        let current_path = component_commands.get::<TransitionPathComponent<L>>();
-
-        if let Some(current_path) = current_path {
-            component_commands.insert(SuspendedPathComponent::<L> {
-                index: current_path.index,
-                phantom: PhantomData,
-            })
-        }
 
         component_commands.insert(TransitionPathComponent {
-            path: deletion_path.clone(),
-            index: 0,
+            step: deletion_path.clone(),
         });
 
         DeletionPolicy::Linger(duration)
