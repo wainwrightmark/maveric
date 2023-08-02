@@ -4,10 +4,7 @@ pub use crate::prelude::*;
 pub use bevy::prelude::*;
 
 #[derive(PartialEq, Debug)]
-pub struct TextNode<V: Into<String> + Clone + PartialEq + Send + Sync + 'static> {
-    pub value: V,
-    pub style: Arc<TextNodeStyle>,
-}
+pub struct TextNode;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct TextNodeStyle {
@@ -16,37 +13,58 @@ pub struct TextNodeStyle {
     pub font: &'static str,
 }
 
-// impl NodeBase for TextNodeStyle {
-//     type Context;
+impl NodeBase for TextNode {
+    type Context = AssetServer;
+    type Args = (String, Arc<TextNodeStyle>);
+}
 
-//     type Args;
-// }
+impl ComponentsAspect for TextNode {
+    fn set_components<'r>(
+        args: &Self::Args,
+        context: &<Self::Context as NodeContext>::Ref<'r>,
+        commands: &mut impl ComponentCommands,
+        _event: SetComponentsEvent,
+    ) {
+        let font = context.load(args.1.font);
 
-// impl<V: Into<String> + PartialEq + Clone + Send + Sync + 'static> HierarchyNode for TextNode<V> {
-//     type Context = AssetServer;
+        //TODO only update text and node components
+        commands.insert(TextBundle::from_section(
+            args.0.clone(),
+            TextStyle {
+                font,
+                font_size: args.1.font_size,
+                color: args.1.color,
+            },
+        ));
+    }
+}
 
-//     fn set_components(
-//         &self,
-//         context: &Res<AssetServer>,
-//         component_commands: &mut impl ComponentCommands,
-//         event: SetComponentsEvent,
-//     ) {
-//         let font = context.load(self.style.font);
+impl HierarchyNode for TextNode {
+    type ComponentsAspect = Self;
 
-//         component_commands.insert(TextBundle::from_section(
-//             self.value.clone(),
-//             TextStyle {
-//                 font,
-//                 font_size: self.style.font_size,
-//                 color: self.style.color,
-//             },
-//         ));
-//     }
+    type AncestorAspect = ();
 
-//     fn set_children<'r>(
-//         &self,
-//         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-//         commands: &mut impl ChildCommands,
-//     ) {
-//     }
-// }
+    fn components_context<'a, 'r>(
+        context: &'a <<Self as NodeBase>::Context as NodeContext>::Wrapper<'r>,
+    ) -> &'a <<Self::ComponentsAspect as NodeBase>::Context as NodeContext>::Wrapper<'r> {
+        context
+    }
+
+    fn ancestor_context<'a, 'r>(
+        _context: &'a <<Self as NodeBase>::Context as NodeContext>::Wrapper<'r>,
+    ) -> &'a <<Self::AncestorAspect as NodeBase>::Context as NodeContext>::Wrapper<'r> {
+        &()
+    }
+
+    fn component_args<'a>(
+        args: &'a <Self as NodeBase>::Args,
+    ) -> &'a <Self::ComponentsAspect as NodeBase>::Args {
+        args
+    }
+
+    fn ancestor_args<'a>(
+        _args: &'a <Self as NodeBase>::Args,
+    ) -> &'a <Self::AncestorAspect as NodeBase>::Args {
+        &()
+    }
+}

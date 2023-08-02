@@ -43,6 +43,22 @@ impl<N0: NodeContext, N1: NodeContext> NodeContext for NC2<N0, N1> {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NoContext;
+
+impl NodeContext for NoContext{
+    type Ref<'r> = ();
+
+    type Wrapper<'c>= ();
+
+    fn from_wrapper<'c>(wrapper: &Self::Wrapper<'c>) -> Self::Ref<'c> {
+    }
+
+    fn has_changed<'c>(wrapper: &Self::Wrapper<'c>) -> bool {
+        false
+    }
+}
+
 // // macro_rules! impl_node_context_resource_tuples {
 // //     ($(($T:ident, $t:ident)),*) => {
 // //         impl<$($T : DetectChanges),*> HasDetectChanges for ($($T,)*)  {

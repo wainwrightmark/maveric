@@ -133,7 +133,10 @@ impl<NParent: AncestorAspect + HasChild<NChild>, NChild: HierarchyNode> ChildDel
             let child_context = NParent::convert_context(parent_context);
             let component_context = NChild::components_context(child_context);
 
-            let context_ref = <<NChild::ComponentsAspect as NodeBase>::Context as NodeContext>::from_wrapper(component_context);
+            let context_ref =
+                <<NChild::ComponentsAspect as NodeBase>::Context as NodeContext>::from_wrapper(
+                    component_context,
+                );
 
             let previous_args = NChild::component_args(&hierarchy_node_component.args);
             <NChild::ComponentsAspect>::on_deleted(previous_args, &context_ref, commands)
@@ -154,4 +157,19 @@ pub trait ChildDeleter<NParent: AncestorAspect>: Send + Sync + 'static {
         commands: &mut ConcreteComponentCommands,
         parent_context: &<NParent::Context as NodeContext>::Wrapper<'r>,
     ) -> DeletionPolicy;
+}
+
+impl NodeBase for () {
+    type Context = NoContext;
+
+    type Args = ();
+}
+
+impl AncestorAspect for () {
+    fn set_children<'r>(
+        _args: &Self::Args,
+        _context: &<Self::Context as NodeContext>::Ref<'r>,
+        _commands: &mut impl ChildCommands<Self>,
+    ) {
+    }
 }
