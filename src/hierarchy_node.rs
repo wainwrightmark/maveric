@@ -25,7 +25,7 @@ pub trait NodeBase: Sized + Send + Sync + 'static {
 pub trait AncestorAspect: NodeBase {
     fn set_children<'r>(
         args: &Self::Args,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>, //TODO should not be wrapper
+        context: &<Self::Context as NodeContext>::Ref<'r>,
         commands: &mut impl ChildCommands<Self>,
     );
 }
@@ -33,7 +33,7 @@ pub trait AncestorAspect: NodeBase {
 pub trait ComponentsAspect: NodeBase {
     fn set_components<'r>(
         args: &Self::Args,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>, //TODO should not be wrapper
+        context: &<Self::Context as NodeContext>::Ref<'r>,
         commands: &mut impl ComponentCommands,
         event: SetComponentsEvent,
     );
@@ -41,7 +41,7 @@ pub trait ComponentsAspect: NodeBase {
     #[allow(clippy::unused_variables)]
     fn on_deleted<'r>(
         _previous_args: &Self::Args,
-        _context: &<Self::Context as NodeContext>::Wrapper<'r>, //TODO should not be wrapper
+        _context: &<Self::Context as NodeContext>::Ref<'r>,
         _commands: &mut impl ComponentCommands,
     ) -> DeletionPolicy {
         DeletionPolicy::DeleteImmediately
@@ -129,11 +129,14 @@ impl<NParent: AncestorAspect + HasChild<NChild>, NChild: HierarchyNode> ChildDel
         commands: &mut ConcreteComponentCommands,
         parent_context: &<<NParent>::Context as NodeContext>::Wrapper<'r>,
     ) -> DeletionPolicy {
-        let child_context = NParent::convert_context(parent_context);
-        let component_context = NChild::components_context(child_context);
         if let Some(hierarchy_node_component) = entity_ref.get::<HierarchyNodeComponent<NChild>>() {
+            let child_context = NParent::convert_context(parent_context);
+            let component_context = NChild::components_context(child_context);
+
+            let context_ref = <<NChild::ComponentsAspect as NodeBase>::Context as NodeContext>::from_wrapper(component_context);
+
             let previous_args = NChild::component_args(&hierarchy_node_component.args);
-            <NChild::ComponentsAspect>::on_deleted(previous_args, component_context, commands)
+            <NChild::ComponentsAspect>::on_deleted(previous_args, &context_ref, commands)
         } else {
             warn!(
                 "Deleted entity of type {t} did not have HierarchyNodeComponent",

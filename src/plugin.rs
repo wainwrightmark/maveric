@@ -50,14 +50,16 @@ fn sync_state<'a, R: HierarchyRoot>(
     }
 
     let all_child_nodes: HashMap<Entity, (EntityRef, HierarchyChildComponent<R>)> =
-        tree.iter().map(|(e, c)| (e.id(), (e, c.clone()))).collect();
+        tree.iter().map(|(e, c)| (e.id(), (e, c.clone()))).collect(); //TODO pass the query directly somehow
 
     let all_child_nodes = Rc::new(all_child_nodes);
 
     let mut root_commands =
         RootCommands::new(&mut commands, &context, all_child_nodes, root_query);
 
-    R::set_children(&(),&context, &mut root_commands);
+    let context_ref = <<R as NodeBase>::Context as NodeContext>::from_wrapper(&context);
+
+    R::set_children(&(),&context_ref, &mut root_commands);
     root_commands.finish();
 }
 
