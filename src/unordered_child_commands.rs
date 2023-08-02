@@ -13,13 +13,11 @@ pub(crate) struct UnorderedChildCommands<
     'a,
     'b,
     'w1,
-    'w_e,
     'd,
     'r,
     R: HierarchyRoot,
     NParent: AncestorAspect,
 > {
-    entity_ref: EntityRef<'w_e>,
     ec: &'b mut EntityCommands<'w, 's, 'a>,
     context: &'d <NParent::Context as NodeContext>::Wrapper<'r>,
 
@@ -30,7 +28,7 @@ pub(crate) struct UnorderedChildCommands<
 
 impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspect>
     ChildCommands<NParent>
-    for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R, NParent>
+    for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'd, 'r, R, NParent>
 {
     fn add_child<'c, NChild: HierarchyNode>(
         &mut self,
@@ -93,11 +91,10 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspec
 }
 
 impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspect>
-    UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R, NParent>
+    UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'd, 'r, R, NParent>
 {
     pub(crate) fn new(
         ec: &'b mut EntityCommands<'w, 's, 'a>,
-        entity_ref: EntityRef<'w_e>,
         children: Option<&Children>,
         context: &'d <NParent::Context as NodeContext>::Wrapper<'r>,
         all_child_nodes: Rc<HashMap<Entity, (EntityRef<'w1>, HierarchyChildComponent<R>)>>,
@@ -118,7 +115,6 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspec
 
                 Self {
                     ec,
-                    entity_ref,
                     remaining_old_entities,
                     all_child_nodes,
                     phantom: PhantomData,
@@ -127,7 +123,6 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspec
             }
             None => Self {
                 ec,
-                entity_ref,
                 remaining_old_entities: Default::default(),
                 all_child_nodes,
                 phantom: PhantomData,
@@ -146,10 +141,4 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspec
     }
 }
 
-impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspect> CommandsBase
-    for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R, NParent>
-{
-    fn get<T: Component>(&self) -> Option<&T> {
-        self.entity_ref.get()
-    }
-}
+

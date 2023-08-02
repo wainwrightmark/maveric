@@ -7,10 +7,9 @@ use bevy::{
 };
 use prelude::*;
 
-pub mod child_commands;
 pub mod child_deletion_policy;
 pub mod child_key;
-pub mod component_commands;
+pub mod commands;
 pub mod components;
 pub mod desired_transform;
 pub mod hierarchy_node;
@@ -27,8 +26,7 @@ pub mod unordered_child_commands;
 pub mod helpers;
 
 pub mod prelude {
-    pub use crate::child_commands::*;
-    pub use crate::component_commands::*;
+    pub use crate::commands::*;
     pub(crate) use crate::components::*;
 
     pub use crate::child_deletion_policy::*;

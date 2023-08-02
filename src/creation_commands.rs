@@ -65,12 +65,9 @@ impl<'w, 's, 'a, 'b, 'c, 'r, R: HierarchyRoot, NParent: AncestorAspect> Componen
     }
 
     fn remove<T: Bundle>(&mut self) {}
-}
 
-impl<'w, 's, 'a, 'b, 'c, 'r, R: HierarchyRoot, NParent: AncestorAspect> CommandsBase
-    for CreationCommands<'w, 's, 'a, 'b, 'c, 'r, R, NParent>
-{
     fn get<T: Component>(&self) -> Option<&T> {
         None
     }
 }
+

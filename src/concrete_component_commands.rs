@@ -12,13 +12,12 @@ pub  struct ConcreteComponentCommands<'w_e, 'w, 's, 'a, 'b> {
     ec: &'b mut EntityCommands<'w, 's, 'a>,
 }
 
-impl<'w_e, 'w, 's, 'a, 'b> CommandsBase for ConcreteComponentCommands<'w_e, 'w, 's, 'a, 'b> {
+
+impl<'w_e, 'w, 's, 'a, 'b> ComponentCommands for ConcreteComponentCommands<'w_e, 'w, 's, 'a, 'b> {
     fn get<T: Component>(&self) -> Option<&T> {
         self.entity_ref.get()
     }
-}
 
-impl<'w_e, 'w, 's, 'a, 'b> ComponentCommands for ConcreteComponentCommands<'w_e, 'w, 's, 'a, 'b> {
     fn insert<T: Bundle>(&mut self, bundle: T) {
         self.ec.insert(bundle);
     }

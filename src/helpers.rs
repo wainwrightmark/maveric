@@ -140,7 +140,6 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     if ancestors_hot {
         let mut ancestor_commands = UnorderedChildCommands::<R, N::AncestorAspect>::new(
             &mut ec,
-            entity_ref,
             children,
             ancestor_context,
             all_child_nodes.clone(),

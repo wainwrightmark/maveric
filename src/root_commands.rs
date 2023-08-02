@@ -40,13 +40,7 @@ impl<'w, 's, 'b, 'w1, 'd, 'r, R: HierarchyRoot> RootCommands<'w, 's, 'b, 'w1, 'd
     }
 }
 
-impl<'w, 's, 'b, 'w1, 'd, 'r, R: HierarchyRoot> CommandsBase
-    for RootCommands<'w, 's, 'b, 'w1, 'd, 'r, R>
-{
-    fn get<T: Component>(&self) -> Option<&T> {
-        None
-    }
-}
+
 
 impl<'w, 's, 'b, 'w1, 'd, 'r, R: HierarchyRoot> ChildCommands<R>
     for RootCommands<'w, 's, 'b, 'w1, 'd, 'r, R>
