@@ -7,7 +7,7 @@ use bevy::{
     utils::{hashbrown::HashMap, HashSet},
 };
 
-pub(crate) struct ConcreteComponentCommands<'w_e, 'w, 's, 'a, 'b> {
+pub  struct ConcreteComponentCommands<'w_e, 'w, 's, 'a, 'b> {
     pub entity_ref: EntityRef<'w_e>,
     ec: &'b mut EntityCommands<'w, 's, 'a>,
 }

@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use crate::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -11,6 +13,8 @@ pub trait HasChild<NChild: HierarchyNode>: AncestorAspect {
     fn convert_context<'a, 'r>(
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
     ) -> &'a <<NChild as NodeBase>::Context as NodeContext>::Wrapper<'r>;
+
+    const DELETER: &'static dyn ChildDeleter<Self> = &NodeDeleter::<Self, NChild>::new();
 }
 
 pub trait NodeBase: Sized + Send + Sync + 'static {
@@ -21,7 +25,7 @@ pub trait NodeBase: Sized + Send + Sync + 'static {
 pub trait AncestorAspect: NodeBase {
     fn set_children<'r>(
         args: &Self::Args,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>, //TODO should not be wrapper
         commands: &mut impl ChildCommands<Self>,
     );
 }
@@ -29,10 +33,18 @@ pub trait AncestorAspect: NodeBase {
 pub trait ComponentsAspect: NodeBase {
     fn set_components<'r>(
         args: &Self::Args,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>, //TODO should not be wrapper
         commands: &mut impl ComponentCommands,
         event: SetComponentsEvent,
     );
+
+    #[allow(clippy::unused_variables)]
+    fn on_deleted<'r>(
+        _context: &<Self::Context as NodeContext>::Wrapper<'r>, //TODO should not be wrapper
+        _commands: &mut impl ComponentCommands,
+    ) -> DeletionPolicy {
+        DeletionPolicy::DeleteImmediately
+    }
 }
 
 pub trait HierarchyNode: NodeBase {
@@ -52,25 +64,6 @@ pub trait HierarchyNode: NodeBase {
     fn ancestor_args<'a>(
         args: &'a <Self as NodeBase>::Args,
     ) -> &'a <Self::AncestorAspect as NodeBase>::Args;
-
-    //TODO components_changed and children_changed
-
-    // fn on_undeleted<'r>(
-    //     &self,
-    //     _context: &<Self::Context as NodeContext>::Wrapper<'r>,
-    //     _commands: &mut impl ComponentCommands,
-    // ) {
-    //     // do nothing by default
-    // }
-
-    // #[allow(clippy::unused_variables)]
-    // fn on_deleted(
-    //     &self,
-    //     _commands: &mut impl ComponentCommands,
-    //     _new_sibling_keys: &HashSet<ChildKey>,
-    // ) -> DeletionPolicy {
-    //     DeletionPolicy::DeleteImmediately
-    // }
 }
 
 impl<N: NodeBase + AncestorAspect + ComponentsAspect> HierarchyNode for N {
@@ -111,39 +104,35 @@ impl<N: NodeBase + AncestorAspect + ComponentsAspect> HierarchyNode for N {
 //     const DELETER: &'static dyn Deleter = &NodeDeleter::<Self>::new();
 // }
 
-// struct NodeDeleter<N: HierarchyNode> {
-//     phantom: PhantomData<N>,
-// }
+#[derive(Debug)]
+struct NodeDeleter<NParent: AncestorAspect + HasChild<NChild>, NChild: HierarchyNode> {
+    phantom: PhantomData<(NParent, NChild)>,
+}
 
-// impl<N: HierarchyNode> NodeDeleter<N> {
-//     pub const fn new() -> Self {
-//         Self {
-//             phantom: PhantomData,
-//         }
-//     }
-// }
+impl<NParent: AncestorAspect + HasChild<NChild>, NChild: HierarchyNode> NodeDeleter<NParent, NChild> {
+    const fn new() -> Self { Self { phantom: PhantomData } }
+}
 
-// impl<N: HierarchyNode> Deleter for NodeDeleter<N> {
-//     fn on_deleted(
-//         &self,
-//         component_commands: &mut ConcreteComponentCommands,
-//         new_sibling_keys: &HashSet<ChildKey>,
-//     ) -> DeletionPolicy {
-//         if let Some(node) = component_commands
-//             .entity_ref
-//             .get::<HierarchyNodeComponent<N>>()
-//         {
-//             node.node.on_deleted(component_commands, new_sibling_keys)
-//         } else {
-//             DeletionPolicy::DeleteImmediately
-//         }
-//     }
-// }
+impl<NParent: AncestorAspect + HasChild<NChild>, NChild: HierarchyNode> ChildDeleter<NParent>
+    for NodeDeleter<NParent, NChild>
+{
+    fn on_deleted<'r>(
+        &self,
+        commands: &mut ConcreteComponentCommands,
+        parent_context: &<<NParent>::Context as NodeContext>::Wrapper<'r>,
+    ) -> DeletionPolicy {
+        let child_context = NParent::convert_context(parent_context);
 
-// pub(crate) trait Deleter: Send + Sync + 'static {
-//     fn on_deleted(
-//         &self,
-//         component_commands: &mut ConcreteComponentCommands,
-//         new_sibling_keys: &HashSet<ChildKey>,
-//     ) -> DeletionPolicy;
-// }
+        let component_context = NChild::components_context(child_context);
+
+        <NChild::ComponentsAspect>::on_deleted(component_context, commands)
+    }
+}
+
+pub  trait ChildDeleter<NParent: AncestorAspect>: Send + Sync + 'static {
+    fn on_deleted<'r>(
+        &self,
+        commands: &mut ConcreteComponentCommands,
+        parent_context: &<NParent::Context as NodeContext>::Wrapper<'r>,
+    ) -> DeletionPolicy;
+}
