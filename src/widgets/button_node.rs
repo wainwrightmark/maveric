@@ -30,10 +30,11 @@ impl<
 {
     type Context = AssetServer;
 
-    fn update<'b>(
+    fn set_components<'b>(
         &self,
-        context: &Res<AssetServer>,
-        commands: &mut impl UpdateCommands,
+        _context: &Res<AssetServer>,
+        commands: &mut impl ComponentCommands,
+        event: SetComponentsEvent,
     ) {
         commands.insert(ButtonBundle {
             style: self.button_node_style.style.clone(),
@@ -42,13 +43,19 @@ impl<
             ..default()
         });
         commands.insert(self.marker.clone());
+    }
 
+    fn set_children<'r>(
+        &self,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ChildCommands,
+    ) {
         commands.add_child(
             0,
             context,
             TextNode {
                 style: self.text_node_style.clone(),
-                value: self.value.clone()
+                value: self.value.clone(),
             },
         )
     }

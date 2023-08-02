@@ -29,7 +29,7 @@ pub mod prelude {
     pub use crate::desired_transform::*;
     pub use crate::node_context::*;
     pub use crate::hierarchy_node::*;
-    pub use crate::hierarchy_root::*;    
+    pub use crate::hierarchy_root::*;
     pub use crate::transition::prelude::*;
     pub use crate::widgets::prelude::*;
 
@@ -106,8 +106,9 @@ fn create_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     context: &<N::Context as NodeContext>::Wrapper<'c>,
 ) {
     //info!("Creating Node {}", type_name::<N>());
-    let mut commands = CreationHierarchyCommands::<R>::new(&mut cec);
-    node.update(&context, &mut commands);
+    let mut commands = CreationCommands::<R>::new(&mut cec);
+    node.set_components(&context, &mut commands, SetComponentsEvent::Created);
+    node.set_children(&context, &mut commands);
 
     cec.insert(HierarchyNodeComponent::new(node));
 }
@@ -126,7 +127,8 @@ fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     let mut commands =
         UnorderedChildCommands::<R>::new(&mut ec, entity_ref, children, all_child_nodes.clone());
 
-    node.update(&context, &mut commands);
+    node.set_components(&context, &mut commands, SetComponentsEvent::Updated);
+    node.set_children(&context, &mut commands);
     commands.finish();
 
     ec.insert(HierarchyNodeComponent::new(node));

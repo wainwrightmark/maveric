@@ -7,8 +7,8 @@ use bevy::{
     utils::{hashbrown::HashMap, HashSet},
 };
 
-pub trait UpdateCommands: ComponentCommands {
-    fn add_child<'c,  N: HierarchyNode>(
+pub trait ChildCommands: CommandsBase {
+    fn add_child<'c, N: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
         child_context: &<N::Context as NodeContext>::Wrapper<'c>,
@@ -16,8 +16,11 @@ pub trait UpdateCommands: ComponentCommands {
     );
 }
 
-pub trait ComponentCommands {
+pub trait CommandsBase {
     fn get<T: Component>(&self) -> Option<&T>;
+}
+
+pub trait ComponentCommands: CommandsBase {
     fn insert<T: Bundle>(&mut self, bundle: T);
     fn remove<T: Bundle>(&mut self);
 }
@@ -27,11 +30,13 @@ pub(crate) struct ConcreteComponentCommands<'w_e, 'w, 's, 'a, 'b> {
     ec: &'b mut EntityCommands<'w, 's, 'a>,
 }
 
-impl<'w_e, 'w, 's, 'a, 'b> ComponentCommands for ConcreteComponentCommands<'w_e, 'w, 's, 'a, 'b> {
+impl<'w_e, 'w, 's, 'a, 'b> CommandsBase for ConcreteComponentCommands<'w_e, 'w, 's, 'a, 'b> {
     fn get<T: Component>(&self) -> Option<&T> {
         self.entity_ref.get()
     }
+}
 
+impl<'w_e, 'w, 's, 'a, 'b> ComponentCommands for ConcreteComponentCommands<'w_e, 'w, 's, 'a, 'b> {
     fn insert<T: Bundle>(&mut self, bundle: T) {
         self.ec.insert(bundle);
     }
@@ -47,18 +52,18 @@ impl<'w_e, 'w, 's, 'a, 'b> ConcreteComponentCommands<'w_e, 'w, 's, 'a, 'b> {
     }
 }
 
-pub(crate) struct CreationHierarchyCommands<'w, 's, 'a, 'b, R: HierarchyRoot> {
+pub(crate) struct CreationCommands<'w, 's, 'a, 'b, R: HierarchyRoot> {
     ec: &'b mut EntityCommands<'w, 's, 'a>,
     phantom: PhantomData<R>,
 }
 
-impl<'w, 's, 'a, 'b, R: HierarchyRoot> ComponentCommands
-    for CreationHierarchyCommands<'w, 's, 'a, 'b, R>
-{
+impl<'w, 's, 'a, 'b, R: HierarchyRoot> CommandsBase for CreationCommands<'w, 's, 'a, 'b, R> {
     fn get<T: Component>(&self) -> Option<&T> {
         None
     }
+}
 
+impl<'w, 's, 'a, 'b, R: HierarchyRoot> ComponentCommands for CreationCommands<'w, 's, 'a, 'b, R> {
     fn insert<T: Bundle>(&mut self, bundle: T) {
         self.ec.insert(bundle);
     }
@@ -66,7 +71,7 @@ impl<'w, 's, 'a, 'b, R: HierarchyRoot> ComponentCommands
     fn remove<T: Bundle>(&mut self) {}
 }
 
-impl<'w, 's, 'a, 'b, R: HierarchyRoot> CreationHierarchyCommands<'w, 's, 'a, 'b, R> {
+impl<'w, 's, 'a, 'b, R: HierarchyRoot> CreationCommands<'w, 's, 'a, 'b, R> {
     pub(crate) fn new(ec: &'b mut EntityCommands<'w, 's, 'a>) -> Self {
         Self {
             ec,
@@ -75,9 +80,7 @@ impl<'w, 's, 'a, 'b, R: HierarchyRoot> CreationHierarchyCommands<'w, 's, 'a, 'b,
     }
 }
 
-impl<'w, 's, 'a, 'b, R: HierarchyRoot> UpdateCommands
-    for CreationHierarchyCommands<'w, 's, 'a, 'b, R>
-{
+impl<'w, 's, 'a, 'b, R: HierarchyRoot> ChildCommands for CreationCommands<'w, 's, 'a, 'b, R> {
     fn add_child<'c, N: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
@@ -101,11 +104,17 @@ pub(crate) struct UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'w_e, R: Hierarchy
     added_children: HashSet<ChildKey>,
 }
 
-impl<'w, 's, 'a, 'b, 'w1, 'w_e, R: HierarchyRoot> ComponentCommands for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'w_e, R> {
+impl<'w, 's, 'a, 'b, 'w1, 'w_e, R: HierarchyRoot> CommandsBase
+    for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'w_e, R>
+{
     fn get<T: Component>(&self) -> Option<&T> {
         self.entity_ref.get()
     }
+}
 
+impl<'w, 's, 'a, 'b, 'w1, 'w_e, R: HierarchyRoot> ComponentCommands
+    for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'w_e, R>
+{
     fn insert<T: Bundle>(&mut self, bundle: T) {
         self.ec.insert(bundle);
     }
@@ -118,7 +127,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, R: HierarchyRoot> ComponentCommands for Unordere
 impl<'w, 's, 'a, 'b, 'w1, 'w_e, R: HierarchyRoot>
     UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'w_e, R>
 {
-        pub (crate) fn new(
+    pub(crate) fn new(
         ec: &'b mut EntityCommands<'w, 's, 'a>,
         entity_ref: EntityRef<'w_e>,
         children: Option<&Children>,
@@ -191,8 +200,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, R: HierarchyRoot>
     }
 }
 
-
-impl<'w, 's, 'a, 'b, 'w1, 'w_e, R: HierarchyRoot> UpdateCommands
+impl<'w, 's, 'a, 'b, 'w1, 'w_e, R: HierarchyRoot> ChildCommands
     for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'w_e, R>
 {
     fn add_child<'c, N: HierarchyNode>(
@@ -240,9 +248,9 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, R: HierarchyRoot> UpdateCommands
                             if entity_ref.contains::<ScheduledForDeletion>() {
                                 let mut cec = self.ec.commands().entity(entity_ref.id());
                                 cec.remove::<ScheduledForDeletion>();
-                                let mut commands = ConcreteComponentCommands::new(entity_ref, &mut cec);
-                                child_node.on_undeleted(child_context, &mut commands);
-                            }
+                                let mut commands =
+                                    ConcreteComponentCommands::new(entity_ref, &mut cec);
+                                child_node.set_components(child_context, &mut commands, SetComponentsEvent::Undeleted);                            }
                         }
                     }
                     None => {

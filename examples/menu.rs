@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use lazy_static::lazy_static;
 use state_hierarchy::transition::prelude::*;
-use state_hierarchy::{prelude::*, register_state_tree, impl_hierarchy_root};
+use state_hierarchy::{impl_hierarchy_root, prelude::*, register_state_tree};
 use std::time::Duration;
 use std::{string::ToString, sync::Arc};
 use strum::{Display, EnumIs};
@@ -80,7 +80,12 @@ pub struct RootPage(MenuState);
 impl HierarchyNode for Root {
     type Context = NC2<MenuState, AssetServer>;
 
-    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl UpdateCommands) {
+    fn set_components<'r>(
+        &self,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ComponentCommands,
+        event: SetComponentsEvent,
+    ) {
         commands.insert(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
@@ -92,7 +97,13 @@ impl HierarchyNode for Root {
         });
 
         commands.insert(RootPage(context.0.clone()));
+    }
 
+    fn set_children<'r>(
+        &self,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ChildCommands,
+    ) {
         match context.0.as_ref() {
             MenuState::Closed => {
                 commands.add_child(
@@ -108,71 +119,10 @@ impl HierarchyNode for Root {
                 let duration: Duration = Duration::from_secs_f32(2.0);
                 let carousel = Carousel::new(*n as u32, |x| Some(LevelMenu(x)), duration);
                 commands.add_child("levels", context, carousel);
-                //
-
-                // let initial_left = match commands.get::<RootPage>(){
-                //     Some(RootPage(MenuState::ShowLevelsPage(prev_page))) =>
-                //     match prev_page.cmp(n){
-                //         std::cmp::Ordering::Less => Val::Percent(00.0),
-                //         std::cmp::Ordering::Equal => Val::Percent(50.0),
-                //         std::cmp::Ordering::Greater => Val::Percent(100.0),
-                //     },
-                //     _ => Val::Percent(0.0),
-                // };
-
-                // let child_node = LevelMenu(*n)
-                //     .with_transition_in_out::<StyleLeftLens>(
-                //         Style {
-                //             position_type: PositionType::Absolute,
-                //             left: initial_left,
-                //             right: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
-                //             top: Val::Px(MENU_OFFSET),
-                //             display: Display::Flex,
-                //             flex_direction: FlexDirection::Column,
-
-                //             ..Default::default()
-                //         },
-                //         Val::Percent(50.0),
-                //         Val::Percent(100.0),
-                //         duration,
-                //         duration,
-                //     )//.with_transition_in_out(initial, destination, out_destination, in_duration, out_duration)
-
-                //     // .with_transition_in_out::<TransformScaleLens>(
-                //     //     Transform::from_scale(Vec3::new(1.0, 0.0, 1.0)),
-                //     //     Vec3::ONE,
-                //     //     Vec3::new(1.0, 0.0, 1.0),
-                //     //     duration,
-                //     //     duration,
-                //     // )
-                //     ;
-
-                // commands.add_child(*n as u32, context, child_node);
             }
         }
     }
-
-
 }
-
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct CarouselDeletionPathMaker{
-    pub page: u8,
-    pub duration: Duration
-}
-
-// impl DeletionPathMaker for CarouselDeletionPathMaker {
-//     fn get_path(
-//         &self,
-//         previous: &L::Value,
-//         sibling_keys: &bevy::utils::HashSet<ChildKey>,
-//     ) -> Option<TransitionPath<L>> {
-//         todo!()
-//     }
-// }
-
-
 
 fn icon_button_node(button_action: ButtonAction) -> ButtonNode<ButtonAction, String> {
     ButtonNode {
@@ -198,28 +148,39 @@ pub struct MainMenu;
 impl HierarchyNode for MainMenu {
     type Context = NC2<MenuState, AssetServer>;
 
-    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl UpdateCommands) {
-        commands.insert(NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                left: Val::Percent(50.0),  // Val::Px(MENU_OFFSET),
-                right: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
-                top: Val::Px(MENU_OFFSET),
-                display: Display::Flex,
-                flex_direction: FlexDirection::Column,
+    fn set_components<'r>(
+        &self,
+        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ComponentCommands,
+        event: SetComponentsEvent,
+    ) {
+        if event == SetComponentsEvent::Created {
+            commands.insert(NodeBundle {
+                style: Style {
+                    position_type: PositionType::Absolute,
+                    left: Val::Percent(50.0),  // Val::Px(MENU_OFFSET),
+                    right: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
+                    top: Val::Px(MENU_OFFSET),
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Column,
 
+                    ..Default::default()
+                },
+                z_index: ZIndex::Global(10),
                 ..Default::default()
-            },
-            z_index: ZIndex::Global(10),
-            ..Default::default()
-        });
+            });
+        }
+    }
 
+    fn set_children<'r>(
+        &self,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ChildCommands,
+    ) {
         for (key, action) in ButtonAction::main_buttons().into_iter().enumerate() {
             commands.add_child(key as u32, &context.1, text_button_node(*action))
         }
     }
-
-
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
@@ -228,22 +189,36 @@ pub struct LevelMenu(u32);
 impl HierarchyNode for LevelMenu {
     type Context = NC2<MenuState, AssetServer>;
 
-    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl UpdateCommands) {
-        commands.insert(NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                left: Val::Percent(50.0),  // Val::Px(MENU_OFFSET),
-                right: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
-                top: Val::Px(MENU_OFFSET),
-                display: Display::Flex,
-                flex_direction: FlexDirection::Column,
+    fn set_components<'r>(
+        &self,
+        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ComponentCommands,
+        event: SetComponentsEvent,
+    ) {
+        if event == SetComponentsEvent::Created{
+            commands.insert(NodeBundle {
+                style: Style {
+                    position_type: PositionType::Absolute,
+                    left: Val::Percent(50.0),  // Val::Px(MENU_OFFSET),
+                    right: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
+                    top: Val::Px(MENU_OFFSET),
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Column,
 
+                    ..Default::default()
+                },
+                z_index: ZIndex::Global(10),
                 ..Default::default()
-            },
-            z_index: ZIndex::Global(10),
-            ..Default::default()
-        });
+            });
+        }
 
+    }
+
+    fn set_children<'r>(
+        &self,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ChildCommands,
+    ) {
         let start = self.0 * LEVELS_PER_PAGE;
         let end = start + LEVELS_PER_PAGE;
 
@@ -257,8 +232,6 @@ impl HierarchyNode for LevelMenu {
 
         commands.add_child("buttons", context, LevelMenuArrows);
     }
-
-
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
@@ -267,35 +240,49 @@ pub struct LevelMenuArrows;
 impl HierarchyNode for LevelMenuArrows {
     type Context = NC2<MenuState, AssetServer>;
 
-    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl UpdateCommands) {
-        commands.insert(NodeBundle {
-            style: Style {
-                position_type: PositionType::Relative,
-                left: Val::Percent(0.0),
-                display: Display::Flex,
-                flex_direction: FlexDirection::Row,
+    fn set_components<'r>(
+        &self,
+        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ComponentCommands,
+        event: SetComponentsEvent,
+    ) {
+        if event == SetComponentsEvent::Created{
+            commands.insert(NodeBundle {
+                style: Style {
+                    position_type: PositionType::Relative,
+                    left: Val::Percent(0.0),
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Row,
 
-                width: Val::Px(TEXT_BUTTON_WIDTH),
-                height: Val::Px(TEXT_BUTTON_HEIGHT),
-                margin: UiRect {
-                    left: Val::Auto,
-                    right: Val::Auto,
-                    top: Val::Px(5.0),
-                    bottom: Val::Px(5.0),
+                    width: Val::Px(TEXT_BUTTON_WIDTH),
+                    height: Val::Px(TEXT_BUTTON_HEIGHT),
+                    margin: UiRect {
+                        left: Val::Auto,
+                        right: Val::Auto,
+                        top: Val::Px(5.0),
+                        bottom: Val::Px(5.0),
+                    },
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    flex_grow: 0.0,
+                    flex_shrink: 0.0,
+                    border: UiRect::all(UI_BORDER_WIDTH),
+
+                    ..Default::default()
                 },
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                flex_grow: 0.0,
-                flex_shrink: 0.0,
-                border: UiRect::all(UI_BORDER_WIDTH),
-
+                background_color: BackgroundColor(TEXT_BUTTON_BACKGROUND),
+                border_color: BorderColor(BUTTON_BORDER),
                 ..Default::default()
-            },
-            background_color: BackgroundColor(TEXT_BUTTON_BACKGROUND),
-            border_color: BorderColor(BUTTON_BORDER),
-            ..Default::default()
-        });
+            });
+        }
 
+    }
+
+    fn set_children<'r>(
+        &self,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ChildCommands,
+    ) {
         if let MenuState::ShowLevelsPage(page) = context.0.as_ref() {
             if *page == 0 {
                 commands.add_child("left", &context.1, icon_button_node(ButtonAction::OpenMenu))
@@ -318,8 +305,6 @@ impl HierarchyNode for LevelMenuArrows {
             }
         }
     }
-
-
 }
 
 pub const ICON_BUTTON_WIDTH: f32 = 65.;

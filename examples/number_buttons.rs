@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use lazy_static::lazy_static;
 use state_hierarchy::transition::prelude::*;
-use state_hierarchy::{prelude::*, impl_hierarchy_root};
+use state_hierarchy::{impl_hierarchy_root, prelude::*};
 use std::f32::consts;
 use std::time::Duration;
 use std::{string::ToString, sync::Arc};
@@ -118,19 +118,32 @@ pub struct CommandGrid;
 impl HierarchyNode for CommandGrid {
     type Context = AssetServer;
 
-    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl UpdateCommands) {
-        commands.insert(NodeBundle {
-            style: Style {
-                width: Val::Percent(100.0),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                display: Display::Flex,
-                flex_direction: FlexDirection::Row,
+    fn set_components<'r>(
+        &self,
+        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ComponentCommands,
+        event: SetComponentsEvent,
+    ) {
+        if event == SetComponentsEvent::Created {
+            commands.insert(NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.0),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Row,
+                    ..default()
+                },
                 ..default()
-            },
-            ..default()
-        });
+            });
+        }
+    }
 
+    fn set_children<'r>(
+        &self,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ChildCommands,
+    ) {
         for command in [Command::AddNew, Command::Reset] {
             let key: &'static str = command.into();
 
@@ -144,15 +157,15 @@ impl HierarchyNode for CommandGrid {
             commands.add_child(key, context, node);
         }
     }
-
 }
 
 #[derive(Eq, PartialEq, Debug, Default)]
 pub struct DynamicGrid;
 
-
 #[derive(Debug, PartialEq, Clone)]
-pub struct MenuSlideDeletionPathMaker{page: u8}
+pub struct MenuSlideDeletionPathMaker {
+    page: u8,
+}
 
 impl DeletionPathMaker<StyleLeftLens> for MenuSlideDeletionPathMaker {
     fn get_path(
@@ -164,24 +177,35 @@ impl DeletionPathMaker<StyleLeftLens> for MenuSlideDeletionPathMaker {
     }
 }
 
-
-
 impl HierarchyNode for DynamicGrid {
     type Context = NC2<UIState, AssetServer>;
 
-    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl UpdateCommands) {
-        commands.insert(NodeBundle {
-            style: Style {
-                width: Val::Percent(100.0),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                display: Display::Flex,
-                flex_direction: FlexDirection::Row,
+    fn set_components<'r>(
+        &self,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ComponentCommands,
+        event: SetComponentsEvent,
+    ) {
+        if event == SetComponentsEvent::Created {
+            commands.insert(NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.0),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Row,
+                    ..default()
+                },
                 ..default()
-            },
-            ..default()
-        });
+            });
+        }
+    }
 
+    fn set_children<'r>(
+        &self,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ChildCommands,
+    ) {
         for number in context.0.dynamic_buttons.iter().cloned() {
             let node = ButtonNode {
                 value: number.to_string(),
@@ -201,29 +225,40 @@ impl HierarchyNode for DynamicGrid {
             commands.add_child(number, &context.1, node);
         }
     }
-
 }
 
 impl HierarchyNode for Root {
     type Context = NC2<UIState, AssetServer>;
 
-    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl UpdateCommands) {
-        commands.insert(NodeBundle {
-            style: Style {
-                width: Val::Percent(100.0),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                display: Display::Flex,
-                flex_direction: FlexDirection::Column,
+    fn set_components<'r>(
+        &self,
+        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ComponentCommands,
+        event: SetComponentsEvent,
+    ) {
+        if event == SetComponentsEvent::Created {
+            commands.insert(NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.0),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Column,
+                    ..default()
+                },
                 ..default()
-            },
-            ..default()
-        });
+            });
+        }
+    }
 
+    fn set_children<'r>(
+        &self,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ChildCommands,
+    ) {
         commands.add_child(0, &context.1, CommandGrid);
         commands.add_child(1, context, DynamicGrid);
     }
-
 }
 
 const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);

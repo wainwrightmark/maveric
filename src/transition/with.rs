@@ -158,29 +158,6 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
         )
     }
 
-    // // fn with_entry_transition<L: Lens>(
-    // //     self,
-    // //     initial: L::Object,
-    // //     path:  impl Into<TransitionPath<L>>,
-    // // ) -> WithTransition<Self, L>
-    // // where
-    // //     L::Value: Tweenable,
-    // //     L::Object: Clone + PartialEq + Component{
-    // //         self.with_transition(initial, path.into(), None)
-    // //     }
-
-    // // fn with_both_transitions<L: Lens>(
-    // //     self,
-    // //     initial: L::Object,
-    // //     path: impl Into<TransitionPath<L>>,
-    // //     deletion_path:  impl Into<TransitionPath<L>>,
-    // // ) -> WithTransition<Self, L>
-    // // where
-    // //     L::Value: Tweenable,
-    // //     L::Object: Clone + PartialEq + Component{
-    // //         self.with_transition(initial, path.into(), Some(deletion_path.into()))
-    // //     }
-
     fn with_transition<L: Lens + GetValueLens, P: DeletionPathMaker<L>>(
         self,
         path: TransitionPath<L>,
@@ -208,7 +185,6 @@ where
     L::Object: Clone + PartialEq + Component,
 {
     pub node: N,
-    //pub initial: L::Object,
     pub path: TransitionPath<L>,
     pub deletion: P,
 }
@@ -221,7 +197,6 @@ where
 {
     fn eq(&self, other: &Self) -> bool {
         self.node == other.node
-            //&& self.initial == other.initial
             && self.path == other.path
             && self.deletion == other.deletion
     }
@@ -235,68 +210,64 @@ where
 {
     type Context = N::Context;
 
-    fn update<'c>(
+    fn set_components<'r>(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'c>,
-        component_commands: &mut impl UpdateCommands,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ComponentCommands,
+        event: SetComponentsEvent,
     ) {
-        self.node.update(context, component_commands);
+        self.node.set_components(context, commands, event);
 
-        // if let Some(previous) = component_commands.get::<L::Object>() {
-        //     component_commands.insert(previous.clone()); //prevent this being overwritten by node::get_components
-        // } else {
-        //     component_commands.insert(self.initial.clone());
-        // }
-
-        let new_path_index: Option<usize> =
-            if let Some(previous_path) = component_commands.get::<TransitionPathComponent<L>>() {
-                if previous_path.path != self.path {
-                    //info!("New path found");
-                    Some(0)
-                } else {
-                    //info!("Same path found");
-                    None
+        match event {
+            SetComponentsEvent::Created => {
+                commands.insert(TransitionPathComponent {
+                    path: self.path.clone(),
+                    index: 0,
+                });
+            }
+            SetComponentsEvent::Updated => {
+                if let Some(previous_path) = commands.get::<TransitionPathComponent<L>>() {
+                    if previous_path.path != self.path {
+                        //info!("New path found");
+                        commands.insert(TransitionPathComponent {
+                            path: self.path.clone(),
+                            index: 0,
+                        });
+                    }
                 }
-            } else {
-                //info!("No preexisting path found");
-                Some(0)
-            };
+            }
+            SetComponentsEvent::Undeleted => {
+                let new_path_index: Option<usize> =
+                    if let Some(suspended_path) = commands.get::<SuspendedPathComponent<L>>() {
+                        let i = suspended_path
+                            .index
+                            .min(self.path.steps.len().saturating_sub(1));
 
-        if let Some(index) = new_path_index {
-            component_commands.insert(TransitionPathComponent {
-                path: self.path.clone(),
-                index,
-            });
+                        //let step = &self.path.steps[i];
+                        //info!("Restoring suspended path index {i} len {l} step {step:?}", l = self.path.steps.len());
+                        commands.remove::<SuspendedPathComponent<L>>();
+                        Some(i)
+                    } else {
+                        //info!("No preexisting path found");
+                        Some(0)
+                    };
+
+                if let Some(index) = new_path_index {
+                    commands.insert(TransitionPathComponent {
+                        path: self.path.clone(),
+                        index,
+                    });
+                }
+            }
         }
     }
 
-    fn on_undeleted<'c>(
+    fn set_children<'r>(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'c>,
-        commands: &mut impl ComponentCommands,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ChildCommands,
     ) {
-        self.node.on_undeleted(context, commands);
-
-        let new_path_index: Option<usize> =
-            if let Some(suspended_path) = commands.get::<SuspendedPathComponent<L>>() {
-                let i = suspended_path
-                    .index
-                    .min(self.path.steps.len().saturating_sub(1));
-
-                //info!("Restoring suspended path index {i}");
-                commands.remove::<SuspendedPathComponent<L>>();
-                Some(i)
-            } else {
-                //info!("No preexisting path found");
-                Some(0)
-            };
-
-        if let Some(index) = new_path_index {
-            commands.insert(TransitionPathComponent {
-                path: self.path.clone(),
-                index,
-            });
-        }
+        self.node.set_children(context, commands);
     }
 
     fn on_deleted(

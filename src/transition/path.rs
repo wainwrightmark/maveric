@@ -5,7 +5,7 @@ use std::{
     time::{Duration, TryFromFloatSecsError},
 };
 
-#[derive(Debug, Clone)]
+#[derive( Clone)]
 pub struct TransitionStep<L: Lens>
 where
     L::Value: Tweenable,
@@ -13,6 +13,15 @@ where
     pub destination: L::Value,
     pub speed: <L::Value as Tweenable>::Speed,
     phantom: PhantomData<L>,
+}
+
+impl<L: Lens> std::fmt::Debug for TransitionStep<L>
+where
+    L::Value: Tweenable,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TransitionStep").field("destination", &self.destination).field("speed", &self.speed).finish()
+    }
 }
 
 impl<L: Lens> PartialEq for TransitionStep<L>

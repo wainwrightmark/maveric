@@ -3,21 +3,38 @@ use std::marker::PhantomData;
 use crate::prelude::*;
 use bevy::utils::HashSet;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SetComponentsEvent{
+    Created,
+    Updated,
+    Undeleted
+}
+
 pub trait HierarchyNode: PartialEq + Send + Sync + 'static {
     type Context: NodeContext;
-    fn update<'r>(
+
+    //TODO components_changed and children_changed
+
+    fn set_components<'r>(
         &self,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl UpdateCommands,
+        commands: &mut impl ComponentCommands,
+        event: SetComponentsEvent
     );
 
-    fn on_undeleted<'r>(
+    fn set_children<'r>(
         &self,
-        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        _commands: &mut impl ComponentCommands,
-    ) {
-        // do nothing by default
-    }
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ChildCommands,
+    );
+
+    // fn on_undeleted<'r>(
+    //     &self,
+    //     _context: &<Self::Context as NodeContext>::Wrapper<'r>,
+    //     _commands: &mut impl ComponentCommands,
+    // ) {
+    //     // do nothing by default
+    // }
 
     #[allow(clippy::unused_variables)]
     fn on_deleted(
