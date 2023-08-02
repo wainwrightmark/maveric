@@ -229,11 +229,11 @@ where
     L::Value: Tweenable,
     L::Object: Clone + PartialEq + Component,
 {
-    type Context<'c> = N::Context<'c>;
+    type Context = N::Context;
 
     fn update<'c>(
         &self,
-        context: &Self::Context<'c>,
+        context: &<Self::Context as NodeContext>::Wrapper<'c>,
         component_commands: &mut impl HierarchyCommands,
     ) {
         self.node.update(context, component_commands);
@@ -266,7 +266,7 @@ where
         }
     }
 
-    fn on_undeleted<'c>(&self, context: &Self::Context<'c>, commands: &mut impl ComponentCommands) {
+    fn on_undeleted<'c>(&self, context: &<Self::Context as NodeContext>::Wrapper<'c>, commands: &mut impl ComponentCommands) {
         self.node.on_undeleted(context, commands);
 
         let new_path_index: Option<usize> =

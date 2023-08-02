@@ -1,24 +1,21 @@
 use std::marker::PhantomData;
 
-use crate::{prelude::*, DeletionPolicy};
-use bevy::{
-    ecs::system::{StaticSystemParam, SystemParam},
-    utils::HashSet,
-};
-
-pub trait HierarchyRoot: HierarchyNode + Default {
-    type ContextParam<'c>: SystemParam;
-
-    fn get_context<'a, 'c, 'w: 'c, 's>(
-        param: StaticSystemParam<'w, 's, Self::ContextParam<'a>>,
-    ) -> Self::Context<'c>;
-}
+use crate::prelude::*;
+use bevy::utils::HashSet;
 
 pub trait HierarchyNode: PartialEq + Send + Sync + 'static {
-    type Context<'c>: HasDetectChanges;
-    fn update<'c>(&self, context: &Self::Context<'c>, commands: &mut impl HierarchyCommands);
+    type Context: NodeContext;
+    fn update<'r>(
+        &self,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl HierarchyCommands,
+    );
 
-    fn on_undeleted<'c>(&self, _context: &Self::Context<'c>, _commands: &mut impl ComponentCommands){
+    fn on_undeleted<'r>(
+        &self,
+        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        _commands: &mut impl ComponentCommands,
+    ) {
         // do nothing by default
     }
 

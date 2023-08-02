@@ -13,10 +13,11 @@ pub mod child_key;
 pub mod component_commands;
 pub mod components;
 pub mod desired_transform;
-pub mod has_detect_changes;
+pub mod node_context;
 pub mod hierarchy_node;
 pub mod transition;
 pub mod widgets;
+pub mod hierarchy_root;
 
 pub mod prelude {
     pub use crate::child_commands::*;
@@ -26,8 +27,9 @@ pub mod prelude {
     pub use crate::child_deletion_policy::*;
     pub use crate::child_key::*;
     pub use crate::desired_transform::*;
-    pub use crate::has_detect_changes::*;
+    pub use crate::node_context::*;
     pub use crate::hierarchy_node::*;
+    pub use crate::hierarchy_root::*;    
     pub use crate::transition::prelude::*;
     pub use crate::widgets::prelude::*;
 
@@ -69,7 +71,8 @@ fn sync_state<'a, R: HierarchyRoot>(
 ) {
     let context = R::get_context(param);
 
-    if !context.has_changed() {
+    let changed = <R::Context as NodeContext>::has_changed(&context);
+    if !changed {
         return;
     }
 
@@ -100,7 +103,7 @@ fn sync_state<'a, R: HierarchyRoot>(
 fn create_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     mut cec: &mut EntityCommands,
     node: N,
-    context: &N::Context<'c>,
+    context: &<N::Context as NodeContext>::Wrapper<'c>,
 ) {
     //info!("Creating Node {}", type_name::<N>());
     let mut commands = CreationHierarchyCommands::<R>::new(&mut cec);
@@ -113,7 +116,7 @@ fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     commands: &mut Commands,
     entity_ref: EntityRef,
     node: N,
-    context: &N::Context<'c>,
+    context: &<N::Context as NodeContext>::Wrapper<'c>,
     all_child_nodes: Rc<HashMap<Entity, (EntityRef, HierarchyChildComponent<R>)>>,
 ) {
     let mut ec = commands.entity(entity_ref.id());

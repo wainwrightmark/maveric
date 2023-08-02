@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use lazy_static::lazy_static;
 use state_hierarchy::transition::prelude::*;
-use state_hierarchy::{prelude::*, register_state_tree};
+use state_hierarchy::{prelude::*, register_state_tree, impl_hierarchy_root};
 use std::time::Duration;
 use std::{string::ToString, sync::Arc};
 use strum::{Display, EnumIs};
@@ -72,23 +72,15 @@ pub enum MenuState {
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct Root;
 
-impl HierarchyRoot for Root {
-    type ContextParam<'c> = (Res<'c, MenuState>, Res<'c, AssetServer>);
-
-    fn get_context<'a, 'c, 'w: 'c, 's>(
-        param: bevy::ecs::system::StaticSystemParam<'w, 's, Self::ContextParam<'a>>,
-    ) -> Self::Context<'c> {
-        param.into_inner()
-    }
-}
+impl_hierarchy_root!(Root);
 
 #[derive(Component, Debug, Clone, Copy, Deref)]
 pub struct RootPage(MenuState);
 
 impl HierarchyNode for Root {
-    type Context<'c> = (Res<'c, MenuState>, Res<'c, AssetServer>);
+    type Context = NC2<MenuState, AssetServer>;
 
-    fn update<'c>(&self, context: &Self::Context<'c>, commands: &mut impl HierarchyCommands) {
+    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl HierarchyCommands) {
         commands.insert(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
@@ -156,6 +148,8 @@ impl HierarchyNode for Root {
             }
         }
     }
+
+    
 }
 
 
@@ -199,13 +193,9 @@ fn text_button_node(button_action: ButtonAction) -> ButtonNode<ButtonAction, Str
 pub struct MainMenu;
 
 impl HierarchyNode for MainMenu {
-    type Context<'c> = (Res<'c, MenuState>, Res<'c, AssetServer>);
+    type Context = NC2<MenuState, AssetServer>;
 
-    fn update<'c>(
-        &self,
-        context: &Self::Context<'c>,
-        commands: &mut impl HierarchyCommands,
-    ) {
+    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl HierarchyCommands) {
         commands.insert(NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
@@ -225,19 +215,17 @@ impl HierarchyNode for MainMenu {
             commands.child(key as u32, &context.1, text_button_node(*action))
         }
     }
+
+    
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct LevelMenu(u8);
 
 impl HierarchyNode for LevelMenu {
-    type Context<'c> = (Res<'c, MenuState>, Res<'c, AssetServer>);
+    type Context = NC2<MenuState, AssetServer>;
 
-    fn update<'c>(
-        &self,
-        context: &Self::Context<'c>,
-        commands: &mut impl HierarchyCommands,
-    ) {
+    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl HierarchyCommands) {
         commands.insert(NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
@@ -266,19 +254,17 @@ impl HierarchyNode for LevelMenu {
 
         commands.child("buttons", context, LevelMenuArrows);
     }
+
+
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct LevelMenuArrows;
 
 impl HierarchyNode for LevelMenuArrows {
-    type Context<'c> = (Res<'c, MenuState>, Res<'c, AssetServer>);
+    type Context = NC2<MenuState, AssetServer>;
 
-    fn update<'c>(
-        &self,
-        context: &Self::Context<'c>,
-        commands: &mut impl HierarchyCommands,
-    ) {
+    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl HierarchyCommands) {
         commands.insert(NodeBundle {
             style: Style {
                 position_type: PositionType::Relative,
@@ -329,6 +315,8 @@ impl HierarchyNode for LevelMenuArrows {
             }
         }
     }
+
+    
 }
 
 pub const ICON_BUTTON_WIDTH: f32 = 65.;

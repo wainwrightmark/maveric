@@ -8,10 +8,10 @@ use bevy::{
 };
 
 pub trait HierarchyCommands: ComponentCommands {
-    fn child<'c, N: HierarchyNode>(
+    fn child<'c,  N: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
-        child_context: &N::Context<'c>,
+        child_context: &<N::Context as NodeContext>::Wrapper<'c>,
         child_node: N,
     );
 }
@@ -81,7 +81,7 @@ impl<'w, 's, 'a, 'b, R: HierarchyRoot> HierarchyCommands
     fn child<'c, N: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
-        child_context: &N::Context<'c>,
+        child_context: &<N::Context as NodeContext>::Wrapper<'c>,
         child_node: N,
     ) {
         self.ec.with_children(|cb| {
@@ -198,9 +198,10 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, R: HierarchyRoot> HierarchyCommands
     fn child<'c, N: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
-        child_context: &N::Context<'c>,
+        child_context: &<N::Context as NodeContext>::Wrapper<'c>,
         child_node: N,
     ) {
+        let context_changed = <N::Context as NodeContext>::has_changed(child_context);
         let key = key.into();
 
         if !self.added_children.insert(key) {
@@ -223,7 +224,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, R: HierarchyRoot> HierarchyCommands
                     Some(existing) => {
                         // unschedule it for deletion if necessary
 
-                        if child_context.has_changed() || existing.node != child_node {
+                        if context_changed || existing.node != child_node {
                             //state has changed
                             //info!("Child {} with key '{key}' has changed", type_name::<N>());
 

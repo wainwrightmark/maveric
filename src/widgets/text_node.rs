@@ -18,11 +18,11 @@ pub struct TextNodeStyle{
 }
 
 impl<V: Into<String> + PartialEq + Clone + Send + Sync + 'static> HierarchyNode for TextNode<V> {
-    type Context<'c> = Res<'c, AssetServer>;
+    type Context = AssetServer;
 
-    fn update<'c>(
+    fn update(
         &self,
-        context: &Self::Context<'c>,
+        context: &Res<AssetServer>,
         component_commands: &mut impl ComponentCommands,
     ) {
         let font =context.load(self.style.font);

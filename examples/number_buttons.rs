@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use lazy_static::lazy_static;
 use state_hierarchy::transition::prelude::*;
-use state_hierarchy::prelude::*;
+use state_hierarchy::{prelude::*, impl_hierarchy_root};
 use std::f32::consts;
 use std::time::Duration;
 use std::{string::ToString, sync::Arc};
@@ -110,26 +110,15 @@ pub struct DynamicButtonComponent(u32);
 #[derive(Eq, PartialEq, Debug, Default)]
 pub struct Root;
 
-impl HierarchyRoot for Root {
-    type ContextParam<'c> = (Res<'c, UIState>, Res<'c, AssetServer>);
+impl_hierarchy_root!(Root);
 
-    fn get_context<'a, 'c, 'w: 'c, 's>(
-        param: bevy::ecs::system::StaticSystemParam<'w, 's, Self::ContextParam<'a>>,
-    ) -> Self::Context<'c> {
-        param.into_inner()
-    }
-}
 #[derive(Eq, PartialEq, Debug, Default)]
 pub struct CommandGrid;
 
 impl HierarchyNode for CommandGrid {
-    type Context<'c> = Res<'c, AssetServer>;
+    type Context = AssetServer;
 
-    fn update<'c>(
-        &self,
-        context: &Self::Context<'c>,
-        commands: &mut impl HierarchyCommands,
-    ) {
+    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl HierarchyCommands) {
         commands.insert(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
@@ -155,6 +144,7 @@ impl HierarchyNode for CommandGrid {
             commands.child(key, context, node);
         }
     }
+
 }
 
 #[derive(Eq, PartialEq, Debug, Default)]
@@ -177,13 +167,9 @@ impl DeletionPathMaker<StyleLeftLens> for MenuSlideDeletionPathMaker {
 
 
 impl HierarchyNode for DynamicGrid {
-    type Context<'c> = (Res<'c, UIState>, Res<'c, AssetServer>);
+    type Context = NC2<UIState, AssetServer>;
 
-    fn update<'c>(
-        &self,
-        context: &Self::Context<'c>,
-        commands: &mut impl HierarchyCommands,
-    ) {
+    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl HierarchyCommands) {
         commands.insert(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
@@ -215,16 +201,13 @@ impl HierarchyNode for DynamicGrid {
             commands.child(number, &context.1, node);
         }
     }
+
 }
 
 impl HierarchyNode for Root {
-    type Context<'c> = (Res<'c, UIState>, Res<'c, AssetServer>);
+    type Context = NC2<UIState, AssetServer>;
 
-    fn update<'b>(
-        &self,
-        context: &Self::Context<'b>,
-        commands: &mut impl HierarchyCommands,
-    ) {
+    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl HierarchyCommands) {
         commands.insert(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
@@ -240,6 +223,7 @@ impl HierarchyNode for Root {
         commands.child(0, &context.1, CommandGrid);
         commands.child(1, context, DynamicGrid);
     }
+
 }
 
 const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);

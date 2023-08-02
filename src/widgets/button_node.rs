@@ -28,11 +28,11 @@ impl<
         V: Into<String> + Clone + PartialEq + Send + Sync + 'static,
     > HierarchyNode for ButtonNode<M, V>
 {
-    type Context<'c> = Res<'c, AssetServer>;
+    type Context = AssetServer;
 
     fn update<'b>(
         &self,
-        context: &Self::Context<'b>,
+        context: &Res<AssetServer>,
         commands: &mut impl HierarchyCommands,
     ) {
         commands.insert(ButtonBundle {
