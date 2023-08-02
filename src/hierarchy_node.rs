@@ -89,7 +89,6 @@ impl<N: NodeBase + AncestorAspect + ComponentsAspect> HierarchyNode for N {
     }
 }
 
-
 #[derive(Debug)]
 struct NodeDeleter<NParent: AncestorAspect + HasChild<NChild>, NChild: HierarchyNode> {
     phantom: PhantomData<(NParent, NChild)>,
@@ -117,7 +116,6 @@ impl<NParent: AncestorAspect + HasChild<NChild>, NChild: HierarchyNode> ChildDel
         if let Some(hierarchy_node_component) = entity_ref.get::<HierarchyNodeComponent<NChild>>() {
             let child_context = NParent::convert_context(parent_context);
             let component_context = NChild::components_context(child_context);
-
 
             let previous_args = NChild::as_component_aspect(&hierarchy_node_component.node);
             <NChild::ComponentsAspect>::on_deleted(previous_args, &component_context, commands)
@@ -147,7 +145,7 @@ impl NodeBase for () {
 impl AncestorAspect for () {
     fn set_children<'r>(
         &self,
-        _context: &<Self::Context as NodeContext>::Ref<'r>,
+        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
         _commands: &mut impl ChildCommands<Self>,
     ) {
     }

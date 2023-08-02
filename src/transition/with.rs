@@ -14,10 +14,7 @@ where
     L::Value: Tweenable,
     L::Object: Clone + PartialEq + Component,
 {
-    fn get_step(
-        &self,
-        previous: &L::Value,
-    ) -> Option<TransitionStep<L>>;
+    fn get_step(&self, previous: &L::Value) -> Option<TransitionStep<L>>;
 }
 
 #[derive(Debug, Clone)]
@@ -45,10 +42,7 @@ where
     L::Value: Tweenable,
     L::Object: Clone + PartialEq + Component,
 {
-    fn get_step(
-        &self,
-        previous: &<L as Lens>::Value,
-    ) -> Option<TransitionStep<L>> {
+    fn get_step(&self, previous: &<L as Lens>::Value) -> Option<TransitionStep<L>> {
         let out_speed = calculate_speed(previous, &self.destination, self.duration);
 
         Some(TransitionStep::new(self.destination.clone(), out_speed, None).into())
@@ -73,10 +67,7 @@ where
     L::Value: Tweenable,
     L::Object: Clone + PartialEq + Component,
 {
-    fn get_step(
-        &self,
-        previous: &<L as Lens>::Value,
-    ) -> Option<TransitionStep<L>> {
+    fn get_step(&self, previous: &<L as Lens>::Value) -> Option<TransitionStep<L>> {
         None
     }
 }
@@ -86,10 +77,7 @@ where
     L::Value: Tweenable,
     L::Object: Clone + PartialEq + Component,
 {
-    fn get_step(
-        &self,
-        previous: &<L as Lens>::Value,
-    ) -> Option<TransitionStep<L>> {
+    fn get_step(&self, previous: &<L as Lens>::Value) -> Option<TransitionStep<L>> {
         Some(self.clone())
     }
 }
@@ -194,7 +182,7 @@ where
     fn ancestor_context<'a, 'r>(
         context: &'a <<Self as NodeBase>::Context as NodeContext>::Wrapper<'r>,
     ) -> &'a <<Self::AncestorAspect as NodeBase>::Context as NodeContext>::Wrapper<'r> {
-        context
+        N::ancestor_context(context)
     }
 
     fn as_component_aspect<'a>(&'a self) -> &'a Self::ComponentsAspect {
@@ -202,7 +190,7 @@ where
     }
 
     fn as_ancestor_aspect<'a>(&'a self) -> &'a Self::AncestorAspect {
-        &self.node
+        &self.node.as_ancestor_aspect()
     }
 }
 
@@ -223,12 +211,15 @@ where
 {
     fn set_components<'r>(
         &self,
-        context: &<Self::Context as NodeContext>::Ref<'r>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ComponentCommands,
         event: SetComponentsEvent,
     ) {
-        let r = <<N::ComponentsAspect as NodeBase>::Context as NodeContext>::from_wrapper(N::components_context(context));
-        self.node.as_component_aspect().set_components(, commands, event);
+        self.node.as_component_aspect().set_components(
+            N::components_context(context),
+            commands,
+            event,
+        );
 
         match event {
             SetComponentsEvent::Created => {
@@ -275,17 +266,20 @@ where
 
     fn on_deleted<'r>(
         &self,
-        context: &<Self::Context as NodeContext>::Ref<'r>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ComponentCommands,
     ) -> DeletionPolicy {
-        let base = self.as_component_aspect().on_deleted(context, commands);
+        let base = self.node.as_component_aspect().on_deleted(
+            N::components_context(Self::components_context(context)),
+            commands,
+        );
 
         let Some(component) = commands
                 .get::<L::Object>() else {return base;};
 
         let previous = &<L as GetValueLens>::get_value(component);
 
-        let Some(deletion_path) = self.deletion.get_step(previous, new_sibling_keys) else{return  base;};
+        let Some(deletion_path) = self.deletion.get_step(previous) else{return  base;};
 
         let duration = deletion_path
             .remaining_duration(previous)
@@ -296,7 +290,7 @@ where
             DeletionPolicy::Linger(d) => duration.max(d),
         };
 
-        component_commands.insert(TransitionPathComponent {
+        commands.insert(TransitionPathComponent {
             step: deletion_path.clone(),
         });
 

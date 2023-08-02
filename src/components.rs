@@ -4,15 +4,6 @@ use bevy::prelude::*;
 
 use crate::prelude::*;
 
-// #[derive(Debug, Component)]
-// pub(crate) struct HierarchyRootComponent<R: HierarchyRoot>(PhantomData<R>);
-
-// impl<R: HierarchyRoot> Default for HierarchyRootComponent<R> {
-//     fn default() -> Self {
-//         Self(Default::default())
-//     }
-// }
-
 #[derive(Debug, Default, Component)]
 pub(crate) struct HierarchyNodeComponent<N: NodeBase> {
     pub node: N,
