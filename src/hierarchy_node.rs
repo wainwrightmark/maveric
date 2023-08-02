@@ -40,6 +40,7 @@ pub trait ComponentsAspect: NodeBase {
 
     #[allow(clippy::unused_variables)]
     fn on_deleted<'r>(
+        _previous_args: &Self::Args,
         _context: &<Self::Context as NodeContext>::Wrapper<'r>, //TODO should not be wrapper
         _commands: &mut impl ComponentCommands,
     ) -> DeletionPolicy {
@@ -109,8 +110,14 @@ struct NodeDeleter<NParent: AncestorAspect + HasChild<NChild>, NChild: Hierarchy
     phantom: PhantomData<(NParent, NChild)>,
 }
 
-impl<NParent: AncestorAspect + HasChild<NChild>, NChild: HierarchyNode> NodeDeleter<NParent, NChild> {
-    const fn new() -> Self { Self { phantom: PhantomData } }
+impl<NParent: AncestorAspect + HasChild<NChild>, NChild: HierarchyNode>
+    NodeDeleter<NParent, NChild>
+{
+    const fn new() -> Self {
+        Self {
+            phantom: PhantomData,
+        }
+    }
 }
 
 impl<NParent: AncestorAspect + HasChild<NChild>, NChild: HierarchyNode> ChildDeleter<NParent>
@@ -118,20 +125,29 @@ impl<NParent: AncestorAspect + HasChild<NChild>, NChild: HierarchyNode> ChildDel
 {
     fn on_deleted<'r>(
         &self,
+        entity_ref: EntityRef,
         commands: &mut ConcreteComponentCommands,
         parent_context: &<<NParent>::Context as NodeContext>::Wrapper<'r>,
     ) -> DeletionPolicy {
         let child_context = NParent::convert_context(parent_context);
-
         let component_context = NChild::components_context(child_context);
-
-        <NChild::ComponentsAspect>::on_deleted(component_context, commands)
+        if let Some(hierarchy_node_component) = entity_ref.get::<HierarchyNodeComponent<NChild>>() {
+            let previous_args = NChild::component_args(&hierarchy_node_component.args);
+            <NChild::ComponentsAspect>::on_deleted(previous_args, component_context, commands)
+        } else {
+            warn!(
+                "Deleted entity of type {t} did not have HierarchyNodeComponent",
+                t = std::any::type_name::<NChild>()
+            );
+            DeletionPolicy::DeleteImmediately
+        }
     }
 }
 
-pub  trait ChildDeleter<NParent: AncestorAspect>: Send + Sync + 'static {
+pub trait ChildDeleter<NParent: AncestorAspect>: Send + Sync + 'static {
     fn on_deleted<'r>(
         &self,
+        entity_ref: EntityRef,
         commands: &mut ConcreteComponentCommands,
         parent_context: &<NParent::Context as NodeContext>::Wrapper<'r>,
     ) -> DeletionPolicy;

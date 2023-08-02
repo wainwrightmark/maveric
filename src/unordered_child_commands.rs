@@ -1,10 +1,10 @@
 use std::{any::type_name, marker::PhantomData, rc::Rc};
 
-use crate::{prelude::*, DeletionPolicy};
+use crate::prelude::*;
 use bevy::{
     ecs::system::EntityCommands,
     prelude::*,
-    utils::{hashbrown::HashMap, HashSet},
+    utils::hashbrown::HashMap,
 };
 
 pub(crate) struct UnorderedChildCommands<
@@ -23,7 +23,7 @@ pub(crate) struct UnorderedChildCommands<
     ec: &'b mut EntityCommands<'w, 's, 'a>,
     context: &'d <NParent::Context as NodeContext>::Wrapper<'r>,
 
-    remaining_old_entities: HashMap<ChildKey, (EntityRef<'w1>, HierarchyChildComponent<R>)>,
+    remaining_old_entities: HashMap<ChildKey, EntityRef<'w1>>,
     all_child_nodes: Rc<HashMap<Entity, (EntityRef<'w1>, HierarchyChildComponent<R>)>>,
     phantom: PhantomData<R>,
 }
@@ -44,7 +44,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspec
         let key = key.into();
 
         match self.remaining_old_entities.remove(&key) {
-            Some((entity_ref, _)) => {
+            Some(entity_ref) => {
                 //check if this node has changed
 
                 if entity_ref.contains::<HierarchyNodeComponent<NChild>>() {
@@ -67,16 +67,25 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspec
                         .despawn_recursive();
 
                     self.ec.with_children(|cb| {
-                        let mut cec = cb.spawn(HierarchyChildComponent::<R>::new::<NChild>(key));
-                        create_recursive::<R, NChild>(&mut cec, child_args, &child_context);
+                        let mut cec = cb.spawn_empty();
+                        create_recursive::<R, NParent, NChild>(
+                            &mut cec,
+                            child_args,
+                            &child_context,
+                            key,
+                        );
                     });
                 }
             }
             None => {
                 self.ec.with_children(|cb| {
-                    //info!("Creating new Child {} with key '{key}'", type_name::<N>());
-                    let mut cec = cb.spawn(HierarchyChildComponent::<R>::new::<NChild>(key));
-                    create_recursive::<R, NChild>(&mut cec, child_args, &child_context);
+                    let mut cec = cb.spawn_empty();
+                    create_recursive::<R, NParent, NChild>(
+                        &mut cec,
+                        child_args,
+                        &child_context,
+                        key,
+                    );
                 });
             }
         }
@@ -96,13 +105,10 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspec
         //let tree = tree.clone();
         match children {
             Some(children) => {
-                let remaining_old_entities: HashMap<
-                    ChildKey,
-                    (EntityRef<'w1>, HierarchyChildComponent<R>),
-                > = children
+                let remaining_old_entities: HashMap<ChildKey, EntityRef<'w1>> = children
                     .iter()
                     .flat_map(|x| match all_child_nodes.get(x) {
-                        Some((er, child)) => Some((child.key, (er.clone(), child.clone()))),
+                        Some((er, child)) => Some((child.key, er.clone())),
                         None => {
                             //new_entities.push(*x);
                             None
@@ -134,45 +140,11 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspec
         let ec = self.ec;
 
         //remove all remaining old entities
-        for (_key, (er, child)) in self.remaining_old_entities {
-            let mut child_ec = ec.commands().entity(er.id());
-            let mut update_commands = ConcreteComponentCommands::new(er, &mut child_ec);
-            //todo linger
-            child_ec.despawn_recursive();
-            // let deletion_policy = child
-            //     .deleter
-            //     .on_deleted(&mut update_commands, &self.added_children);
-
-            // match deletion_policy {
-            //     DeletionPolicy::DeleteImmediately => {
-            //         //info!("Despawning Child with key '{key}'");
-            //         //do nothing
-            //         child_ec.despawn_recursive();
-            //     }
-            //     DeletionPolicy::Linger(duration) => {
-            //         if !er.contains::<ScheduledForDeletion>() {
-            //             //info!("Scheduling deletion of Child with key '{key}'");
-            //             child_ec.insert(ScheduledForDeletion {
-            //                 timer: Timer::new(duration, TimerMode::Once),
-            //             });
-            //         }
-            //     }
-            // }
+        for (_key, entity_ref) in self.remaining_old_entities {
+            delete_recursive::<NParent>(ec.commands(), entity_ref, self.context);
         }
     }
 }
-
-// impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspect> ComponentCommands
-//     for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R, NParent>
-// {
-//     fn insert<T: Bundle>(&mut self, bundle: T) {
-//         self.ec.insert(bundle);
-//     }
-
-//     fn remove<T: Bundle>(&mut self) {
-//         self.ec.remove::<T>();
-//     }
-// }
 
 impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspect> CommandsBase
     for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R, NParent>

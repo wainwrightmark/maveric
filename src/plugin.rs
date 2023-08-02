@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use bevy::{
-    ecs::system::{EntityCommands, StaticSystemParam},
+    ecs::system:: StaticSystemParam,
     prelude::*,
     utils::hashbrown::HashMap,
 };

@@ -4,10 +4,11 @@ pub use crate::prelude::*;
 pub use bevy::prelude::*;
 use bevy::{ecs::system::EntityCommands, utils::HashMap};
 
-pub(crate) fn create_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
+pub(crate) fn create_recursive<'c, R: HierarchyRoot, P: HasChild<N>, N: HierarchyNode>(
     mut cec: &mut EntityCommands,
     args: <N as NodeBase>::Args,
     context: &<<N as NodeBase>::Context as NodeContext>::Wrapper<'c>,
+    key: ChildKey,
 ) {
     //info!("Creating Node {}", type_name::<N>());
 
@@ -32,7 +33,42 @@ pub(crate) fn create_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
         &mut child_commands,
     );
 
-    cec.insert(HierarchyNodeComponent::<N> { args });
+    let hnc = HierarchyNodeComponent::<N> { args };
+    let hcc = HierarchyChildComponent::<R>::new::<N>(key.into());
+    let ac = AncestorComponent::<P>::new::<N>();
+
+    cec.insert((hnc, hcc, ac));
+}
+
+pub(crate) fn delete_recursive<
+    'c,
+    P: AncestorAspect
+>(
+    commands: &mut Commands,
+    entity_ref: EntityRef,
+    parent_context: &<<P as NodeBase>::Context as NodeContext>::Wrapper<'c>,
+) {
+    if entity_ref.contains::<ScheduledForDeletion>(){
+        return;
+    }
+
+    let mut ec = commands.entity(entity_ref.id());
+    let mut cc = ConcreteComponentCommands::new(entity_ref, &mut ec);
+
+    let dp: DeletionPolicy = if let Some(ac) = entity_ref.get::<AncestorComponent<P>>() {
+        ac.deleter.on_deleted(entity_ref, &mut cc, parent_context)
+    } else {
+        DeletionPolicy::DeleteImmediately
+    };
+
+    match dp {
+        DeletionPolicy::DeleteImmediately => ec.despawn_recursive(),
+        DeletionPolicy::Linger(duration) => {
+            ec.insert(ScheduledForDeletion {
+                timer: Timer::new(duration, TimerMode::Once),
+            });
+        }
+    }
 }
 
 pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(

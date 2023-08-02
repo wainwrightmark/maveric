@@ -1,19 +1,25 @@
-// use std::sync::Arc;
+use std::sync::Arc;
 
-// pub use crate::prelude::*;
-// pub use bevy::prelude::*;
+pub use crate::prelude::*;
+pub use bevy::prelude::*;
 
-// #[derive(PartialEq, Debug)]
-// pub struct TextNode<V: Into<String> + Clone + PartialEq + Send + Sync + 'static> {
-//     pub value: V,
-//     pub style: Arc<TextNodeStyle>,
-// }
+#[derive(PartialEq, Debug)]
+pub struct TextNode<V: Into<String> + Clone + PartialEq + Send + Sync + 'static> {
+    pub value: V,
+    pub style: Arc<TextNodeStyle>,
+}
 
-// #[derive(PartialEq, Debug, Clone)]
-// pub struct TextNodeStyle {
-//     pub font_size: f32,
-//     pub color: Color,
-//     pub font: &'static str,
+#[derive(PartialEq, Debug, Clone)]
+pub struct TextNodeStyle {
+    pub font_size: f32,
+    pub color: Color,
+    pub font: &'static str,
+}
+
+// impl NodeBase for TextNodeStyle {
+//     type Context;
+
+//     type Args;
 // }
 
 // impl<V: Into<String> + PartialEq + Clone + Send + Sync + 'static> HierarchyNode for TextNode<V> {
