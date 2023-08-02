@@ -66,7 +66,7 @@ pub enum MenuState {
     #[default]
     Closed,
     ShowMainMenu,
-    ShowLevelsPage(u8),
+    ShowLevelsPage(u32),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
@@ -105,46 +105,48 @@ impl HierarchyNode for Root {
                 commands.child("main_menu", context, MainMenu);
             }
             MenuState::ShowLevelsPage(n) => {
-                let duration: Duration = Duration::from_secs_f32(2.0);
+                let carousel = Carousel::new(*n as u32, |x| Some(LevelMenu(x)));
+                commands.child("levels", context, carousel);
+                // let duration: Duration = Duration::from_secs_f32(2.0);
 
-                let initial_left = match commands.get::<RootPage>(){
-                    Some(RootPage(MenuState::ShowLevelsPage(prev_page))) =>
-                    match prev_page.cmp(n){
-                        std::cmp::Ordering::Less => Val::Percent(00.0),
-                        std::cmp::Ordering::Equal => Val::Percent(50.0),
-                        std::cmp::Ordering::Greater => Val::Percent(100.0),
-                    },
-                    _ => Val::Percent(0.0),
-                };
+                // let initial_left = match commands.get::<RootPage>(){
+                //     Some(RootPage(MenuState::ShowLevelsPage(prev_page))) =>
+                //     match prev_page.cmp(n){
+                //         std::cmp::Ordering::Less => Val::Percent(00.0),
+                //         std::cmp::Ordering::Equal => Val::Percent(50.0),
+                //         std::cmp::Ordering::Greater => Val::Percent(100.0),
+                //     },
+                //     _ => Val::Percent(0.0),
+                // };
 
-                let child_node = LevelMenu(*n)
-                    .with_transition_in_out::<StyleLeftLens>(
-                        Style {
-                            position_type: PositionType::Absolute,
-                            left: initial_left,
-                            right: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
-                            top: Val::Px(MENU_OFFSET),
-                            display: Display::Flex,
-                            flex_direction: FlexDirection::Column,
+                // let child_node = LevelMenu(*n)
+                //     .with_transition_in_out::<StyleLeftLens>(
+                //         Style {
+                //             position_type: PositionType::Absolute,
+                //             left: initial_left,
+                //             right: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
+                //             top: Val::Px(MENU_OFFSET),
+                //             display: Display::Flex,
+                //             flex_direction: FlexDirection::Column,
 
-                            ..Default::default()
-                        },
-                        Val::Percent(50.0),
-                        Val::Percent(100.0),
-                        duration,
-                        duration,
-                    )//.with_transition_in_out(initial, destination, out_destination, in_duration, out_duration)
+                //             ..Default::default()
+                //         },
+                //         Val::Percent(50.0),
+                //         Val::Percent(100.0),
+                //         duration,
+                //         duration,
+                //     )//.with_transition_in_out(initial, destination, out_destination, in_duration, out_duration)
 
-                    // .with_transition_in_out::<TransformScaleLens>(
-                    //     Transform::from_scale(Vec3::new(1.0, 0.0, 1.0)),
-                    //     Vec3::ONE,
-                    //     Vec3::new(1.0, 0.0, 1.0),
-                    //     duration,
-                    //     duration,
-                    // )
-                    ;
+                //     // .with_transition_in_out::<TransformScaleLens>(
+                //     //     Transform::from_scale(Vec3::new(1.0, 0.0, 1.0)),
+                //     //     Vec3::ONE,
+                //     //     Vec3::new(1.0, 0.0, 1.0),
+                //     //     duration,
+                //     //     duration,
+                //     // )
+                //     ;
 
-                commands.child(*n as u32, context, child_node);
+                // commands.child(*n as u32, context, child_node);
             }
         }
     }
@@ -220,7 +222,7 @@ impl HierarchyNode for MainMenu {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
-pub struct LevelMenu(u8);
+pub struct LevelMenu(u32);
 
 impl HierarchyNode for LevelMenu {
     type Context = NC2<MenuState, AssetServer>;
@@ -334,7 +336,7 @@ pub const FONT_PATH: &str = "fonts/merged-font.ttf";
 pub const ICON_FONT_SIZE: f32 = 30.0;
 pub const BUTTON_FONT_SIZE: f32 = 22.0;
 
-const LEVELS_PER_PAGE: u8 = 8;
+const LEVELS_PER_PAGE: u32 = 8;
 
 pub const BACKGROUND_COLOR: Color = Color::hsla(216., 0.7, 0.72, 1.0); // #86AEEA
 pub const ACCENT_COLOR: Color = Color::hsla(218., 0.69, 0.62, 1.0); // #5B8BE2
@@ -431,7 +433,7 @@ pub enum ButtonAction {
     Share,
     ChooseLevel,
     ClipboardImport,
-    GotoLevel { level: u8 },
+    GotoLevel { level: u32 },
     NextLevel,
     MinimizeSplash,
     RestoreSplash,
