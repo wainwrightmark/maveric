@@ -54,7 +54,7 @@ impl<'w, 's, 'b, 'w1, 'd, 'r, R: HierarchyRoot> ChildCommands<R>
     fn add_child<'c, NChild: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
-        child_args: <NChild as NodeBase>::Args,
+        child: NChild,
     ) where
         R: HasChild<NChild>,
     {
@@ -68,7 +68,7 @@ impl<'w, 's, 'b, 'w1, 'd, 'r, R: HierarchyRoot> ChildCommands<R>
                     update_recursive::<R, NChild>(
                         &mut self.commands,
                         entity_ref.clone(),
-                        child_args,
+                        child,
                         child_context,
                         self.all_child_nodes.clone(),
                     );
@@ -81,12 +81,12 @@ impl<'w, 's, 'b, 'w1, 'd, 'r, R: HierarchyRoot> ChildCommands<R>
                     self.commands.entity(entity_ref.id()).despawn_recursive();
 
                     let mut cec = self.commands.spawn_empty();
-                    create_recursive::<R, R, NChild>(&mut cec, child_args, child_context, key);
+                    create_recursive::<R, R, NChild>(&mut cec, child, child_context, key);
                 }
             }
             None => {
                 let mut cec = self.commands.spawn_empty();
-                create_recursive::<R, R, NChild>(&mut cec, child_args, &child_context, key);
+                create_recursive::<R, R, NChild>(&mut cec, child, &child_context, key);
             }
         }
     }

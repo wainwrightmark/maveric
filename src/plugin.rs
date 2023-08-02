@@ -59,7 +59,7 @@ fn sync_state<'a, R: HierarchyRoot>(
 
     let context_ref = <<R as NodeBase>::Context as NodeContext>::from_wrapper(&context);
 
-    R::set_children(&(),&context_ref, &mut root_commands);
+    R::set_children(&R::default(),&context_ref, &mut root_commands);
     root_commands.finish();
 }
 

@@ -6,7 +6,7 @@ use bevy::{ecs::system::EntityCommands, utils::HashMap};
 
 pub(crate) fn create_recursive<'c, R: HierarchyRoot, P: HasChild<N>, N: HierarchyNode>(
     mut cec: &mut EntityCommands,
-    args: <N as NodeBase>::Args,
+    node: N,
     context: &<<N as NodeBase>::Context as NodeContext>::Wrapper<'c>,
     key: ChildKey,
 ) {
@@ -24,8 +24,8 @@ pub(crate) fn create_recursive<'c, R: HierarchyRoot, P: HasChild<N>, N: Hierarch
     let mut child_commands =
         CreationCommands::<R, N::AncestorAspect>::new(&mut cec, ancestor_context);
 
-    let ancestor_args = N::ancestor_args(&args);
-    let component_args = N::component_args(&args);
+    let ancestor_args = N::as_ancestor_aspect(&node);
+    let component_args = N::as_component_aspect(&node);
 
     <N::ComponentsAspect as ComponentsAspect>::set_components(
         component_args,
@@ -39,7 +39,7 @@ pub(crate) fn create_recursive<'c, R: HierarchyRoot, P: HasChild<N>, N: Hierarch
         &mut child_commands,
     );
 
-    let hnc = HierarchyNodeComponent::<N> { args };
+    let hnc = HierarchyNodeComponent::<N> { node };
     let hcc = HierarchyChildComponent::<R>::new::<N>(key.into());
     let ac = AncestorComponent::<P>::new::<N>();
 
@@ -77,7 +77,7 @@ pub(crate) fn delete_recursive<'c, P: AncestorAspect>(
 pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     commands: &mut Commands,
     entity_ref: EntityRef,
-    args: <N as NodeBase>::Args,
+    node: N,
     context: &<<N as NodeBase>::Context as NodeContext>::Wrapper<'c>,
     all_child_nodes: Rc<HashMap<Entity, (EntityRef, HierarchyChildComponent<R>)>>,
 ) {
@@ -91,25 +91,26 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
 
     let old_args = entity_ref
         .get::<HierarchyNodeComponent<N>>()
-        .map(|x| &x.args);
+        .map(|x| &x.node);
 
     let args_changed = match old_args {
-        Some(a) => args.eq(a),
+        Some(a) => node.eq(a),
         None => true,
     };
 
     let children = entity_ref.get::<Children>();
 
     let component_context = N::components_context(context);
-    let component_args = N::component_args(&args);
-    let ancestor_args = N::ancestor_args(&args);
+    let component_args = N::as_component_aspect(&node);
+    let ancestor_args = N::as_ancestor_aspect(&node);
     let ancestor_context = N::ancestor_context(context);
 
     let components_hot = undeleted
         || <<N::ComponentsAspect as NodeBase>::Context as NodeContext>::has_changed(
             component_context,
         )
-        || (args_changed && old_args.is_some_and(|oa| N::component_args(&oa) == component_args));
+        || (args_changed
+            && old_args.is_some_and(|oa| N::as_component_aspect(&oa) == component_args));
 
     if components_hot {
         let mut component_commands = ConcreteComponentCommands::new(entity_ref, &mut ec);
@@ -133,7 +134,8 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
 
     let ancestors_hot =
         <<N::AncestorAspect as NodeBase>::Context as NodeContext>::has_changed(ancestor_context)
-            || (args_changed && old_args.is_some_and(|oa| N::ancestor_args(&oa) == ancestor_args));
+            || (args_changed
+                && old_args.is_some_and(|oa| N::as_ancestor_aspect(&oa) == ancestor_args));
 
     if ancestors_hot {
         let mut ancestor_commands = UnorderedChildCommands::<R, N::AncestorAspect>::new(
@@ -157,6 +159,6 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     }
 
     if args_changed {
-        ec.insert(HierarchyNodeComponent::<N> { args });
+        ec.insert(HierarchyNodeComponent::<N> { node });
     }
 }

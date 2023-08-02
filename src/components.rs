@@ -15,7 +15,7 @@ use crate::prelude::*;
 
 #[derive(Debug, Default, Component)]
 pub(crate) struct HierarchyNodeComponent<N: NodeBase> {
-    pub args: N::Args,
+    pub node: N,
 }
 
 #[derive(Component)]

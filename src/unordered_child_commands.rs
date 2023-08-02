@@ -35,7 +35,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspec
     fn add_child<'c, NChild: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
-        child_args: <NChild as NodeBase>::Args,
+        child: NChild,
     ) where
         NParent: HasChild<NChild>,
     {
@@ -51,7 +51,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspec
                     update_recursive::<R, NChild>(
                         &mut self.ec.commands(),
                         entity_ref.clone(),
-                        child_args,
+                        child,
                         child_context,
                         self.all_child_nodes.clone(),
                     );
@@ -70,7 +70,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspec
                         let mut cec = cb.spawn_empty();
                         create_recursive::<R, NParent, NChild>(
                             &mut cec,
-                            child_args,
+                            child,
                             &child_context,
                             key,
                         );
@@ -82,7 +82,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspec
                     let mut cec = cb.spawn_empty();
                     create_recursive::<R, NParent, NChild>(
                         &mut cec,
-                        child_args,
+                        child,
                         &child_context,
                         key,
                     );

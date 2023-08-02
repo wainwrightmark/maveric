@@ -1,10 +1,11 @@
-use std::sync::Arc;
-
 pub use crate::prelude::*;
 pub use bevy::prelude::*;
 
 #[derive(PartialEq, Debug)]
-pub struct TextNode;
+pub struct TextNode {
+    text: String,
+    style: TextNodeStyle,
+}
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct TextNodeStyle {
@@ -15,25 +16,24 @@ pub struct TextNodeStyle {
 
 impl NodeBase for TextNode {
     type Context = AssetServer;
-    type Args = (String, Arc<TextNodeStyle>);
 }
 
 impl ComponentsAspect for TextNode {
     fn set_components<'r>(
-        args: &Self::Args,
+        &self,
         context: &<Self::Context as NodeContext>::Ref<'r>,
         commands: &mut impl ComponentCommands,
         _event: SetComponentsEvent,
     ) {
-        let font = context.load(args.1.font);
+        let font = context.load(self.style.font);
 
         //TODO only update text and node components
         commands.insert(TextBundle::from_section(
-            args.0.clone(),
+            self.text.clone(),
             TextStyle {
                 font,
-                font_size: args.1.font_size,
-                color: args.1.color,
+                font_size: self.style.font_size,
+                color: self.style.color,
             },
         ));
     }
@@ -56,15 +56,11 @@ impl HierarchyNode for TextNode {
         &()
     }
 
-    fn component_args<'a>(
-        args: &'a <Self as NodeBase>::Args,
-    ) -> &'a <Self::ComponentsAspect as NodeBase>::Args {
-        args
+    fn as_component_aspect<'a>(&'a self) -> &'a Self::ComponentsAspect {
+        self
     }
 
-    fn ancestor_args<'a>(
-        _args: &'a <Self as NodeBase>::Args,
-    ) -> &'a <Self::AncestorAspect as NodeBase>::Args {
+    fn as_ancestor_aspect<'a>(&'a self) -> &'a Self::AncestorAspect {
         &()
     }
 }

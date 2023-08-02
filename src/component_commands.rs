@@ -1,18 +1,12 @@
-use std::{any::type_name, marker::PhantomData, rc::Rc};
-
-use crate::{prelude::*, DeletionPolicy};
+use crate::prelude::*;
 use bevy::{
-    ecs::system::EntityCommands,
     prelude::*,
     utils::{hashbrown::HashMap, HashSet},
 };
 
-pub trait ChildCommands<NParent: AncestorAspect>: CommandsBase {
-    fn add_child<'c, NChild: HierarchyNode>(
-        &mut self,
-        key: impl Into<ChildKey>,
-        child_args: <NChild as NodeBase>::Args,
-    ) where
+pub trait ChildCommands<NParent: AncestorAspect>: CommandsBase { //TODO remove commands_base
+    fn add_child<'c, NChild: HierarchyNode>(&mut self, key: impl Into<ChildKey>, child: NChild)
+    where
         NParent: HasChild<NChild>;
 }
 

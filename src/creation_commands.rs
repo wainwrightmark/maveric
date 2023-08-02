@@ -28,7 +28,7 @@ impl<'w, 's, 'a, 'b, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspect> ChildCom
     fn add_child<'c, NChild: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
-        child_args: <NChild as NodeBase>::Args,
+        child: NChild,
     ) where
         NParent: HasChild<NChild>,
     {
@@ -37,7 +37,7 @@ impl<'w, 's, 'a, 'b, 'd, 'r, R: HierarchyRoot, NParent: AncestorAspect> ChildCom
             let mut cec = cb.spawn_empty();
 
             let child_context = <NParent as HasChild<NChild>>::convert_context(self.context);
-            create_recursive::<R, NParent, NChild>(&mut cec, child_args, &child_context, key);
+            create_recursive::<R, NParent, NChild>(&mut cec, child, &child_context, key);
         });
     }
 }

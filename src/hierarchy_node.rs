@@ -17,14 +17,14 @@ pub trait HasChild<NChild: HierarchyNode>: AncestorAspect {
     const DELETER: &'static dyn ChildDeleter<Self> = &NodeDeleter::<Self, NChild>::new();
 }
 
-pub trait NodeBase: Sized + Send + Sync + 'static {
+pub trait NodeBase: PartialEq + Sized + Send + Sync + 'static {
     type Context: NodeContext;
-    type Args: PartialEq + Send + Sync + 'static;
+    //type Args: PartialEq + Send + Sync + 'static;
 }
 
 pub trait AncestorAspect: NodeBase {
     fn set_children<'r>(
-        args: &Self::Args,
+        &self,
         context: &<Self::Context as NodeContext>::Ref<'r>,
         commands: &mut impl ChildCommands<Self>,
     );
@@ -32,7 +32,7 @@ pub trait AncestorAspect: NodeBase {
 
 pub trait ComponentsAspect: NodeBase {
     fn set_components<'r>(
-        args: &Self::Args,
+        &self,
         context: &<Self::Context as NodeContext>::Ref<'r>,
         commands: &mut impl ComponentCommands,
         event: SetComponentsEvent,
@@ -40,7 +40,7 @@ pub trait ComponentsAspect: NodeBase {
 
     #[allow(clippy::unused_variables)]
     fn on_deleted<'r>(
-        _previous_args: &Self::Args,
+        &self,
         _context: &<Self::Context as NodeContext>::Ref<'r>,
         _commands: &mut impl ComponentCommands,
     ) -> DeletionPolicy {
@@ -59,12 +59,12 @@ pub trait HierarchyNode: NodeBase {
         context: &'a <<Self as NodeBase>::Context as NodeContext>::Wrapper<'r>,
     ) -> &'a <<Self::AncestorAspect as NodeBase>::Context as NodeContext>::Wrapper<'r>;
 
-    fn component_args<'a>(
-        args: &'a <Self as NodeBase>::Args,
-    ) -> &'a <Self::ComponentsAspect as NodeBase>::Args;
-    fn ancestor_args<'a>(
-        args: &'a <Self as NodeBase>::Args,
-    ) -> &'a <Self::AncestorAspect as NodeBase>::Args;
+    fn as_component_aspect<'a>(
+        &'a self,
+    ) -> &'a Self::ComponentsAspect;
+    fn as_ancestor_aspect<'a>(
+        &'a self,
+    ) -> &'a Self::AncestorAspect;
 }
 
 impl<N: NodeBase + AncestorAspect + ComponentsAspect> HierarchyNode for N {
@@ -84,17 +84,18 @@ impl<N: NodeBase + AncestorAspect + ComponentsAspect> HierarchyNode for N {
         context
     }
 
-    fn component_args<'a>(
-        args: &'a <Self as NodeBase>::Args,
-    ) -> &'a <Self::ComponentsAspect as NodeBase>::Args {
-        args
+    fn as_component_aspect<'a>(
+        &'a self,
+    ) -> &'a Self::ComponentsAspect {
+        self
     }
 
-    fn ancestor_args<'a>(
-        args: &'a <Self as NodeBase>::Args,
-    ) -> &'a <Self::AncestorAspect as NodeBase>::Args {
-        args
+    fn as_ancestor_aspect<'a>(
+        &'a self,
+    ) -> &'a Self::AncestorAspect {
+        self
     }
+
 }
 
 // pub(crate) trait CanDelete {
@@ -138,7 +139,7 @@ impl<NParent: AncestorAspect + HasChild<NChild>, NChild: HierarchyNode> ChildDel
                     component_context,
                 );
 
-            let previous_args = NChild::component_args(&hierarchy_node_component.args);
+            let previous_args = NChild::as_component_aspect(&hierarchy_node_component.node);
             <NChild::ComponentsAspect>::on_deleted(previous_args, &context_ref, commands)
         } else {
             warn!(
@@ -161,13 +162,11 @@ pub trait ChildDeleter<NParent: AncestorAspect>: Send + Sync + 'static {
 
 impl NodeBase for () {
     type Context = NoContext;
-
-    type Args = ();
 }
 
 impl AncestorAspect for () {
     fn set_children<'r>(
-        _args: &Self::Args,
+        &self,
         _context: &<Self::Context as NodeContext>::Ref<'r>,
         _commands: &mut impl ChildCommands<Self>,
     ) {
