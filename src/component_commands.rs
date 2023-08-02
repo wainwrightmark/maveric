@@ -7,8 +7,8 @@ use bevy::{
     utils::{hashbrown::HashMap, HashSet},
 };
 
-pub trait HierarchyCommands: ComponentCommands {
-    fn child<'c,  N: HierarchyNode>(
+pub trait UpdateCommands: ComponentCommands {
+    fn add_child<'c,  N: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
         child_context: &<N::Context as NodeContext>::Wrapper<'c>,
@@ -75,10 +75,10 @@ impl<'w, 's, 'a, 'b, R: HierarchyRoot> CreationHierarchyCommands<'w, 's, 'a, 'b,
     }
 }
 
-impl<'w, 's, 'a, 'b, R: HierarchyRoot> HierarchyCommands
+impl<'w, 's, 'a, 'b, R: HierarchyRoot> UpdateCommands
     for CreationHierarchyCommands<'w, 's, 'a, 'b, R>
 {
-    fn child<'c, N: HierarchyNode>(
+    fn add_child<'c, N: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
         child_context: &<N::Context as NodeContext>::Wrapper<'c>,
@@ -192,10 +192,10 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, R: HierarchyRoot>
 }
 
 
-impl<'w, 's, 'a, 'b, 'w1, 'w_e, R: HierarchyRoot> HierarchyCommands
+impl<'w, 's, 'a, 'b, 'w1, 'w_e, R: HierarchyRoot> UpdateCommands
     for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'w_e, R>
 {
-    fn child<'c, N: HierarchyNode>(
+    fn add_child<'c, N: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
         child_context: &<N::Context as NodeContext>::Wrapper<'c>,

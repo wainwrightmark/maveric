@@ -38,7 +38,7 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
     fn update<'r>(
         &self,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl HierarchyCommands,
+        commands: &mut impl UpdateCommands,
     ) {
         commands.insert(NodeBundle {
             style: Style {
@@ -62,7 +62,7 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
                 self.transition_duration,
             );
 
-            commands.child(self.current_page, context, child);
+            commands.add_child(self.current_page, context, child);
         }
     }
 }

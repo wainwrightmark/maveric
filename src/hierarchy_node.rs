@@ -8,7 +8,7 @@ pub trait HierarchyNode: PartialEq + Send + Sync + 'static {
     fn update<'r>(
         &self,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl HierarchyCommands,
+        commands: &mut impl UpdateCommands,
     );
 
     fn on_undeleted<'r>(

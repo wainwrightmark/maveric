@@ -238,7 +238,7 @@ where
     fn update<'c>(
         &self,
         context: &<Self::Context as NodeContext>::Wrapper<'c>,
-        component_commands: &mut impl HierarchyCommands,
+        component_commands: &mut impl UpdateCommands,
     ) {
         self.node.update(context, component_commands);
 

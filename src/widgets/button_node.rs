@@ -33,7 +33,7 @@ impl<
     fn update<'b>(
         &self,
         context: &Res<AssetServer>,
-        commands: &mut impl HierarchyCommands,
+        commands: &mut impl UpdateCommands,
     ) {
         commands.insert(ButtonBundle {
             style: self.button_node_style.style.clone(),
@@ -43,7 +43,7 @@ impl<
         });
         commands.insert(self.marker.clone());
 
-        commands.child(
+        commands.add_child(
             0,
             context,
             TextNode {

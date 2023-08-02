@@ -80,7 +80,7 @@ pub struct RootPage(MenuState);
 impl HierarchyNode for Root {
     type Context = NC2<MenuState, AssetServer>;
 
-    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl HierarchyCommands) {
+    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl UpdateCommands) {
         commands.insert(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
@@ -95,20 +95,20 @@ impl HierarchyNode for Root {
 
         match context.0.as_ref() {
             MenuState::Closed => {
-                commands.child(
+                commands.add_child(
                     "open_icon",
                     &context.1,
                     icon_button_node(ButtonAction::OpenMenu),
                 );
             }
             MenuState::ShowMainMenu => {
-                commands.child("main_menu", context, MainMenu);
+                commands.add_child("main_menu", context, MainMenu);
             }
             MenuState::ShowLevelsPage(n) => {
                 let duration: Duration = Duration::from_secs_f32(2.0);
                 let carousel = Carousel::new(*n as u32, |x| Some(LevelMenu(x)), duration);
-                commands.child("levels", context, carousel);
-                // 
+                commands.add_child("levels", context, carousel);
+                //
 
                 // let initial_left = match commands.get::<RootPage>(){
                 //     Some(RootPage(MenuState::ShowLevelsPage(prev_page))) =>
@@ -147,12 +147,12 @@ impl HierarchyNode for Root {
                 //     // )
                 //     ;
 
-                // commands.child(*n as u32, context, child_node);
+                // commands.add_child(*n as u32, context, child_node);
             }
         }
     }
 
-    
+
 }
 
 
@@ -198,7 +198,7 @@ pub struct MainMenu;
 impl HierarchyNode for MainMenu {
     type Context = NC2<MenuState, AssetServer>;
 
-    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl HierarchyCommands) {
+    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl UpdateCommands) {
         commands.insert(NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
@@ -215,11 +215,11 @@ impl HierarchyNode for MainMenu {
         });
 
         for (key, action) in ButtonAction::main_buttons().into_iter().enumerate() {
-            commands.child(key as u32, &context.1, text_button_node(*action))
+            commands.add_child(key as u32, &context.1, text_button_node(*action))
         }
     }
 
-    
+
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
@@ -228,7 +228,7 @@ pub struct LevelMenu(u32);
 impl HierarchyNode for LevelMenu {
     type Context = NC2<MenuState, AssetServer>;
 
-    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl HierarchyCommands) {
+    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl UpdateCommands) {
         commands.insert(NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
@@ -248,14 +248,14 @@ impl HierarchyNode for LevelMenu {
         let end = start + LEVELS_PER_PAGE;
 
         for (key, level) in (start..end).enumerate() {
-            commands.child(
+            commands.add_child(
                 key as u32,
                 &context.1,
                 text_button_node(ButtonAction::GotoLevel { level }),
             )
         }
 
-        commands.child("buttons", context, LevelMenuArrows);
+        commands.add_child("buttons", context, LevelMenuArrows);
     }
 
 
@@ -267,7 +267,7 @@ pub struct LevelMenuArrows;
 impl HierarchyNode for LevelMenuArrows {
     type Context = NC2<MenuState, AssetServer>;
 
-    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl HierarchyCommands) {
+    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl UpdateCommands) {
         commands.insert(NodeBundle {
             style: Style {
                 position_type: PositionType::Relative,
@@ -298,9 +298,9 @@ impl HierarchyNode for LevelMenuArrows {
 
         if let MenuState::ShowLevelsPage(page) = context.0.as_ref() {
             if *page == 0 {
-                commands.child("left", &context.1, icon_button_node(ButtonAction::OpenMenu))
+                commands.add_child("left", &context.1, icon_button_node(ButtonAction::OpenMenu))
             } else {
-                commands.child(
+                commands.add_child(
                     "left",
                     &context.1,
                     icon_button_node(ButtonAction::PreviousLevelsPage),
@@ -308,18 +308,18 @@ impl HierarchyNode for LevelMenuArrows {
             }
 
             if *page < 4 {
-                commands.child(
+                commands.add_child(
                     "right",
                     &context.1,
                     icon_button_node(ButtonAction::NextLevelsPage),
                 )
             } else {
-                commands.child("right", &context.1, icon_button_node(ButtonAction::None))
+                commands.add_child("right", &context.1, icon_button_node(ButtonAction::None))
             }
         }
     }
 
-    
+
 }
 
 pub const ICON_BUTTON_WIDTH: f32 = 65.;

@@ -118,7 +118,7 @@ pub struct CommandGrid;
 impl HierarchyNode for CommandGrid {
     type Context = AssetServer;
 
-    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl HierarchyCommands) {
+    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl UpdateCommands) {
         commands.insert(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
@@ -141,7 +141,7 @@ impl HierarchyNode for CommandGrid {
                 marker: command,
             };
 
-            commands.child(key, context, node);
+            commands.add_child(key, context, node);
         }
     }
 
@@ -169,7 +169,7 @@ impl DeletionPathMaker<StyleLeftLens> for MenuSlideDeletionPathMaker {
 impl HierarchyNode for DynamicGrid {
     type Context = NC2<UIState, AssetServer>;
 
-    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl HierarchyCommands) {
+    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl UpdateCommands) {
         commands.insert(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
@@ -198,7 +198,7 @@ impl HierarchyNode for DynamicGrid {
                 Duration::from_secs_f32(2.0),
             );
 
-            commands.child(number, &context.1, node);
+            commands.add_child(number, &context.1, node);
         }
     }
 
@@ -207,7 +207,7 @@ impl HierarchyNode for DynamicGrid {
 impl HierarchyNode for Root {
     type Context = NC2<UIState, AssetServer>;
 
-    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl HierarchyCommands) {
+    fn update<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl UpdateCommands) {
         commands.insert(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
@@ -220,8 +220,8 @@ impl HierarchyNode for Root {
             ..default()
         });
 
-        commands.child(0, &context.1, CommandGrid);
-        commands.child(1, context, DynamicGrid);
+        commands.add_child(0, &context.1, CommandGrid);
+        commands.add_child(1, context, DynamicGrid);
     }
 
 }
