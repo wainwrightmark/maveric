@@ -45,7 +45,7 @@ where
     fn get_step(&self, previous: &<L as Lens>::Value) -> Option<TransitionStep<L>> {
         let out_speed = calculate_speed(previous, &self.destination, self.duration);
 
-        Some(TransitionStep::new(self.destination.clone(), out_speed, None).into())
+        Some(TransitionStep::new(self.destination.clone(), Some(out_speed), None).into())
     }
 }
 
@@ -94,11 +94,11 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
         L::Object: Clone + PartialEq + Component,
     {
         let in_speed = calculate_speed(&initial, &destination, duration);
-        let real_step = TransitionStep::new(destination, in_speed, None);
+        let real_step = TransitionStep::new(destination, Some(in_speed), None);
 
         let first_step = TransitionStep::<L>::new(
             initial,
-            <<L::Value as Tweenable>::Speed as Speed>::INFINITE,
+            None,
             Some(Box::new(real_step)),
         );
 
@@ -118,11 +118,11 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
         L::Object: Clone + PartialEq + Component,
     {
         let in_speed = calculate_speed(&initial, &destination, in_duration);
-        let real_step = TransitionStep::new(destination, in_speed, None);
+        let real_step = TransitionStep::new(destination, Some(in_speed), None);
 
         let first_step = TransitionStep::<L>::new(
             initial,
-            <<L::Value as Tweenable>::Speed as Speed>::INFINITE,
+            None,
             Some(Box::new(real_step)),
         );
 
@@ -151,7 +151,7 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
 
 impl<N: HierarchyNode> CanHaveTransition for N {}
 
-/// This required the animation plugin
+/// This requires the animation plugin
 
 pub struct WithTransition<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>>
 where
@@ -296,3 +296,8 @@ where
         self.node == other.node && self.step == other.step && self.deletion == other.deletion
     }
 }
+
+
+// impl<NP : HasChild<NC>, NC : HierarchyNode, L : Lens, P : DeletionPathMaker<L>> HasChild<WithTransition<NC, L, P>> for NP{
+
+// }

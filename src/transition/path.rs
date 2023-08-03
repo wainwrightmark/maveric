@@ -11,7 +11,7 @@ where
     L::Value: Tweenable,
 {
     pub destination: L::Value,
-    pub speed: <L::Value as Tweenable>::Speed,
+    pub speed: Option<<L::Value as Tweenable>::Speed>,
     phantom: PhantomData<L>,
     pub next: Option<Box<Self>>,
 }
@@ -25,13 +25,15 @@ where
         let mut current_value: &L::Value = start;
         let mut current_step = self;
 
-        'l: loop{
-            let step_duration = current_value.duration_to(&current_step.destination, &current_step.speed)?;
+        'l: loop {
+            if let Some(speed) = current_step.speed {
+                let step_duration = current_value.duration_to(&current_step.destination, &speed)?;
 
-            total += step_duration;
-            current_value = &current_step.destination;
+                total += step_duration;
+                current_value = &current_step.destination;
+            }
 
-            match &current_step.next{
+            match &current_step.next {
                 Some(x) => current_step = x.as_ref(),
                 None => break 'l,
             }
@@ -68,7 +70,11 @@ impl<L: Lens> TransitionStep<L>
 where
     L::Value: Tweenable,
 {
-    pub fn new(destination: L::Value, speed: <L::Value as Tweenable>::Speed, next: Option<Box<Self>>) -> Self {
+    pub fn new(
+        destination: L::Value,
+        speed: Option<<L::Value as Tweenable>::Speed>,
+        next: Option<Box<Self>>,
+    ) -> Self {
         Self {
             destination,
             speed,
@@ -90,5 +96,19 @@ impl<L: Lens> TransitionPathComponent<L>
 where
     L::Value: Tweenable,
 {
+    pub fn try_go_to_next_step(&mut self)-> bool{
+        let mut empty: Option<Box<TransitionStep<L>>> = None;
+        let c_s  = &mut self.step.next;
+        std::mem::swap(&mut empty, c_s);
 
+        if let Some(next) = empty{
+            self.step = *next;
+            true
+        }
+        else{
+            false
+        }
+    }
 }
+
+impl<L: Lens> TransitionPathComponent<L> where L::Value: Tweenable {}

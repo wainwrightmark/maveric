@@ -115,12 +115,14 @@ impl_hierarchy_root!(Root);
 #[derive(Eq, PartialEq, Debug, Default)]
 pub struct CommandGrid;
 
-impl HierarchyNode for CommandGrid {
+impl NodeBase for CommandGrid {
     type Context = AssetServer;
+}
 
+impl ComponentsAspect for CommandGrid {
     fn set_components<'r>(
         &self,
-        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ComponentCommands,
         event: SetComponentsEvent,
     ) {
@@ -138,23 +140,33 @@ impl HierarchyNode for CommandGrid {
             });
         }
     }
+}
 
+impl HasChild<ButtonNode<Command>> for CommandGrid{
+    fn convert_context<'a, 'r>(
+        context: &'a <Self::Context as NodeContext>::Wrapper<'r>,
+    ) -> &'a <<ButtonNode<Command> as NodeBase>::Context as NodeContext>::Wrapper<'r> {
+        context
+    }
+}
+
+impl ChildrenAspect for CommandGrid {
     fn set_children<'r>(
         &self,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands,
+        commands: &mut impl ChildCommands<Self>,
     ) {
         for command in [Command::AddNew, Command::Reset] {
             let key: &'static str = command.into();
 
             let node = ButtonNode {
-                value: command.to_string(),
+                text: command.to_string(),
                 text_node_style: TEXT_NODE_STYLE.clone(),
                 button_node_style: BUTTON_NODE_STYLE.clone(),
                 marker: command,
             };
 
-            commands.add_child(key, context, node);
+            commands.add_child(key, node);
         }
     }
 }
@@ -162,53 +174,39 @@ impl HierarchyNode for CommandGrid {
 #[derive(Eq, PartialEq, Debug, Default)]
 pub struct DynamicGrid;
 
-#[derive(Debug, PartialEq, Clone)]
-pub struct MenuSlideDeletionPathMaker {
-    page: u8,
+impl NodeBase for DynamicGrid {
+    type Context = NC2<UIState, AssetServer>;
 }
 
-// impl DeletionPathMaker<StyleLeftLens> for MenuSlideDeletionPathMaker {
-//     fn get_path(
-//         &self,
-//         previous: &<StyleLeftLens as Lens>::Value,
-//         sibling_keys: &bevy::utils::HashSet<ChildKey>,
-//     ) -> Option<TransitionPath<StyleLeftLens>> {
-//         todo!()
-//     }
-// }
-
-impl HierarchyNode for DynamicGrid {
-    type Context = NC2<UIState, AssetServer>;
-
-    fn set_components<'r>(
-        &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
-        event: SetComponentsEvent,
-    ) {
-        if event == SetComponentsEvent::Created {
-            commands.insert(NodeBundle {
-                style: Style {
-                    width: Val::Percent(100.0),
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    display: Display::Flex,
-                    flex_direction: FlexDirection::Row,
-                    ..default()
-                },
-                ..default()
-            });
-        }
+impl
+    HasChild<
+        WithTransition<
+            ButtonNode<DynamicButtonComponent>,
+            (TransformRotationLens, TransformScaleLens),
+            DurationDeletionPathMaker<(TransformRotationLens, TransformScaleLens)>,
+        >,
+    > for DynamicGrid
+{
+    fn convert_context<'a, 'r>(
+        context: &'a <Self::Context as NodeContext>::Wrapper<'r>,
+    ) -> &'a <<WithTransition<
+        ButtonNode<DynamicButtonComponent>,
+        (TransformRotationLens, TransformScaleLens),
+        DurationDeletionPathMaker<(TransformRotationLens, TransformScaleLens)>,
+    > as NodeBase>::Context as NodeContext>::Wrapper<'r> {
+        &context.1
     }
+}
 
+impl ChildrenAspect for DynamicGrid {
     fn set_children<'r>(
         &self,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands,
+        commands: &mut impl ChildCommands<Self>,
     ) {
         for number in context.0.dynamic_buttons.iter().cloned() {
             let node = ButtonNode {
-                value: number.to_string(),
+                text: number.to_string(),
                 text_node_style: TEXT_NODE_STYLE.clone(),
                 button_node_style: BUTTON_NODE_STYLE.clone(),
                 marker: DynamicButtonComponent(number),
@@ -222,17 +220,15 @@ impl HierarchyNode for DynamicGrid {
                 Duration::from_secs_f32(2.0),
             );
 
-            commands.add_child(number, &context.1, node);
+            commands.add_child(number, node);
         }
     }
 }
 
-impl HierarchyNode for Root {
-    type Context = NC2<UIState, AssetServer>;
-
+impl ComponentsAspect for DynamicGrid {
     fn set_components<'r>(
         &self,
-        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ComponentCommands,
         event: SetComponentsEvent,
     ) {
@@ -243,21 +239,43 @@ impl HierarchyNode for Root {
                     align_items: AlignItems::Center,
                     justify_content: JustifyContent::Center,
                     display: Display::Flex,
-                    flex_direction: FlexDirection::Column,
+                    flex_direction: FlexDirection::Row,
                     ..default()
                 },
                 ..default()
             });
         }
     }
+}
 
+impl NodeBase for Root {
+    type Context = NC2<UIState, AssetServer>;
+}
+
+impl HasChild<CommandGrid> for Root {
+    fn convert_context<'a, 'r>(
+        context: &'a <Self::Context as NodeContext>::Wrapper<'r>,
+    ) -> &'a <<CommandGrid as NodeBase>::Context as NodeContext>::Wrapper<'r> {
+        &context.1
+    }
+}
+
+impl HasChild<DynamicGrid> for Root {
+    fn convert_context<'a, 'r>(
+        context: &'a <Self::Context as NodeContext>::Wrapper<'r>,
+    ) -> &'a <<DynamicGrid as NodeBase>::Context as NodeContext>::Wrapper<'r> {
+        &context
+    }
+}
+
+impl ChildrenAspect for Root {
     fn set_children<'r>(
         &self,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands,
+        commands: &mut impl ChildCommands<Self>,
     ) {
-        commands.add_child(0, &context.1, CommandGrid);
-        commands.add_child(1, context, DynamicGrid);
+        commands.add_child(0, CommandGrid);
+        commands.add_child(1, DynamicGrid);
     }
 }
 

@@ -17,6 +17,39 @@ pub trait HasChild<NChild: HierarchyNode>: ChildrenAspect {
     const DELETER: &'static dyn ChildDeleter<Self> = &NodeDeleter::<Self, NChild>::new();
 }
 
+#[macro_export]
+macro_rules! impl_has_child {
+    ($NParent:ty, $NChild: ty, $context: ident, $from_context:expr  ) => {
+        impl HasChild<$NChild> for $NParent {
+            fn convert_context<'a, 'r>(
+                $context: &'a <Self::Context as NodeContext>::Wrapper<'r>,
+            ) -> &'a <<$NChild as NodeBase>::Context as NodeContext>::Wrapper<'r> {
+                $from_context
+            }
+        }
+    };
+}
+
+// impl<NParent: ChildrenAspect, NChild: HierarchyNode + NodeBase<Context = NoContext>>
+//     HasChild<NChild> for NParent
+// {
+//     fn convert_context<'a, 'r>(
+//         context: &'a <Self::Context as NodeContext>::Wrapper<'r>,
+//     ) -> &'a <<NChild as NodeBase>::Context as NodeContext>::Wrapper<'r> {
+//         &()
+//     }
+// }
+
+// impl<Context: NodeContext, NParent: ChildrenAspect + NodeBase<Context = Context>, NChild: HierarchyNode + NodeBase<Context = Context>>
+//     HasChild<NChild> for NParent
+// {
+//     fn convert_context<'a, 'r>(
+//         context: &'a <Self::Context as NodeContext>::Wrapper<'r>,
+//     ) -> &'a <<NChild as NodeBase>::Context as NodeContext>::Wrapper<'r> {
+//         context
+//     }
+// }
+
 pub trait NodeBase: PartialEq + Sized + Send + Sync + 'static {
     type Context: NodeContext;
 }
@@ -97,7 +130,6 @@ impl<N: ComponentsAspect> HasComponentsAspect for N {
 }
 
 impl<N: HasChildrenAspect + HasComponentsAspect> HierarchyNode for N {}
-
 
 #[derive(Debug)]
 struct NodeDeleter<NParent: ChildrenAspect + HasChild<NChild>, NChild: HierarchyNode> {

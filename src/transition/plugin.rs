@@ -46,27 +46,32 @@ fn step_transition<L: Lens + GetValueLens + SetValueLens>(
     for (entity, mut tp, mut t) in query.iter_mut() {
         let component = t.as_mut();
 
+        let speed = {
+            loop {
+                if let Some(speed) = tp.step.speed {
+                    break speed;
+                } else {
+                    <L as SetValueLens>::set(component, tp.step.destination.clone());
+                    if !tp.try_go_to_next_step() {
+                        commands
+                            .entity(entity)
+                            .remove::<TransitionPathComponent<L>>();
+                        return;
+                    }
+                }
+            }
+        };
+
         let from = L::get_value(&component);
 
-        let new_value = Tweenable::transition_towards(
-            &from,
-            &tp.step.destination,
-            &tp.step.speed,
-            &delta_seconds,
-        );
+        let new_value =
+            Tweenable::transition_towards(&from, &tp.step.destination, &speed, &delta_seconds);
 
         if tp.step.destination.approx_eq(&new_value) {
-
-            if tp.step.next.is_some(){
-                let mut empty: Option<Box<TransitionStep<L>>> = None;
-                let component = tp.as_mut();
-                let c_s  = &mut component.step.next;
-                std::mem::swap(&mut empty, c_s);
-                let next = empty.unwrap();
-                component.step = *next;
-            }
-            else{
-                commands.entity(entity).remove::<TransitionPathComponent<L>>();
+            if !tp.try_go_to_next_step() {
+                commands
+                    .entity(entity)
+                    .remove::<TransitionPathComponent<L>>();
             }
         }
 
