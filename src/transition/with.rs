@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::time::Duration;
 
 use bevy::prelude::*;
@@ -13,7 +14,7 @@ where
     L::Value: Tweenable,
     L::Object: Clone + PartialEq + Component,
 {
-    fn get_step(&self, previous: &L::Value) -> Option<TransitionStep<L>>;
+    fn get_step(&self, previous: &L::Value) -> Option<Arc<TransitionStep<L>>>;
 }
 
 #[derive(Debug, Clone)]
@@ -41,7 +42,7 @@ where
     L::Value: Tweenable,
     L::Object: Clone + PartialEq + Component,
 {
-    fn get_step(&self, previous: &<L as Lens>::Value) -> Option<TransitionStep<L>> {
+    fn get_step(&self, previous: &<L as Lens>::Value) -> Option<Arc<TransitionStep<L>>> {
         let out_speed = calculate_speed(previous, &self.destination, self.duration);
 
         Some(TransitionStep::new(self.destination.clone(), Some(out_speed), None).into())
@@ -66,7 +67,7 @@ where
     L::Value: Tweenable,
     L::Object: Clone + PartialEq + Component,
 {
-    fn get_step(&self, previous: &<L as Lens>::Value) -> Option<TransitionStep<L>> {
+    fn get_step(&self, previous: &<L as Lens>::Value) -> Option<Arc<TransitionStep<L>>> {
         None
     }
 }
@@ -76,8 +77,8 @@ where
     L::Value: Tweenable,
     L::Object: Clone + PartialEq + Component,
 {
-    fn get_step(&self, previous: &<L as Lens>::Value) -> Option<TransitionStep<L>> {
-        Some(self.clone())
+    fn get_step(&self, previous: &<L as Lens>::Value) -> Option<Arc<TransitionStep<L>>> {
+        Some(Arc::new(self.clone()))
     }
 }
 
@@ -98,10 +99,10 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
         let first_step = TransitionStep::<L>::new(
             initial,
             None,
-            Some(Box::new(real_step)),
+            Some(Arc::new(real_step)),
         );
 
-        self.with_transition(first_step, ())
+        self.with_transition(Arc::new(first_step), ())
     }
 
     fn with_transition_in_out<L: Lens + GetValueLens>(
@@ -122,18 +123,18 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
         let first_step = TransitionStep::<L>::new(
             initial,
             None,
-            Some(Box::new(real_step)),
+            Some(Arc::new(real_step)),
         );
 
         self.with_transition(
-            first_step,
+            Arc::new(first_step),
             DurationDeletionPathMaker::new(out_duration, out_destination),
         )
     }
 
     fn with_transition<L: Lens + GetValueLens, P: DeletionPathMaker<L>>(
         self,
-        step: TransitionStep<L>,
+        step: Arc<TransitionStep<L>>,
         deletion: P,
     ) -> WithTransition<Self, L, P>
     where
@@ -158,7 +159,7 @@ where
     L::Object: Clone + PartialEq + Component,
 {
     pub node: N,
-    pub step: TransitionStep<L>,
+    pub step: Arc<TransitionStep<L>>,
     pub deletion: P,
 }
 
@@ -226,13 +227,13 @@ where
             }
             SetComponentsEvent::Undeleted => {
 
-                let mut step: TransitionStep<L> = match &self.step.next{
-                    Some(s) => (**s).clone(),
+                let mut step: Arc<TransitionStep<L>> = match &self.step.next{
+                    Some(s) => s.clone(),
                     None => self.step.clone(),
                 };
 
                 if let Some(existing_value) = commands.get::<L::Object>(){
-                    step = TransitionStep::<L>::new(L::get_value(existing_value), None, Some(Box::new(step)));
+                    step = Arc::new(TransitionStep::<L>::new(L::get_value(existing_value), None, Some(step)));
                 }
 
                 commands.insert(TransitionPathComponent {
@@ -269,7 +270,7 @@ where
         };
 
         commands.insert(TransitionPathComponent {
-            step: deletion_path.clone(),
+            step: deletion_path,
         });
 
         DeletionPolicy::Linger(duration)

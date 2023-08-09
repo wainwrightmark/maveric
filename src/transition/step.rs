@@ -2,7 +2,7 @@ use crate::transition::prelude::*;
 use bevy::prelude::*;
 use std::{
     marker::PhantomData,
-    time::{Duration, TryFromFloatSecsError},
+    time::{Duration, TryFromFloatSecsError}, sync::Arc,
 };
 
 #[derive(Clone)]
@@ -13,7 +13,7 @@ where
     pub destination: L::Value,
     pub speed: Option<<L::Value as Tweenable>::Speed>,
     phantom: PhantomData<L>,
-    pub next: Option<Box<Self>>,
+    pub next: Option<Arc<Self>>,
 }
 
 impl<L: Lens> TransitionStep<L>
@@ -73,7 +73,7 @@ where
     pub fn new(
         destination: L::Value,
         speed: Option<<L::Value as Tweenable>::Speed>,
-        next: Option<Box<Self>>,
+        next: Option<Arc<Self>>,
     ) -> Self {
         Self {
             destination,
@@ -89,7 +89,7 @@ pub(crate) struct TransitionPathComponent<L: Lens>
 where
     L::Value: Tweenable,
 {
-    pub step: TransitionStep<L>,
+    pub step: Arc<TransitionStep<L>>,
 }
 
 impl<L: Lens> TransitionPathComponent<L>
@@ -97,12 +97,8 @@ where
     L::Value: Tweenable,
 {
     pub fn try_go_to_next_step(&mut self)-> bool{
-        let mut empty: Option<Box<TransitionStep<L>>> = None;
-        let c_s  = &mut self.step.next;
-        std::mem::swap(&mut empty, c_s);
-
-        if let Some(next) = empty{
-            self.step = *next;
+        if let Some(next) = &self.step.next{
+            self.step = next.clone();
             true
         }
         else{
