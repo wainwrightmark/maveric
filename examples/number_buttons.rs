@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use lazy_static::lazy_static;
 use state_hierarchy::transition::prelude::*;
-use state_hierarchy::{impl_hierarchy_root, prelude::*};
+use state_hierarchy::{impl_hierarchy_root, impl_static_components, prelude::*};
 use std::f32::consts;
 use std::time::Duration;
 use std::{string::ToString, sync::Arc};
@@ -119,28 +119,20 @@ impl HasContext for CommandGrid {
     type Context = AssetServer;
 }
 
-impl ComponentsAspect for CommandGrid {
-    fn set_components<'r>(
-        &self,
-        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
-        event: SetComponentsEvent,
-    ) {
-        if event == SetComponentsEvent::Created {
-            commands.insert(NodeBundle {
-                style: Style {
-                    width: Val::Percent(100.0),
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    display: Display::Flex,
-                    flex_direction: FlexDirection::Row,
-                    ..default()
-                },
-                ..default()
-            });
-        }
+impl_static_components!(
+    CommandGrid,
+    NodeBundle {
+        style: Style {
+            width: Val::Percent(100.0),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            display: Display::Flex,
+            flex_direction: FlexDirection::Row,
+            ..default()
+        },
+        ..default()
     }
-}
+);
 
 impl ChildrenAspect for CommandGrid {
     fn set_children<'r>(
@@ -197,28 +189,20 @@ impl ChildrenAspect for DynamicGrid {
     }
 }
 
-impl ComponentsAspect for DynamicGrid {
-    fn set_components<'r>(
-        &self,
-        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
-        event: SetComponentsEvent,
-    ) {
-        if event == SetComponentsEvent::Created {
-            commands.insert(NodeBundle {
-                style: Style {
-                    width: Val::Percent(100.0),
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    display: Display::Flex,
-                    flex_direction: FlexDirection::Row,
-                    ..default()
-                },
-                ..default()
-            });
-        }
+impl_static_components!(
+    DynamicGrid,
+    NodeBundle {
+        style: Style {
+            width: Val::Percent(100.0),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            display: Display::Flex,
+            flex_direction: FlexDirection::Row,
+            ..default()
+        },
+        ..default()
     }
-}
+);
 
 impl HasContext for Root {
     type Context = NC2<UIState, AssetServer>;

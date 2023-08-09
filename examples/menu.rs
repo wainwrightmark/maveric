@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use lazy_static::lazy_static;
 use state_hierarchy::transition::prelude::*;
-use state_hierarchy::{impl_hierarchy_root, prelude::*};
+use state_hierarchy::{impl_hierarchy_root, impl_static_components, prelude::*};
 
 use std::time::Duration;
 use std::{string::ToString, sync::Arc};
@@ -79,8 +79,6 @@ impl HasContext for Root {
     type Context = NC2<MenuState, AssetServer>;
 }
 
-
-
 impl ChildrenAspect for Root {
     fn set_children<'r>(
         &self,
@@ -89,11 +87,10 @@ impl ChildrenAspect for Root {
     ) {
         let transition_duration: Duration = Duration::from_secs_f32(0.5);
 
-        fn get_carousel_child(page: u32)-> Option<Either<MainMenu, LevelMenu>>{
-            Some( if let Some(page) = page.checked_sub(1){
+        fn get_carousel_child(page: u32) -> Option<Either<MainMenu, LevelMenu>> {
+            Some(if let Some(page) = page.checked_sub(1) {
                 Either::Case1(LevelMenu(page))
-            }
-            else{
+            } else {
                 Either::Case0(MainMenu)
             })
         }
@@ -111,7 +108,6 @@ impl ChildrenAspect for Root {
                 commands.add_child("carousel", carousel, context);
             }
             MenuState::ShowLevelsPage(n) => {
-
                 let carousel = Carousel::new(n + 1 as u32, get_carousel_child, transition_duration);
                 commands.add_child("carousel", carousel, context);
             }
@@ -143,31 +139,23 @@ impl HasContext for MainMenu {
     type Context = NC2<MenuState, AssetServer>;
 }
 
-impl ComponentsAspect for MainMenu {
-    fn set_components<'r>(
-        &self,
-        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
-        event: SetComponentsEvent,
-    ) {
-        if event == SetComponentsEvent::Created {
-            commands.insert(NodeBundle {
-                style: Style {
-                    position_type: PositionType::Absolute,
-                    left: Val::Percent(50.0),  // Val::Px(MENU_OFFSET),
-                    right: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
-                    top: Val::Px(MENU_OFFSET),
-                    display: Display::Flex,
-                    flex_direction: FlexDirection::Column,
+impl_static_components!(
+    MainMenu,
+    NodeBundle {
+        style: Style {
+            position_type: PositionType::Absolute,
+            left: Val::Percent(50.0),  // Val::Px(MENU_OFFSET),
+            right: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
+            top: Val::Px(MENU_OFFSET),
+            display: Display::Flex,
+            flex_direction: FlexDirection::Column,
 
-                    ..Default::default()
-                },
-                z_index: ZIndex::Global(10),
-                ..Default::default()
-            });
-        }
+            ..Default::default()
+        },
+        z_index: ZIndex::Global(10),
+        ..Default::default()
     }
-}
+);
 
 impl ChildrenAspect for MainMenu {
     fn set_children<'r>(
@@ -188,31 +176,23 @@ impl HasContext for LevelMenu {
     type Context = NC2<MenuState, AssetServer>;
 }
 
-impl ComponentsAspect for LevelMenu {
-    fn set_components<'r>(
-        &self,
-        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
-        event: SetComponentsEvent,
-    ) {
-        if event == SetComponentsEvent::Created {
-            commands.insert(NodeBundle {
-                style: Style {
-                    position_type: PositionType::Absolute,
-                    left: Val::Percent(50.0),  // Val::Px(MENU_OFFSET),
-                    right: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
-                    top: Val::Px(MENU_OFFSET),
-                    display: Display::Flex,
-                    flex_direction: FlexDirection::Column,
+impl_static_components!(
+    LevelMenu,
+    NodeBundle {
+        style: Style {
+            position_type: PositionType::Absolute,
+            left: Val::Percent(50.0),  // Val::Px(MENU_OFFSET),
+            right: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
+            top: Val::Px(MENU_OFFSET),
+            display: Display::Flex,
+            flex_direction: FlexDirection::Column,
 
-                    ..Default::default()
-                },
-                z_index: ZIndex::Global(10),
-                ..Default::default()
-            });
-        }
+            ..Default::default()
+        },
+        z_index: ZIndex::Global(10),
+        ..Default::default()
     }
-}
+);
 
 impl ChildrenAspect for LevelMenu {
     fn set_children<'r>(
@@ -242,44 +222,38 @@ impl HasContext for LevelMenuArrows {
     type Context = AssetServer;
 }
 
-impl ComponentsAspect for LevelMenuArrows {
-    fn set_components<'r>(
-        &self,
-        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
-        event: SetComponentsEvent,
-    ) {
-        if event == SetComponentsEvent::Created {
-            commands.insert(NodeBundle {
-                style: Style {
-                    position_type: PositionType::Relative,
-                    left: Val::Percent(0.0),
-                    display: Display::Flex,
-                    flex_direction: FlexDirection::Row,
+impl_static_components!(
+    LevelMenuArrows,
+    NodeBundle {
+        style: Style {
+            position_type: PositionType::Relative,
+            left: Val::Percent(0.0),
+            display: Display::Flex,
+            flex_direction: FlexDirection::Row,
 
-                    width: Val::Px(TEXT_BUTTON_WIDTH),
-                    height: Val::Px(TEXT_BUTTON_HEIGHT),
-                    margin: UiRect {
-                        left: Val::Auto,
-                        right: Val::Auto,
-                        top: Val::Px(5.0),
-                        bottom: Val::Px(5.0),
-                    },
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    flex_grow: 0.0,
-                    flex_shrink: 0.0,
-                    border: UiRect::all(UI_BORDER_WIDTH),
+            width: Val::Px(TEXT_BUTTON_WIDTH),
+            height: Val::Px(TEXT_BUTTON_HEIGHT),
+            margin: UiRect {
+                left: Val::Auto,
+                right: Val::Auto,
+                top: Val::Px(5.0),
+                bottom: Val::Px(5.0),
+            },
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            flex_grow: 0.0,
+            flex_shrink: 0.0,
+            border: UiRect::all(UI_BORDER_WIDTH),
 
-                    ..Default::default()
-                },
-                background_color: BackgroundColor(TEXT_BUTTON_BACKGROUND),
-                border_color: BorderColor(BUTTON_BORDER),
-                ..Default::default()
-            });
-        }
+            ..Default::default()
+        },
+        background_color: BackgroundColor(TEXT_BUTTON_BACKGROUND),
+        border_color: BorderColor(BUTTON_BORDER),
+        ..Default::default()
     }
-}
+);
+
+
 
 impl ChildrenAspect for LevelMenuArrows {
     fn set_children<'r>(

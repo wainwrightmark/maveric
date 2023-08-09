@@ -1,5 +1,4 @@
 use std::{marker::PhantomData, time::Duration};
-
 use crate::prelude::*;
 
 pub struct Carousel<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> {
@@ -80,8 +79,17 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
         let left_speed =
             crate::transition::speed::calculate_speed(&FAR_LEFT, &CENTER, self.transition_duration);
 
-        let scale_speed =
-            crate::transition::speed::calculate_speed(&Vec3::ZERO, &Vec3::ONE, self.transition_duration) ;
+        const ZERO_VEC: Vec3 = Vec3 {
+            x: 1.0,
+            y: 0.0,
+            z: 1.0,
+        };
+
+        let scale_speed = crate::transition::speed::calculate_speed(
+            &ZERO_VEC,
+            &Vec3::ONE,
+            self.transition_duration,
+        );
 
         let children = [
             (Position::Prev, FAR_LEFT),
@@ -100,7 +108,11 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
 
             let Some(child) = (self.get_child)(index) else {continue;};
 
-            let current_scale = if position == Position::Current {Vec3::ONE} else{ Vec3::ZERO};
+            let current_scale = if position == Position::Current {
+                Vec3::ONE
+            } else {
+                ZERO_VEC
+            };
 
             let child = child
                 .with_transition::<StyleLeftLens, ()>(
