@@ -9,7 +9,6 @@ pub mod hierarchy_root;
 pub mod node_context;
 pub mod transition;
 pub mod widgets;
-pub mod either;
 
 pub mod concrete_component_commands;
 pub mod creation_commands;
@@ -28,7 +27,6 @@ pub mod prelude {
     pub use crate::desired_transform::*;
     pub use crate::hierarchy_node::*;
     pub use crate::hierarchy_root::*;
-    pub use crate::either::*;
     pub use crate::node_context::*;
     pub use crate::transition::prelude::*;
     pub use crate::widgets::prelude::*;
