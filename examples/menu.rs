@@ -79,12 +79,25 @@ impl HasContext for Root {
     type Context = NC2<MenuState, AssetServer>;
 }
 
+
+
 impl ChildrenAspect for Root {
     fn set_children<'r>(
         &self,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ChildCommands,
     ) {
+        let transition_duration: Duration = Duration::from_secs_f32(0.5);
+
+        fn get_carousel_child(page: u32)-> Option<Either<MainMenu, LevelMenu>>{
+            Some( if let Some(page) = page.checked_sub(1){
+                Either::Case1(LevelMenu(page))
+            }
+            else{
+                Either::Case0(MainMenu)
+            })
+        }
+
         match context.0.as_ref() {
             MenuState::Closed => {
                 commands.add_child(
@@ -94,12 +107,13 @@ impl ChildrenAspect for Root {
                 );
             }
             MenuState::ShowMainMenu => {
-                commands.add_child("main_menu", MainMenu, context);
+                let carousel = Carousel::new(0, get_carousel_child, transition_duration);
+                commands.add_child("carousel", carousel, context);
             }
             MenuState::ShowLevelsPage(n) => {
-                let duration: Duration = Duration::from_secs_f32(2.0);
-                let carousel = Carousel::new(*n as u32, |x| Some(LevelMenu(x)), duration);
-                commands.add_child("levels", carousel, context);
+
+                let carousel = Carousel::new(n + 1 as u32, get_carousel_child, transition_duration);
+                commands.add_child("carousel", carousel, context);
             }
         }
     }
