@@ -1,43 +1,26 @@
 use std::{any::type_name, marker::PhantomData, rc::Rc};
 
 use crate::prelude::*;
-use bevy::{
-    ecs::system::EntityCommands,
-    prelude::*,
-    utils::hashbrown::HashMap,
-};
+use bevy::{ecs::system::EntityCommands, prelude::*, utils::hashbrown::HashMap};
 
-pub(crate) struct UnorderedChildCommands<
-    'w,
-    's,
-    'a,
-    'b,
-    'w1,
-    'd,
-    'r,
-    R: HierarchyRoot,
-    NParent: ChildrenAspect,
-> {
+pub(crate) struct UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, R: HierarchyRoot> {
     ec: &'b mut EntityCommands<'w, 's, 'a>,
-    context: &'d <NParent::Context as NodeContext>::Wrapper<'r>,
 
     remaining_old_entities: HashMap<ChildKey, EntityRef<'w1>>,
     all_child_nodes: Rc<HashMap<Entity, (EntityRef<'w1>, HierarchyChildComponent<R>)>>,
     phantom: PhantomData<R>,
 }
 
-impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: ChildrenAspect>
-    ChildCommands<NParent>
-    for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'd, 'r, R, NParent>
+impl<'w, 's, 'a, 'b, 'w1, 'w_e, R: HierarchyRoot> ChildCommands
+    for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, R>
 {
     fn add_child<'c, NChild: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
         child: NChild,
-    ) where
-        NParent: HasChild<NChild>,
-    {
-        let child_context = <NParent as HasChild<NChild>>::convert_context(self.context);
+        context: &<NChild::Context as NodeContext>::Wrapper<'c>,
+    ) {
+        //let child_context = <NParent as HasChild<NChild>>::convert_context(self.context);
         //let context_changed = <NChild::Context as NodeContext>::has_changed(context);
         let key = key.into();
 
@@ -50,7 +33,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: ChildrenAspec
                         &mut self.ec.commands(),
                         entity_ref.clone(),
                         child,
-                        child_context,
+                        context,
                         self.all_child_nodes.clone(),
                     );
                 } else {
@@ -66,37 +49,24 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: ChildrenAspec
 
                     self.ec.with_children(|cb| {
                         let mut cec = cb.spawn_empty();
-                        create_recursive::<R, NParent, NChild>(
-                            &mut cec,
-                            child,
-                            &child_context,
-                            key,
-                        );
+                        create_recursive::<R, NChild>(&mut cec, child, &context, key);
                     });
                 }
             }
             None => {
                 self.ec.with_children(|cb| {
                     let mut cec = cb.spawn_empty();
-                    create_recursive::<R, NParent, NChild>(
-                        &mut cec,
-                        child,
-                        &child_context,
-                        key,
-                    );
+                    create_recursive::<R, NChild>(&mut cec, child, &context, key);
                 });
             }
         }
     }
 }
 
-impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: ChildrenAspect>
-    UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'd, 'r, R, NParent>
-{
+impl<'w, 's, 'a, 'b, 'w1, 'w_e, R: HierarchyRoot> UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, R> {
     pub(crate) fn new(
         ec: &'b mut EntityCommands<'w, 's, 'a>,
         children: Option<&Children>,
-        context: &'d <NParent::Context as NodeContext>::Wrapper<'r>,
         all_child_nodes: Rc<HashMap<Entity, (EntityRef<'w1>, HierarchyChildComponent<R>)>>,
     ) -> Self {
         //let tree = tree.clone();
@@ -118,7 +88,6 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: ChildrenAspec
                     remaining_old_entities,
                     all_child_nodes,
                     phantom: PhantomData,
-                    context,
                 }
             }
             None => Self {
@@ -126,7 +95,6 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: ChildrenAspec
                 remaining_old_entities: Default::default(),
                 all_child_nodes,
                 phantom: PhantomData,
-                context,
             },
         }
     }
@@ -136,9 +104,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, 'd, 'r, R: HierarchyRoot, NParent: ChildrenAspec
 
         //remove all remaining old entities
         for (_key, entity_ref) in self.remaining_old_entities {
-            delete_recursive::<NParent>(ec.commands(), entity_ref, self.context);
+            delete_recursive::<R>(ec.commands(), entity_ref);
         }
     }
 }
-
-

@@ -1,13 +1,7 @@
 use std::rc::Rc;
 
-use bevy::{
-    ecs::system:: StaticSystemParam,
-    prelude::*,
-    utils::hashbrown::HashMap,
-};
 use crate::prelude::*;
-
-
+use bevy::{ecs::system::StaticSystemParam, prelude::*, utils::hashbrown::HashMap};
 
 #[derive(Debug, Default)]
 pub struct StateTreePlugin;
@@ -54,12 +48,8 @@ fn sync_state<'a, R: HierarchyRoot>(
 
     let all_child_nodes = Rc::new(all_child_nodes);
 
-    let mut root_commands =
-        RootCommands::new(&mut commands, &context, all_child_nodes, root_query);
+    let mut root_commands = RootCommands::new(&mut commands, all_child_nodes, root_query);
 
-
-
-    R::set_children(&R::default(),&context, &mut root_commands);
+    R::set_children(&R::default(), &context, &mut root_commands);
     root_commands.finish();
 }
-

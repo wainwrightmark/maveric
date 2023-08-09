@@ -1,3 +1,1 @@
-pub struct DesiredTransform{
-    
-}
+pub struct DesiredTransform {}

@@ -1,15 +1,14 @@
 use crate::prelude::*;
-use bevy::{
-    prelude::*,
-    utils::{hashbrown::HashMap, HashSet},
-};
+use bevy::prelude::*;
 
-pub trait ChildCommands<NParent: ChildrenAspect> {
-    fn add_child<'c, NChild: HierarchyNode>(&mut self, key: impl Into<ChildKey>, child: NChild)
-    where
-        NParent: HasChild<NChild>;
+pub trait ChildCommands {
+    fn add_child<'c, NChild: HierarchyNode>(
+        &mut self,
+        key: impl Into<ChildKey>,
+        child: NChild,
+        context: &<NChild::Context as NodeContext>::Wrapper<'c>,
+    );
 }
-
 
 pub trait ComponentCommands {
     fn get<T: Component>(&self) -> Option<&T>;

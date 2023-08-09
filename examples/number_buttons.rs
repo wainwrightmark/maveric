@@ -142,19 +142,11 @@ impl ComponentsAspect for CommandGrid {
     }
 }
 
-impl HasChild<ButtonNode<Command>> for CommandGrid{
-    fn convert_context<'a, 'r>(
-        context: &'a <Self::Context as NodeContext>::Wrapper<'r>,
-    ) -> &'a <<ButtonNode<Command> as NodeBase>::Context as NodeContext>::Wrapper<'r> {
-        context
-    }
-}
-
 impl ChildrenAspect for CommandGrid {
     fn set_children<'r>(
         &self,
-        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands<Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ChildCommands,
     ) {
         for command in [Command::AddNew, Command::Reset] {
             let key: &'static str = command.into();
@@ -166,7 +158,7 @@ impl ChildrenAspect for CommandGrid {
                 marker: command,
             };
 
-            commands.add_child(key, node);
+            commands.add_child(key, node, context);
         }
     }
 }
@@ -178,31 +170,11 @@ impl NodeBase for DynamicGrid {
     type Context = NC2<UIState, AssetServer>;
 }
 
-impl
-    HasChild<
-        WithTransition<
-            ButtonNode<DynamicButtonComponent>,
-            (TransformRotationLens, TransformScaleLens),
-            DurationDeletionPathMaker<(TransformRotationLens, TransformScaleLens)>,
-        >,
-    > for DynamicGrid
-{
-    fn convert_context<'a, 'r>(
-        context: &'a <Self::Context as NodeContext>::Wrapper<'r>,
-    ) -> &'a <<WithTransition<
-        ButtonNode<DynamicButtonComponent>,
-        (TransformRotationLens, TransformScaleLens),
-        DurationDeletionPathMaker<(TransformRotationLens, TransformScaleLens)>,
-    > as NodeBase>::Context as NodeContext>::Wrapper<'r> {
-        &context.1
-    }
-}
-
 impl ChildrenAspect for DynamicGrid {
     fn set_children<'r>(
         &self,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands<Self>,
+        commands: &mut impl ChildCommands,
     ) {
         for number in context.0.dynamic_buttons.iter().cloned() {
             let node = ButtonNode {
@@ -220,7 +192,7 @@ impl ChildrenAspect for DynamicGrid {
                 Duration::from_secs_f32(2.0),
             );
 
-            commands.add_child(number, node);
+            commands.add_child(number, node, &context.1);
         }
     }
 }
@@ -252,30 +224,14 @@ impl NodeBase for Root {
     type Context = NC2<UIState, AssetServer>;
 }
 
-impl HasChild<CommandGrid> for Root {
-    fn convert_context<'a, 'r>(
-        context: &'a <Self::Context as NodeContext>::Wrapper<'r>,
-    ) -> &'a <<CommandGrid as NodeBase>::Context as NodeContext>::Wrapper<'r> {
-        &context.1
-    }
-}
-
-impl HasChild<DynamicGrid> for Root {
-    fn convert_context<'a, 'r>(
-        context: &'a <Self::Context as NodeContext>::Wrapper<'r>,
-    ) -> &'a <<DynamicGrid as NodeBase>::Context as NodeContext>::Wrapper<'r> {
-        &context
-    }
-}
-
 impl ChildrenAspect for Root {
     fn set_children<'r>(
         &self,
-        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands<Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ChildCommands,
     ) {
-        commands.add_child(0, CommandGrid);
-        commands.add_child(1, DynamicGrid);
+        commands.add_child(0, CommandGrid, &context.1);
+        commands.add_child(1, DynamicGrid, context);
     }
 }
 

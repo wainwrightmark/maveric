@@ -31,10 +31,9 @@ impl<N0: NodeContext, N1: NodeContext> NodeContext for NC2<N0, N1> {
 pub struct NoContext;
 
 impl NodeContext for NoContext {
-
     type Wrapper<'c> = ();
 
-    fn has_changed<'c>(wrapper: &Self::Wrapper<'c>) -> bool {
+    fn has_changed<'c>(_wrapper: &Self::Wrapper<'c>) -> bool {
         false
     }
 }

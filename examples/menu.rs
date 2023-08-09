@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 use lazy_static::lazy_static;
 use state_hierarchy::transition::prelude::*;
-use state_hierarchy::{impl_hierarchy_root, prelude::*, impl_has_child};
-use std::time::Duration;
+use state_hierarchy::{impl_hierarchy_root, prelude::*};
+
 use std::{string::ToString, sync::Arc};
 use strum::{Display, EnumIs};
 
@@ -78,23 +78,24 @@ impl NodeBase for Root {
     type Context = NC2<MenuState, AssetServer>;
 }
 
-impl_has_child!(Root, ButtonNode<ButtonAction>, context, &context.1);
-impl_has_child!(Root, MainMenu, context, &context);
-
 impl ChildrenAspect for Root {
     fn set_children<'r>(
         &self,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands<Self>,
+        commands: &mut impl ChildCommands,
     ) {
         match context.0.as_ref() {
             MenuState::Closed => {
-                commands.add_child("open_icon", icon_button_node(ButtonAction::OpenMenu));
+                commands.add_child(
+                    "open_icon",
+                    icon_button_node(ButtonAction::OpenMenu),
+                    &context.1,
+                );
             }
             MenuState::ShowMainMenu => {
-                commands.add_child("main_menu", MainMenu);
+                commands.add_child("main_menu", MainMenu, context);
             }
-            MenuState::ShowLevelsPage(n) => {
+            MenuState::ShowLevelsPage(_n) => {
                 panic!("No Carousel")
                 // let duration: Duration = Duration::from_secs_f32(2.0);
                 // let carousel = Carousel::new(*n as u32, |x| Some(LevelMenu(x)), duration);
@@ -103,41 +104,6 @@ impl ChildrenAspect for Root {
         }
     }
 }
-
-// #[derive(Component, Debug, Clone, Copy, Deref)]
-// pub struct RootPage(MenuState);
-
-// impl HierarchyNode for Root {
-//     type Context =
-
-//     fn set_components<'r>(
-//         &self,
-//         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-//         commands: &mut impl ComponentCommands,
-//         event: SetComponentsEvent,
-//     ) {
-//         commands.insert(NodeBundle {
-//             style: Style {
-//                 width: Val::Percent(100.0),
-//                 height: Val::Percent(100.0),
-//                 ..Default::default()
-//             },
-//             background_color: BACKGROUND_COLOR.into(),
-//             ..Default::default()
-//         });
-
-//         commands.insert(RootPage(context.0.clone()));
-//     }
-
-//     fn set_children<'r>(
-//         &self,
-//         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-//         commands: &mut impl ChildCommands,
-//     ) {
-
-//     }
-// }
-
 fn icon_button_node(button_action: ButtonAction) -> ButtonNode<ButtonAction> {
     ButtonNode {
         text: button_action.icon(),
@@ -163,12 +129,10 @@ impl NodeBase for MainMenu {
     type Context = NC2<MenuState, AssetServer>;
 }
 
-impl_has_child!(MainMenu, ButtonNode<ButtonAction>, c, &c.1);
-
 impl ComponentsAspect for MainMenu {
     fn set_components<'r>(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ComponentCommands,
         event: SetComponentsEvent,
     ) {
@@ -195,10 +159,10 @@ impl ChildrenAspect for MainMenu {
     fn set_children<'r>(
         &self,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands<Self>,
+        commands: &mut impl ChildCommands,
     ) {
         for (key, action) in ButtonAction::main_buttons().into_iter().enumerate() {
-            commands.add_child(key as u32, text_button_node(*action))
+            commands.add_child(key as u32, text_button_node(*action), &context.1)
         }
     }
 }
@@ -210,13 +174,10 @@ impl NodeBase for LevelMenu {
     type Context = NC2<MenuState, AssetServer>;
 }
 
-impl_has_child!(LevelMenu, ButtonNode<ButtonAction>, c, &c.1);
-impl_has_child!(LevelMenu, LevelMenuArrows, c, &c);
-
 impl ComponentsAspect for LevelMenu {
     fn set_components<'r>(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ComponentCommands,
         event: SetComponentsEvent,
     ) {
@@ -243,7 +204,7 @@ impl ChildrenAspect for LevelMenu {
     fn set_children<'r>(
         &self,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands<Self>,
+        commands: &mut impl ChildCommands,
     ) {
         let start = self.0 * LEVELS_PER_PAGE;
         let end = start + LEVELS_PER_PAGE;
@@ -252,17 +213,16 @@ impl ChildrenAspect for LevelMenu {
             commands.add_child(
                 key as u32,
                 text_button_node(ButtonAction::GotoLevel { level }),
+                &context.1,
             )
         }
 
-        commands.add_child("buttons", LevelMenuArrows);
+        commands.add_child("buttons", LevelMenuArrows, context);
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct LevelMenuArrows;
-
-impl_has_child!(LevelMenuArrows, ButtonNode<ButtonAction>, c, &c.1);
 
 impl NodeBase for LevelMenuArrows {
     type Context = NC2<MenuState, AssetServer>;
@@ -271,7 +231,7 @@ impl NodeBase for LevelMenuArrows {
 impl ComponentsAspect for LevelMenuArrows {
     fn set_components<'r>(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ComponentCommands,
         event: SetComponentsEvent,
     ) {
@@ -311,22 +271,27 @@ impl ChildrenAspect for LevelMenuArrows {
     fn set_children<'r>(
         &self,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands<Self>,
+        commands: &mut impl ChildCommands,
     ) {
         if let MenuState::ShowLevelsPage(page) = context.0.as_ref() {
             if *page == 0 {
-                commands.add_child("left", icon_button_node(ButtonAction::OpenMenu))
+                commands.add_child("left", icon_button_node(ButtonAction::OpenMenu), &context.1)
             } else {
-                commands.add_child("left", icon_button_node(ButtonAction::PreviousLevelsPage))
+                commands.add_child(
+                    "left",
+                    icon_button_node(ButtonAction::PreviousLevelsPage),
+                    &context.1,
+                )
             }
 
             if *page < 4 {
                 commands.add_child(
                     "right",
                     icon_button_node(ButtonAction::NextLevelsPage),
+                    &context.1,
                 )
             } else {
-                commands.add_child("right", icon_button_node(ButtonAction::None))
+                commands.add_child("right", icon_button_node(ButtonAction::None), &context.1)
             }
         }
     }

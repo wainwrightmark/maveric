@@ -41,11 +41,11 @@ impl ComponentsAspect for TextNode {
     }
 }
 
-impl HasChildrenAspect for TextNode{
+impl HasChildrenAspect for TextNode {
     type ChildrenAspect = ();
 
     fn children_context<'a, 'r>(
-        context: &'a <<Self as NodeBase>::Context as NodeContext>::Wrapper<'r>,
+        _context: &'a <<Self as NodeBase>::Context as NodeContext>::Wrapper<'r>,
     ) -> &'a <<Self::ChildrenAspect as NodeBase>::Context as NodeContext>::Wrapper<'r> {
         &()
     }

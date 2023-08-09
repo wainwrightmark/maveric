@@ -1,12 +1,12 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum ChildKey{
+pub enum ChildKey {
     Number(u32),
-    String(&'static str)
+    String(&'static str),
 }
 
 impl std::fmt::Display for ChildKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self{
+        match self {
             ChildKey::Number(u) => u.fmt(f),
             ChildKey::String(s) => s.fmt(f),
         }

@@ -4,7 +4,7 @@ pub use crate::prelude::*;
 pub use bevy::prelude::*;
 use bevy::{ecs::system::EntityCommands, utils::HashMap};
 
-pub(crate) fn create_recursive<'c, R: HierarchyRoot, P: HasChild<N>, N: HierarchyNode>(
+pub(crate) fn create_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     mut cec: &mut EntityCommands,
     node: N,
     context: &<<N as NodeBase>::Context as NodeContext>::Wrapper<'c>,
@@ -15,8 +15,7 @@ pub(crate) fn create_recursive<'c, R: HierarchyRoot, P: HasChild<N>, N: Hierarch
     let children_context = N::children_context(context);
     let component_context = N::components_context(context);
 
-    let mut child_commands =
-        CreationCommands::<R, N::ChildrenAspect>::new(&mut cec, children_context);
+    let mut child_commands = CreationCommands::<R>::new(&mut cec);
 
     let children_args = N::as_children_aspect(&node);
     let component_args = N::as_component_aspect(&node);
@@ -33,17 +32,16 @@ pub(crate) fn create_recursive<'c, R: HierarchyRoot, P: HasChild<N>, N: Hierarch
         &mut child_commands,
     );
 
-    let hnc = HierarchyNodeComponent::<N> { node };
+    let hnc = HierarchyNodeComponent::new(node);
     let hcc = HierarchyChildComponent::<R>::new::<N>(key.into());
-    let ac = ChildrenComponent::<P>::new::<N>();
 
-    cec.insert((hnc, hcc, ac));
+    cec.insert((hnc, hcc));
 }
 
-pub(crate) fn delete_recursive<'c, P: ChildrenAspect>(
+pub(crate) fn delete_recursive<'c, R: HierarchyRoot>(
     commands: &mut Commands,
     entity_ref: EntityRef,
-    parent_context: &<<P as NodeBase>::Context as NodeContext>::Wrapper<'c>,
+    //parent_context: &<<P as NodeBase>::Context as NodeContext>::Wrapper<'c>,
 ) {
     if entity_ref.contains::<ScheduledForDeletion>() {
         return;
@@ -52,8 +50,8 @@ pub(crate) fn delete_recursive<'c, P: ChildrenAspect>(
     let mut ec = commands.entity(entity_ref.id());
     let mut cc = ConcreteComponentCommands::new(entity_ref, &mut ec);
 
-    let dp: DeletionPolicy = if let Some(ac) = entity_ref.get::<ChildrenComponent<P>>() {
-        ac.deleter.on_deleted(entity_ref, &mut cc, parent_context)
+    let dp: DeletionPolicy = if let Some(ac) = entity_ref.get::<HierarchyChildComponent<R>>() {
+        ac.deleter.on_deleted(entity_ref, &mut cc)
     } else {
         DeletionPolicy::DeleteImmediately
     };
@@ -121,18 +119,14 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
         );
     }
 
-    let childrens_hot =
+    let children_hot =
         <<N::ChildrenAspect as NodeBase>::Context as NodeContext>::has_changed(children_context)
             || (args_changed
                 && old_args.is_some_and(|oa| N::as_children_aspect(&oa) == children_args));
 
-    if childrens_hot {
-        let mut children_commands = UnorderedChildCommands::<R, N::ChildrenAspect>::new(
-            &mut ec,
-            children,
-            children_context,
-            all_child_nodes.clone(),
-        );
+    if children_hot {
+        let mut children_commands =
+            UnorderedChildCommands::<R>::new(&mut ec, children, all_child_nodes.clone());
 
         <N::ChildrenAspect as ChildrenAspect>::set_children(
             children_args,

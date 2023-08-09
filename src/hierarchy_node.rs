@@ -15,7 +15,7 @@ pub trait ChildrenAspect: NodeBase {
     fn set_children<'r>(
         &self,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands<Self>,
+        commands: &mut impl ChildCommands,
     );
 }
 
@@ -28,11 +28,7 @@ pub trait ComponentsAspect: NodeBase {
     );
 
     #[allow(clippy::unused_variables)]
-    fn on_deleted<'r>(
-        &self,
-        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        _commands: &mut impl ComponentCommands,
-    ) -> DeletionPolicy {
+    fn on_deleted<'r>(&self, _commands: &mut impl ComponentCommands) -> DeletionPolicy {
         DeletionPolicy::DeleteImmediately
     }
 }
@@ -57,7 +53,9 @@ pub trait HasChildrenAspect: NodeBase {
     fn as_children_aspect<'a>(&'a self) -> &'a Self::ChildrenAspect;
 }
 
-pub trait HierarchyNode: HasChildrenAspect + HasComponentsAspect {}
+pub trait HierarchyNode: HasChildrenAspect + HasComponentsAspect {
+    const DELETER: &'static dyn Deleter = &NodeDeleter::<Self>::new();
+}
 
 impl<N: ChildrenAspect> HasChildrenAspect for N {
     type ChildrenAspect = Self;
@@ -88,8 +86,6 @@ impl<N: ComponentsAspect> HasComponentsAspect for N {
 
 impl<N: HasChildrenAspect + HasComponentsAspect> HierarchyNode for N {}
 
-
-
 impl NodeBase for () {
     type Context = NoContext;
 }
@@ -98,7 +94,7 @@ impl ChildrenAspect for () {
     fn set_children<'r>(
         &self,
         _context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        _commands: &mut impl ChildCommands<Self>,
+        _commands: &mut impl ChildCommands,
     ) {
     }
 }

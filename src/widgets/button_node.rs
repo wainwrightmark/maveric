@@ -12,22 +12,12 @@ pub struct ButtonNodeStyle {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct ButtonNode<
-    Marker: Component + PartialEq + Clone,
-> {
+pub struct ButtonNode<Marker: Component + PartialEq + Clone> {
     pub text: String,
     pub text_node_style: Arc<TextNodeStyle>,
     pub button_node_style: Arc<ButtonNodeStyle>,
 
     pub marker: Marker,
-}
-
-impl<Marker: Component + PartialEq + Clone> HasChild<TextNode> for ButtonNode<Marker> {
-    fn convert_context<'a, 'r>(
-        context: &'a <Self::Context as NodeContext>::Wrapper<'r>,
-    ) -> &'a <<TextNode as NodeBase>::Context as NodeContext>::Wrapper<'r> {
-        context
-    }
 }
 
 impl<Marker: Component + PartialEq + Clone> NodeBase for ButtonNode<Marker> {
@@ -37,8 +27,8 @@ impl<Marker: Component + PartialEq + Clone> NodeBase for ButtonNode<Marker> {
 impl<Marker: Component + PartialEq + Clone> ChildrenAspect for ButtonNode<Marker> {
     fn set_children<'r>(
         &self,
-        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands<Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ChildCommands,
     ) {
         commands.add_child(
             0,
@@ -46,6 +36,7 @@ impl<Marker: Component + PartialEq + Clone> ChildrenAspect for ButtonNode<Marker
                 style: self.text_node_style.clone(),
                 text: self.text.clone(),
             },
+            context,
         )
     }
 }
@@ -53,9 +44,9 @@ impl<Marker: Component + PartialEq + Clone> ChildrenAspect for ButtonNode<Marker
 impl<Marker: Component + PartialEq + Clone> ComponentsAspect for ButtonNode<Marker> {
     fn set_components<'r>(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ComponentCommands,
-        event: SetComponentsEvent,
+        _event: SetComponentsEvent,
     ) {
         commands.insert(ButtonBundle {
             style: self.button_node_style.style.clone(),
@@ -66,7 +57,3 @@ impl<Marker: Component + PartialEq + Clone> ComponentsAspect for ButtonNode<Mark
         commands.insert(self.marker.clone());
     }
 }
-
-
-
-

@@ -1,9 +1,8 @@
-use std::marker::PhantomData;
 
-use crate::{prelude::*, DeletionPolicy};
+
+use crate::{prelude::*};
 use bevy::{
     ecs::system::{StaticSystemParam, SystemParam},
-    utils::HashSet,
 };
 
 pub trait HierarchyRoot: ChildrenAspect + Default + Send + Sync + 'static {

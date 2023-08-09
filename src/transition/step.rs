@@ -2,7 +2,8 @@ use crate::transition::prelude::*;
 use bevy::prelude::*;
 use std::{
     marker::PhantomData,
-    time::{Duration, TryFromFloatSecsError}, sync::Arc,
+    sync::Arc,
+    time::{Duration, TryFromFloatSecsError},
 };
 
 #[derive(Clone)]
@@ -96,12 +97,11 @@ impl<L: Lens> TransitionPathComponent<L>
 where
     L::Value: Tweenable,
 {
-    pub fn try_go_to_next_step(&mut self)-> bool{
-        if let Some(next) = &self.step.next{
+    pub fn try_go_to_next_step(&mut self) -> bool {
+        if let Some(next) = &self.step.next {
             self.step = next.clone();
             true
-        }
-        else{
+        } else {
             false
         }
     }
