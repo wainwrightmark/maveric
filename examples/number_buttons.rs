@@ -115,7 +115,7 @@ impl_hierarchy_root!(Root);
 #[derive(Eq, PartialEq, Debug, Default)]
 pub struct CommandGrid;
 
-impl NodeBase for CommandGrid {
+impl HasContext for CommandGrid {
     type Context = AssetServer;
 }
 
@@ -166,7 +166,7 @@ impl ChildrenAspect for CommandGrid {
 #[derive(Eq, PartialEq, Debug, Default)]
 pub struct DynamicGrid;
 
-impl NodeBase for DynamicGrid {
+impl HasContext for DynamicGrid {
     type Context = NC2<UIState, AssetServer>;
 }
 
@@ -220,7 +220,7 @@ impl ComponentsAspect for DynamicGrid {
     }
 }
 
-impl NodeBase for Root {
+impl HasContext for Root {
     type Context = NC2<UIState, AssetServer>;
 }
 

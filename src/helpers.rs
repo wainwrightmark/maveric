@@ -7,7 +7,7 @@ use bevy::{ecs::system::EntityCommands, utils::HashMap};
 pub(crate) fn create_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     mut cec: &mut EntityCommands,
     node: N,
-    context: &<<N as NodeBase>::Context as NodeContext>::Wrapper<'c>,
+    context: &<<N as HasContext>::Context as NodeContext>::Wrapper<'c>,
     key: ChildKey,
 ) {
     //info!("Creating Node {}", type_name::<N>());
@@ -41,7 +41,7 @@ pub(crate) fn create_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
 pub(crate) fn delete_recursive<'c, R: HierarchyRoot>(
     commands: &mut Commands,
     entity_ref: EntityRef,
-    //parent_context: &<<P as NodeBase>::Context as NodeContext>::Wrapper<'c>,
+    //parent_context: &<<P as HasContext>::Context as NodeContext>::Wrapper<'c>,
 ) {
     if entity_ref.contains::<ScheduledForDeletion>() {
         return;
@@ -70,7 +70,7 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     commands: &mut Commands,
     entity_ref: EntityRef,
     node: N,
-    context: &<<N as NodeBase>::Context as NodeContext>::Wrapper<'c>,
+    context: &<<N as HasContext>::Context as NodeContext>::Wrapper<'c>,
     all_child_nodes: Rc<HashMap<Entity, (EntityRef, HierarchyChildComponent<R>)>>,
 ) {
     let mut ec = commands.entity(entity_ref.id());
@@ -98,7 +98,7 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     let children_context = N::children_context(context);
 
     let components_hot = undeleted
-        || <<N::ComponentsAspect as NodeBase>::Context as NodeContext>::has_changed(
+        || <<N::ComponentsAspect as HasContext>::Context as NodeContext>::has_changed(
             component_context,
         )
         || (args_changed
@@ -120,7 +120,7 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     }
 
     let children_hot =
-        <<N::ChildrenAspect as NodeBase>::Context as NodeContext>::has_changed(children_context)
+        <<N::ChildrenAspect as HasContext>::Context as NodeContext>::has_changed(children_context)
             || (args_changed
                 && old_args.is_some_and(|oa| N::as_children_aspect(&oa) == children_args));
 

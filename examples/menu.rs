@@ -3,6 +3,7 @@ use lazy_static::lazy_static;
 use state_hierarchy::transition::prelude::*;
 use state_hierarchy::{impl_hierarchy_root, prelude::*};
 
+use std::time::Duration;
 use std::{string::ToString, sync::Arc};
 use strum::{Display, EnumIs};
 
@@ -74,7 +75,7 @@ pub struct Root;
 
 impl_hierarchy_root!(Root);
 
-impl NodeBase for Root {
+impl HasContext for Root {
     type Context = NC2<MenuState, AssetServer>;
 }
 
@@ -95,11 +96,10 @@ impl ChildrenAspect for Root {
             MenuState::ShowMainMenu => {
                 commands.add_child("main_menu", MainMenu, context);
             }
-            MenuState::ShowLevelsPage(_n) => {
-                panic!("No Carousel")
-                // let duration: Duration = Duration::from_secs_f32(2.0);
-                // let carousel = Carousel::new(*n as u32, |x| Some(LevelMenu(x)), duration);
-                // commands.add_child("levels", carousel);
+            MenuState::ShowLevelsPage(n) => {
+                let duration: Duration = Duration::from_secs_f32(2.0);
+                let carousel = Carousel::new(*n as u32, |x| Some(LevelMenu(x)), duration);
+                commands.add_child("levels", carousel, context);
             }
         }
     }
@@ -125,7 +125,7 @@ fn text_button_node(button_action: ButtonAction) -> ButtonNode<ButtonAction> {
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct MainMenu;
 
-impl NodeBase for MainMenu {
+impl HasContext for MainMenu {
     type Context = NC2<MenuState, AssetServer>;
 }
 
@@ -170,7 +170,7 @@ impl ChildrenAspect for MainMenu {
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct LevelMenu(u32);
 
-impl NodeBase for LevelMenu {
+impl HasContext for LevelMenu {
     type Context = NC2<MenuState, AssetServer>;
 }
 
@@ -217,15 +217,15 @@ impl ChildrenAspect for LevelMenu {
             )
         }
 
-        commands.add_child("buttons", LevelMenuArrows, context);
+        commands.add_child("buttons", LevelMenuArrows(self.0), &context.1);
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
-pub struct LevelMenuArrows;
+pub struct LevelMenuArrows(u32);
 
-impl NodeBase for LevelMenuArrows {
-    type Context = NC2<MenuState, AssetServer>;
+impl HasContext for LevelMenuArrows {
+    type Context = AssetServer;
 }
 
 impl ComponentsAspect for LevelMenuArrows {
@@ -273,26 +273,24 @@ impl ChildrenAspect for LevelMenuArrows {
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ChildCommands,
     ) {
-        if let MenuState::ShowLevelsPage(page) = context.0.as_ref() {
-            if *page == 0 {
-                commands.add_child("left", icon_button_node(ButtonAction::OpenMenu), &context.1)
-            } else {
-                commands.add_child(
-                    "left",
-                    icon_button_node(ButtonAction::PreviousLevelsPage),
-                    &context.1,
-                )
-            }
+        if self.0 == 0 {
+            commands.add_child("left", icon_button_node(ButtonAction::OpenMenu), context)
+        } else {
+            commands.add_child(
+                "left",
+                icon_button_node(ButtonAction::PreviousLevelsPage),
+                context,
+            )
+        }
 
-            if *page < 4 {
-                commands.add_child(
-                    "right",
-                    icon_button_node(ButtonAction::NextLevelsPage),
-                    &context.1,
-                )
-            } else {
-                commands.add_child("right", icon_button_node(ButtonAction::None), &context.1)
-            }
+        if self.0 < 4 {
+            commands.add_child(
+                "right",
+                icon_button_node(ButtonAction::NextLevelsPage),
+                context,
+            )
+        } else {
+            commands.add_child("right", icon_button_node(ButtonAction::None), context)
         }
     }
 }

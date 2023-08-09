@@ -20,7 +20,7 @@ pub struct ButtonNode<Marker: Component + PartialEq + Clone> {
     pub marker: Marker,
 }
 
-impl<Marker: Component + PartialEq + Clone> NodeBase for ButtonNode<Marker> {
+impl<Marker: Component + PartialEq + Clone> HasContext for ButtonNode<Marker> {
     type Context = AssetServer;
 }
 

@@ -5,11 +5,11 @@ use bevy::prelude::*;
 use crate::prelude::*;
 
 #[derive(Debug, Default, Component)]
-pub(crate) struct HierarchyNodeComponent<N: NodeBase> {
+pub(crate) struct HierarchyNodeComponent<N: HasContext> {
     pub node: N,
 }
 
-impl<N: NodeBase> HierarchyNodeComponent<N> {
+impl<N: HasContext> HierarchyNodeComponent<N> {
     pub(crate) fn new(node: N) -> Self {
         Self { node }
     }

@@ -16,7 +16,7 @@ pub struct TextNodeStyle {
     pub font: &'static str,
 }
 
-impl NodeBase for TextNode {
+impl HasContext for TextNode {
     type Context = AssetServer;
 }
 
@@ -45,8 +45,8 @@ impl HasChildrenAspect for TextNode {
     type ChildrenAspect = ();
 
     fn children_context<'a, 'r>(
-        _context: &'a <<Self as NodeBase>::Context as NodeContext>::Wrapper<'r>,
-    ) -> &'a <<Self::ChildrenAspect as NodeBase>::Context as NodeContext>::Wrapper<'r> {
+        _context: &'a <<Self as HasContext>::Context as NodeContext>::Wrapper<'r>,
+    ) -> &'a <<Self::ChildrenAspect as HasContext>::Context as NodeContext>::Wrapper<'r> {
         &()
     }
 

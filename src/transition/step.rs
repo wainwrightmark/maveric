@@ -42,6 +42,23 @@ where
 
         Ok(total)
     }
+
+    /// Does this step contain the other step
+    pub fn contains(&self, other: &Self)-> bool{
+        let mut current_step = self;
+
+        'l: loop {
+            if current_step == other{
+                return true;
+            }
+
+            match &current_step.next {
+                Some(x) => current_step = x.as_ref(),
+                None => break 'l,
+            }
+        }
+        false
+    }
 }
 
 impl<L: Lens> std::fmt::Debug for TransitionStep<L>
@@ -71,17 +88,17 @@ impl<L: Lens> TransitionStep<L>
 where
     L::Value: Tweenable,
 {
-    pub fn new(
+    pub fn new_arc(
         destination: L::Value,
         speed: Option<<L::Value as Tweenable>::Speed>,
         next: Option<Arc<Self>>,
-    ) -> Self {
-        Self {
+    ) -> Arc<Self> {
+       Arc::new(  Self {
             destination,
             speed,
             next,
             phantom: PhantomData,
-        }
+        })
     }
 }
 

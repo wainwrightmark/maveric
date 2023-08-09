@@ -44,7 +44,7 @@ where
     fn get_step(&self, previous: &<L as Lens>::Value) -> Option<Arc<TransitionStep<L>>> {
         let out_speed = calculate_speed(previous, &self.destination, self.duration);
 
-        Some(TransitionStep::new(self.destination.clone(), Some(out_speed), None).into())
+        Some(TransitionStep::new_arc(self.destination.clone(), Some(out_speed), None).into())
     }
 }
 
@@ -84,7 +84,7 @@ where
 pub trait CanHaveTransition: HierarchyNode + Sized {
     fn with_transition_in<L: Lens + GetValueLens>(
         self,
-        initial: L::Value,
+        initial_value: L::Value,
         destination: L::Value,
         duration: Duration,
     ) -> WithTransition<Self, L, ()>
@@ -92,17 +92,15 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
         L::Value: Tweenable,
         L::Object: Clone + PartialEq + Component,
     {
-        let in_speed = calculate_speed(&initial, &destination, duration);
-        let real_step = TransitionStep::new(destination, Some(in_speed), None);
+        let speed = calculate_speed(&initial_value, &destination, duration);
+        let update_transition = TransitionStep::new_arc(destination, Some(speed), None);
 
-        let first_step = TransitionStep::<L>::new(initial, None, Some(Arc::new(real_step)));
-
-        self.with_transition(Arc::new(first_step), ())
+        self.with_transition(initial_value, update_transition, ())
     }
 
     fn with_transition_in_out<L: Lens + GetValueLens>(
         self,
-        initial: L::Value,
+        initial_value: L::Value,
         destination: L::Value,
         out_destination: L::Value,
         in_duration: Duration,
@@ -112,20 +110,20 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
         L::Value: Tweenable,
         L::Object: Clone + PartialEq + Component,
     {
-        let in_speed = calculate_speed(&initial, &destination, in_duration);
-        let real_step = TransitionStep::new(destination, Some(in_speed), None);
-
-        let first_step = TransitionStep::<L>::new(initial, None, Some(Arc::new(real_step)));
+        let speed = calculate_speed(&initial_value, &destination, in_duration);
+        let update_transition = TransitionStep::new_arc(destination, Some(speed), None);
 
         self.with_transition(
-            Arc::new(first_step),
+            initial_value,
+            update_transition,
             DurationDeletionPathMaker::new(out_duration, out_destination),
         )
     }
 
     fn with_transition<L: Lens + GetValueLens, P: DeletionPathMaker<L>>(
         self,
-        step: Arc<TransitionStep<L>>,
+        initial_value: L::Value,
+        update_transition: Arc<TransitionStep<L>>,
         deletion: P,
     ) -> WithTransition<Self, L, P>
     where
@@ -134,7 +132,8 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
     {
         WithTransition {
             node: self,
-            step,
+            initial_value,
+            update_transition,
             deletion,
         }
     }
@@ -150,7 +149,11 @@ where
     L::Object: Clone + PartialEq + Component,
 {
     pub node: N,
-    pub step: Arc<TransitionStep<L>>,
+
+    /// The initial value
+    pub initial_value: L::Value,
+    /// The transition that will be run when the node is updated or undeleted
+    pub update_transition: Arc<TransitionStep<L>>,
     pub deletion: P,
 }
 
@@ -163,8 +166,8 @@ where
     type ChildrenAspect = N::ChildrenAspect;
 
     fn children_context<'a, 'r>(
-        context: &'a <<Self as NodeBase>::Context as NodeContext>::Wrapper<'r>,
-    ) -> &'a <<Self::ChildrenAspect as NodeBase>::Context as NodeContext>::Wrapper<'r> {
+        context: &'a <<Self as HasContext>::Context as NodeContext>::Wrapper<'r>,
+    ) -> &'a <<Self::ChildrenAspect as HasContext>::Context as NodeContext>::Wrapper<'r> {
         N::children_context(context)
     }
 
@@ -173,7 +176,7 @@ where
     }
 }
 
-impl<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> NodeBase
+impl<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> HasContext
     for WithTransition<N, L, P>
 where
     L::Value: Tweenable,
@@ -202,33 +205,43 @@ where
 
         match event {
             SetComponentsEvent::Created => {
+                let in_transition = TransitionStep::new_arc(
+                    self.initial_value.clone(),
+                    None,
+                    Some(self.update_transition.clone()),
+                );
+
                 commands.insert(TransitionPathComponent {
-                    step: self.step.clone(),
+                    step: in_transition,
                 });
             }
             SetComponentsEvent::Updated => {
                 if let Some(previous_path) = commands.get::<TransitionPathComponent<L>>() {
-                    if previous_path.step != self.step {
+                    if self.update_transition.contains(&previous_path.step) {
+                        //info!("Same path found - no change");
+                    } else {
                         //info!("New path found");
                         commands.insert(TransitionPathComponent {
-                            step: self.step.clone(),
+                            step: self.update_transition.clone(),
                         });
                     }
+                } else {
+                    //info!("No path found");
+                    commands.insert(TransitionPathComponent {
+                        step: self.update_transition.clone(),
+                    });
                 }
             }
             SetComponentsEvent::Undeleted => {
-                let mut step: Arc<TransitionStep<L>> = match &self.step.next {
-                    Some(s) => s.clone(),
-                    None => self.step.clone(),
-                };
-
-                if let Some(existing_value) = commands.get::<L::Object>() {
-                    step = Arc::new(TransitionStep::<L>::new(
+                let step = if let Some(existing_value) = commands.get::<L::Object>() {
+                    TransitionStep::<L>::new_arc(
                         L::get_value(existing_value),
                         None,
-                        Some(step),
-                    ));
-                }
+                        Some(self.update_transition.clone()),
+                    )
+                } else {
+                    self.update_transition.clone()
+                };
 
                 commands.insert(TransitionPathComponent { step });
             }
@@ -269,10 +282,9 @@ where
     L::Object: Clone + PartialEq + Component,
 {
     fn eq(&self, other: &Self) -> bool {
-        self.node == other.node && self.step == other.step && self.deletion == other.deletion
+        self.node == other.node
+            && self.initial_value.approx_eq(&other.initial_value)
+            && self.update_transition == self.update_transition
+            && self.deletion == other.deletion
     }
 }
-
-// impl<NP : HasChild<NC>, NC : HierarchyNode, L : Lens, P : DeletionPathMaker<L>> HasChild<WithTransition<NC, L, P>> for NP{
-
-// }
