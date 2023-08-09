@@ -14,6 +14,7 @@ pub mod components;
 pub mod desired_transform;
 pub mod hierarchy_node;
 pub mod hierarchy_root;
+pub mod has_child;
 pub mod node_context;
 pub mod transition;
 pub mod widgets;
@@ -34,6 +35,7 @@ pub mod prelude {
     pub use crate::desired_transform::*;
     pub use crate::hierarchy_node::*;
     pub use crate::hierarchy_root::*;
+    pub use crate::has_child::*;
     pub use crate::node_context::*;
     pub use crate::transition::prelude::*;
     pub use crate::widgets::prelude::*;
