@@ -37,7 +37,7 @@ impl<Marker: Component + PartialEq + Clone> NodeBase for ButtonNode<Marker> {
 impl<Marker: Component + PartialEq + Clone> ChildrenAspect for ButtonNode<Marker> {
     fn set_children<'r>(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ChildCommands<Self>,
     ) {
         commands.add_child(

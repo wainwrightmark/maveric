@@ -122,7 +122,7 @@ impl NodeBase for CommandGrid {
 impl ComponentsAspect for CommandGrid {
     fn set_components<'r>(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ComponentCommands,
         event: SetComponentsEvent,
     ) {
@@ -153,7 +153,7 @@ impl HasChild<ButtonNode<Command>> for CommandGrid{
 impl ChildrenAspect for CommandGrid {
     fn set_children<'r>(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ChildCommands<Self>,
     ) {
         for command in [Command::AddNew, Command::Reset] {
@@ -228,7 +228,7 @@ impl ChildrenAspect for DynamicGrid {
 impl ComponentsAspect for DynamicGrid {
     fn set_components<'r>(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ComponentCommands,
         event: SetComponentsEvent,
     ) {
@@ -271,7 +271,7 @@ impl HasChild<DynamicGrid> for Root {
 impl ChildrenAspect for Root {
     fn set_children<'r>(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ChildCommands<Self>,
     ) {
         commands.add_child(0, CommandGrid);

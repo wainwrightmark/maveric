@@ -1,13 +1,12 @@
-use std::marker::PhantomData;
 use std::time::Duration;
 
 use bevy::prelude::*;
-use bevy::utils::HashSet;
+
 
 use crate::prelude::*;
 use crate::transition::prelude::*;
 
-use super::speed::{calculate_speed, Speed};
+use super::speed::calculate_speed;
 
 pub trait DeletionPathMaker<L: Lens + GetValueLens>: PartialEq + Send + Sync + 'static
 where
@@ -226,28 +225,19 @@ where
                 }
             }
             SetComponentsEvent::Undeleted => {
+
+                let mut step: TransitionStep<L> = match &self.step.next{
+                    Some(s) => (**s).clone(),
+                    None => self.step.clone(),
+                };
+
+                if let Some(existing_value) = commands.get::<L::Object>(){
+                    step = TransitionStep::<L>::new(L::get_value(existing_value), None, Some(Box::new(step)));
+                }
+
                 commands.insert(TransitionPathComponent {
-                    step: self.step.clone(),
+                    step
                 });
-
-                // let new_path_index: Option<usize> =
-                //     if let Some(suspended_path) = commands.get::<SuspendedPathComponent<L>>() {
-                //         let i = suspended_path
-                //             .index
-                //             .min(self.step.steps.len().saturating_sub(1));
-
-                //         //let step = &self.path.steps[i];
-                //         //info!("Restoring suspended path index {i} len {l} step {step:?}", l = self.path.steps.len());
-                //         commands.remove::<SuspendedPathComponent<L>>();
-                //         Some(i)
-                //     } else {
-                //         //info!("No preexisting path found");
-                //         Some(0)
-                //     };
-
-                // if let Some(index) = new_path_index {
-
-                // }
             }
         }
     }

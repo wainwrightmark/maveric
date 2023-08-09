@@ -88,14 +88,7 @@ impl<N: ComponentsAspect> HasComponentsAspect for N {
 
 impl<N: HasChildrenAspect + HasComponentsAspect> HierarchyNode for N {}
 
-pub trait ChildDeleter<NParent: ChildrenAspect>: Send + Sync + 'static {
-    fn on_deleted<'r>(
-        &self,
-        entity_ref: EntityRef,
-        commands: &mut ConcreteComponentCommands,
-        parent_context: &<NParent::Context as NodeContext>::Wrapper<'r>,
-    ) -> DeletionPolicy;
-}
+
 
 impl NodeBase for () {
     type Context = NoContext;

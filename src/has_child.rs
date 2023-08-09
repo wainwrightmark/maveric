@@ -11,6 +11,15 @@ pub trait HasChild<NChild: HierarchyNode>: ChildrenAspect {
     const DELETER: &'static dyn ChildDeleter<Self> = &NodeDeleter::<Self, NChild>::new();
 }
 
+pub trait ChildDeleter<NParent: ChildrenAspect>: Send + Sync + 'static {
+    fn on_deleted<'r>(
+        &self,
+        entity_ref: EntityRef,
+        commands: &mut ConcreteComponentCommands,
+        parent_context: &<NParent::Context as NodeContext>::Wrapper<'r>,
+    ) -> DeletionPolicy;
+}
+
 #[macro_export]
 macro_rules! impl_has_child {
     ($NParent:ty, $NChild: ty, $context: ident, $from_context:expr  ) => {
