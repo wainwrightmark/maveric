@@ -2,8 +2,6 @@ use std::marker::PhantomData;
 
 use bevy::prelude::*;
 
-pub struct NC2<T0, T1>(PhantomData<(T0, T1)>);
-
 pub trait NodeContext {
     type Wrapper<'c>;
 
@@ -18,38 +16,25 @@ impl<R: Resource> NodeContext for R {
     }
 }
 
-impl<N0: NodeContext, N1: NodeContext> NodeContext for NC2<N0, N1> {
-    type Wrapper<'c> = (N0::Wrapper<'c>, N1::Wrapper<'c>);
+macro_rules! impl_nc {
+    ($NC:ident, $(($T:ident, $t:ident)),*) => {
+        pub struct $NC<$($T,)*>(PhantomData<($($T,)*)>);
 
-    fn has_changed<'c>(wrapper: &Self::Wrapper<'c>) -> bool {
-        let (w0, w1) = wrapper;
-        N0::has_changed(w0) || N1::has_changed(w1)
-    }
+        impl<$($T : NodeContext,)*> NodeContext for $NC<$($T,)*> {
+            type Wrapper<'c> = ($($T::Wrapper<'c>,)*);
+
+            fn has_changed<'c>(wrapper: &Self::Wrapper<'c>) -> bool {
+                let ($($t,)*) = wrapper;
+                $($T::has_changed($t) ||)* false
+            }
+        }
+
+
+    };
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct NoContext;
-
-impl NodeContext for NoContext {
-    type Wrapper<'c> = ();
-
-    fn has_changed<'c>(_wrapper: &Self::Wrapper<'c>) -> bool {
-        false
-    }
-}
-
-// // macro_rules! impl_node_context_resource_tuples {
-// //     ($(($T:ident, $t:ident)),*) => {
-// //         impl<$($T : DetectChanges),*> HasDetectChanges for ($($T,)*)  {
-
-// //         fn has_changed(
-// //             &self,
-// //         ) -> bool {
-// //             let &($($t,)*) = &self;
-// //             false $(|| $t.is_changed())*
-// //         }
-// //         }
-// //     }
-// // }
-
-// bevy::utils::all_tuples!(impl_state_tree_args, 0, 15, T, t);
+impl_nc!(NoContext,);
+impl_nc!(NC1, (T0, t0));
+impl_nc!(NC2, (T0, t0), (T1, t1));
+impl_nc!(NC3, (T0, t0), (T1, t1), (T2, t2));
+impl_nc!(NC4, (T0, t0), (T1, t1), (T2, t2), (T3, t3));
