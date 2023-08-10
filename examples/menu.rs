@@ -20,7 +20,7 @@ fn main() {
     app.add_plugins(TransitionPlugin::<TransformScaleLens>::default());
     app.add_plugins(TransitionPlugin::<BackgroundColorLens>::default());
 
-    register_state_tree::<Root>(&mut app);
+    register_state_tree::<MenuRoot>(&mut app);
     app.run();
 }
 fn setup(mut commands: Commands) {
@@ -72,15 +72,15 @@ pub enum MenuState {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
-pub struct Root;
+pub struct MenuRoot;
 
-impl_hierarchy_root!(Root);
+impl_hierarchy_root!(MenuRoot);
 
-impl HasContext for Root {
+impl HasContext for MenuRoot {
     type Context = NC2<MenuState, AssetServer>;
 }
 
-impl ChildrenAspect for Root {
+impl ChildrenAspect for MenuRoot {
     fn set_children<'r>(
         &self,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
@@ -88,11 +88,11 @@ impl ChildrenAspect for Root {
     ) {
         let transition_duration: Duration = Duration::from_secs_f32(0.5);
 
-        fn get_carousel_child(page: u32) -> Option<Either<MainMenu, LevelMenu>> {
+        fn get_carousel_child(page: u32) -> Option<Either2<MainMenu, LevelMenu>> {
             Some(if let Some(page) = page.checked_sub(1) {
-                Either::Case1(LevelMenu(page))
+                Either2::Case1(LevelMenu(page))
             } else {
-                Either::Case0(MainMenu)
+                Either2::Case0(MainMenu)
             })
         }
 
@@ -106,20 +106,6 @@ impl ChildrenAspect for Root {
                 Carousel::new(n + 1 as u32, get_carousel_child, transition_duration)
             }
         };
-
-        // let carousel = carousel.with_transition_in::<BackgroundColorLens>(
-        //     Color::RED,
-        //     Color::GREEN,
-        //     Duration::from_secs_f32(2.0),
-        // );
-
-        // let carousel = carousel.with_transition_in_out::<TransformScaleLens>(
-        //     Vec3::new(0.0, 1.0, 1.0),
-        //     Vec3::ONE,
-        //     Vec3::new(0.0, 1.0, 1.0),
-        //     Duration::from_secs_f32(0.5),
-        //     Duration::from_secs_f32(0.5),
-        // );
 
         commands.add_child("carousel", carousel, context);
     }
