@@ -18,6 +18,7 @@ fn main() {
     app.add_plugins(TransitionPlugin::<StyleLeftLens>::default());
     //app.add_plugins(TransitionPlugin::<StyleTopLens>::default());
     app.add_plugins(TransitionPlugin::<TransformScaleLens>::default());
+    app.add_plugins(TransitionPlugin::<BackgroundColorLens>::default());
 
     register_state_tree::<Root>(&mut app);
     app.run();
@@ -95,25 +96,44 @@ impl ChildrenAspect for Root {
             })
         }
 
-        match context.0.as_ref() {
+        let carousel = match context.0.as_ref() {
             MenuState::Closed => {
-                commands.add_child(
-                    "open_icon",
-                    icon_button_node(ButtonAction::OpenMenu),
-                    &context.1,
-                );
+                commands.add_child("open_icon", menu_button_node(), &context.1);
+                return;
             }
-            MenuState::ShowMainMenu => {
-                let carousel = Carousel::new(0, get_carousel_child, transition_duration);
-                commands.add_child("carousel", carousel, context);
-            }
+            MenuState::ShowMainMenu => Carousel::new(0, get_carousel_child, transition_duration),
             MenuState::ShowLevelsPage(n) => {
-                let carousel = Carousel::new(n + 1 as u32, get_carousel_child, transition_duration);
-                commands.add_child("carousel", carousel, context);
+                Carousel::new(n + 1 as u32, get_carousel_child, transition_duration)
             }
-        }
+        };
+
+        // let carousel = carousel.with_transition_in::<BackgroundColorLens>(
+        //     Color::RED,
+        //     Color::GREEN,
+        //     Duration::from_secs_f32(2.0),
+        // );
+
+        // let carousel = carousel.with_transition_in_out::<TransformScaleLens>(
+        //     Vec3::new(0.0, 1.0, 1.0),
+        //     Vec3::ONE,
+        //     Vec3::new(0.0, 1.0, 1.0),
+        //     Duration::from_secs_f32(0.5),
+        //     Duration::from_secs_f32(0.5),
+        // );
+
+        commands.add_child("carousel", carousel, context);
     }
 }
+
+fn menu_button_node() -> ButtonNode<ButtonAction> {
+    ButtonNode {
+        text: ButtonAction::OpenMenu.icon(),
+        text_node_style: ICON_BUTTON_TEXT_STYLE.clone(),
+        button_node_style: OPEN_MENU_BUTTON_STYLE.clone(),
+        marker: ButtonAction::OpenMenu,
+    }
+}
+
 fn icon_button_node(button_action: ButtonAction) -> ButtonNode<ButtonAction> {
     ButtonNode {
         text: button_action.icon(),
@@ -164,7 +184,10 @@ impl ChildrenAspect for MainMenu {
         commands: &mut impl ChildCommands,
     ) {
         for (key, action) in ButtonAction::main_buttons().into_iter().enumerate() {
-            commands.add_child(key as u32, text_button_node(*action), &context.1)
+            let button = text_button_node(*action);
+            let button = button.with_transition_in::<BackgroundColorLens>(Color::WHITE.with_a(0.0), Color::WHITE, Duration::from_secs_f32(1.0));
+
+            commands.add_child(key as u32, button, &context.1)
         }
     }
 }
@@ -253,8 +276,6 @@ impl_static_components!(
     }
 );
 
-
-
 impl ChildrenAspect for LevelMenuArrows {
     fn set_children<'r>(
         &self,
@@ -340,9 +361,23 @@ lazy_static! {
         background_color: Color::NONE,
         ..default()
     });
-}
+    static ref OPEN_MENU_BUTTON_STYLE: Arc<ButtonNodeStyle> = Arc::new(ButtonNodeStyle {
+        style: Style {
+            width: Val::Px(ICON_BUTTON_WIDTH),
+            height: Val::Px(ICON_BUTTON_HEIGHT),
+            margin: UiRect::DEFAULT,
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            flex_grow: 0.0,
+            flex_shrink: 0.0,
+            left: Val::Px(40.0),
+            top: Val::Px(40.0),
 
-lazy_static! {
+            ..Default::default()
+        },
+        background_color: Color::NONE,
+        ..default()
+    });
     static ref TEXT_BUTTON_STYLE: Arc<ButtonNodeStyle> = Arc::new(ButtonNodeStyle {
         style: Style {
             width: Val::Px(TEXT_BUTTON_WIDTH),
@@ -365,17 +400,11 @@ lazy_static! {
         border_color: BUTTON_BORDER.into(),
         ..Default::default()
     });
-}
-
-lazy_static! {
     static ref TEXT_BUTTON_TEXT_STYLE: Arc<TextNodeStyle> = Arc::new(TextNodeStyle {
         font_size: BUTTON_FONT_SIZE,
         color: BUTTON_TEXT_COLOR,
         font: FONT_PATH,
     });
-}
-
-lazy_static! {
     static ref ICON_BUTTON_TEXT_STYLE: Arc<TextNodeStyle> = Arc::new(TextNodeStyle {
         font_size: ICON_FONT_SIZE,
         color: BUTTON_TEXT_COLOR,

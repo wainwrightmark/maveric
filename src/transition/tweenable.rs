@@ -220,25 +220,190 @@ impl Tweenable for Val {
     }
 }
 
-// impl Tweenable for Color{
-//     type Speed;
+impl Tweenable for Color {
+    type Speed = ScalarSpeed;
 
-//     fn duration_to(
-//         &self,
-//         rhs: &Self,
-//         speed: &Self::Speed,
-//     ) -> Result<Duration, TryFromFloatSecsError> {
-//         todo!()
-//     }
+    fn duration_to(
+        &self,
+        rhs: &Self,
+        speed: &Self::Speed,
+    ) -> Result<Duration, TryFromFloatSecsError> {
+        let differences: [f32; 4] = match (self, rhs) {
+            (
+                Color::Rgba {
+                    red,
+                    green,
+                    blue,
+                    alpha,
+                },
+                Color::Rgba {
+                    red: red2,
+                    green: green2,
+                    blue: blue2,
+                    alpha: alpha2,
+                },
+            ) => [
+                (red - red2).abs(),
+                (green - green2).abs(),
+                (blue - blue2).abs(),
+                (alpha - alpha2).abs(),
+            ],
+            (
+                Color::RgbaLinear {
+                    red,
+                    green,
+                    blue,
+                    alpha,
+                },
+                Color::RgbaLinear {
+                    red: red2,
+                    green: green2,
+                    blue: blue2,
+                    alpha: alpha2,
+                },
+            ) => [
+                (red - red2).abs(),
+                (green - green2).abs(),
+                (blue - blue2).abs(),
+                (alpha - alpha2).abs(),
+            ],
 
-//     fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, delta_seconds: &f32) -> Self {
-//         self.f32
-//     }
+            (
+                Color::Hsla {
+                    hue,
+                    saturation,
+                    lightness,
+                    alpha,
+                },
+                Color::Hsla {
+                    hue: hue2,
+                    saturation: saturation2,
+                    lightness: lightness2,
+                    alpha: alpha2,
+                },
+            ) => [
+                (hue - hue2).abs(),
+                (saturation - saturation2).abs(),
+                (lightness - lightness2).abs(),
+                (alpha - alpha2).abs(),
+            ],
+            (
+                Color::Lcha {
+                    lightness,
+                    chroma,
+                    hue,
+                    alpha,
+                },
+                Color::Lcha {
+                    lightness: lightness2,
+                    chroma: chroma2,
+                    hue: hue2,
+                    alpha: alpha2,
+                },
+            ) => [
+                (hue - hue2).abs(),
+                (chroma - chroma2).abs(),
+                (lightness - lightness2).abs(),
+                (alpha - alpha2).abs(),
+            ],
+            _ => {
+                return Duration::try_from_secs_f32(f32::NAN);
+            }
+        };
 
-//     fn approx_eq(&self, rhs: &Self) -> bool {
-//         self.eq(rhs)
-//     }
-// }
+        let difference = differences.into_iter().max_by(f32::total_cmp).unwrap();
+
+        let seconds = difference / speed.amount_per_second;
+        Duration::try_from_secs_f32(seconds)
+    }
+
+    fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, delta_seconds: &f32) -> Self {
+        match (self, rhs) {
+            (
+                Color::Rgba {
+                    red,
+                    green,
+                    blue,
+                    alpha,
+                },
+                Color::Rgba {
+                    red: red2,
+                    green: green2,
+                    blue: blue2,
+                    alpha: alpha2,
+                },
+            ) => Color::Rgba {
+                red: red.transition_towards(red2, speed, delta_seconds),
+                green: green.transition_towards(green2, speed, delta_seconds),
+                blue: blue.transition_towards(blue2, speed, delta_seconds),
+                alpha: alpha.transition_towards(alpha2, speed, delta_seconds),
+            },
+            (
+                Color::RgbaLinear {
+                    red,
+                    green,
+                    blue,
+                    alpha,
+                },
+                Color::RgbaLinear {
+                    red: red2,
+                    green: green2,
+                    blue: blue2,
+                    alpha: alpha2,
+                },
+            ) => Color::RgbaLinear {
+                red: red.transition_towards(red2, speed, delta_seconds),
+                green: green.transition_towards(green2, speed, delta_seconds),
+                blue: blue.transition_towards(blue2, speed, delta_seconds),
+                alpha: alpha.transition_towards(alpha2, speed, delta_seconds),
+            },
+
+            (
+                Color::Hsla {
+                    hue,
+                    saturation,
+                    lightness,
+                    alpha,
+                },
+                Color::Hsla {
+                    hue: hue2,
+                    saturation: saturation2,
+                    lightness: lightness2,
+                    alpha: alpha2,
+                },
+            ) => Color::Hsla {
+                lightness: lightness.transition_towards(lightness2, speed, delta_seconds),
+                saturation: saturation.transition_towards(saturation2, speed, delta_seconds),
+                hue: hue.transition_towards(hue2, speed, delta_seconds),
+                alpha: alpha.transition_towards(alpha2, speed, delta_seconds),
+            },
+            (
+                Color::Lcha {
+                    lightness,
+                    chroma,
+                    hue,
+                    alpha,
+                },
+                Color::Lcha {
+                    lightness: lightness2,
+                    chroma: chroma2,
+                    hue: hue2,
+                    alpha: alpha2,
+                },
+            ) => Color::Lcha {
+                lightness: lightness.transition_towards(lightness2, speed, delta_seconds),
+                chroma: chroma.transition_towards(chroma2, speed, delta_seconds),
+                hue: hue.transition_towards(hue2, speed, delta_seconds),
+                alpha: alpha.transition_towards(alpha2, speed, delta_seconds),
+            },
+            _ => rhs.clone(),
+        }
+    }
+
+    fn approx_eq(&self, rhs: &Self) -> bool {
+        self.eq(rhs)
+    }
+}
 
 fn quat_clamp_length_max(q: Quat, max: f32) -> Quat {
     let length_sq = q.length_squared();

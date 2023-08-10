@@ -35,6 +35,36 @@ macro_rules! define_lens {
     };
 }
 
+macro_rules! define_lens_transparent {
+    ($L:ident, $O:ident, $V:ident) => {
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct $L;
+
+        impl Lens for $L {
+            type Object = $O;
+            type Value = $V;
+        }
+
+        impl GetRefLens for $L {
+            fn get(object: &Self::Object) -> &Self::Value {
+                &object.0
+            }
+        }
+
+        impl GetValueLens for $L {
+            fn get_value(object: &Self::Object) -> Self::Value {
+                object.0
+            }
+        }
+
+        impl GetMutLens for $L {
+            fn get_mut(object: &mut Self::Object) -> &mut Self::Value {
+                &mut object.0
+            }
+        }
+    };
+}
+
 define_lens!(TransformTranslationLens, Transform, Vec3, translation);
 define_lens!(TransformRotationLens, Transform, Quat, rotation);
 define_lens!(TransformScaleLens, Transform, Vec3, scale);
@@ -53,6 +83,10 @@ define_lens!(StyleTopLens, Style, Val, top);
 define_lens!(StyleBottomLens, Style, Val, bottom);
 define_lens!(StyleLeftLens, Style, Val, left);
 define_lens!(StyleRightLens, Style, Val, right);
+
+define_lens_transparent!(BackgroundColorLens, BackgroundColor, Color);
+define_lens_transparent!(BorderColorLens, BorderColor, Color);
+define_lens!(TextColorLens, TextStyle, Color, color);
 
 pub fn transform_speed(
     translation_units_per_second: f32,

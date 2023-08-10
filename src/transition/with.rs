@@ -8,10 +8,10 @@ use crate::transition::prelude::*;
 
 use super::speed::calculate_speed;
 
-pub trait DeletionPathMaker<L: Lens + GetValueLens>: PartialEq + Send + Sync + 'static
+pub trait DeletionPathMaker<L: Lens + GetValueLens>: Send + Sync + PartialEq + 'static
 where
     L::Value: Tweenable,
-    L::Object: Clone + PartialEq + Component,
+    L::Object: Clone + Component,
 {
     fn get_step(&self, previous: &L::Value) -> Option<Arc<TransitionStep<L>>>;
 }
@@ -20,7 +20,7 @@ where
 pub struct DurationDeletionPathMaker<L: Lens + GetValueLens>
 where
     L::Value: Tweenable,
-    L::Object: Clone + PartialEq + Component,
+    L::Object: Clone + Component,
 {
     duration: Duration,
     destination: L::Value,
@@ -29,7 +29,7 @@ where
 impl<L: Lens + GetValueLens> PartialEq for DurationDeletionPathMaker<L>
 where
     L::Value: Tweenable,
-    L::Object: Clone + PartialEq + Component,
+    L::Object: Clone + Component,
 {
     fn eq(&self, other: &Self) -> bool {
         self.duration == other.duration && self.destination.approx_eq(&other.destination)
@@ -39,7 +39,7 @@ where
 impl<L: Lens + GetValueLens> DeletionPathMaker<L> for DurationDeletionPathMaker<L>
 where
     L::Value: Tweenable,
-    L::Object: Clone + PartialEq + Component,
+    L::Object: Clone + Component,
 {
     fn get_step(&self, previous: &<L as Lens>::Value) -> Option<Arc<TransitionStep<L>>> {
         let out_speed = calculate_speed(previous, &self.destination, self.duration);
@@ -51,7 +51,7 @@ where
 impl<L: Lens + GetValueLens> DurationDeletionPathMaker<L>
 where
     L::Value: Tweenable,
-    L::Object: Clone + PartialEq + Component,
+    L::Object: Clone + Component,
 {
     fn new(duration: Duration, destination: L::Value) -> Self {
         Self {
@@ -64,7 +64,7 @@ where
 impl<L: Lens + GetValueLens> DeletionPathMaker<L> for ()
 where
     L::Value: Tweenable,
-    L::Object: Clone + PartialEq + Component,
+    L::Object: Clone + Component,
 {
     fn get_step(&self, _previous: &<L as Lens>::Value) -> Option<Arc<TransitionStep<L>>> {
         None
@@ -74,7 +74,7 @@ where
 impl<L: Lens + GetValueLens> DeletionPathMaker<L> for TransitionStep<L>
 where
     L::Value: Tweenable,
-    L::Object: Clone + PartialEq + Component,
+    L::Object: Clone + Component,
 {
     fn get_step(&self, _previous: &<L as Lens>::Value) -> Option<Arc<TransitionStep<L>>> {
         Some(Arc::new(self.clone()))
@@ -90,7 +90,7 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
     ) -> WithTransition<Self, L, ()>
     where
         L::Value: Tweenable,
-        L::Object: Clone + PartialEq + Component,
+        L::Object: Clone + Component,
     {
         let speed = calculate_speed(&initial_value, &destination, duration);
         let update_transition = TransitionStep::new_arc(destination, Some(speed), None);
@@ -108,7 +108,7 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
     ) -> WithTransition<Self, L, DurationDeletionPathMaker<L>>
     where
         L::Value: Tweenable,
-        L::Object: Clone + PartialEq + Component,
+        L::Object: Clone + Component,
     {
         let speed = calculate_speed(&initial_value, &destination, in_duration);
         let update_transition = TransitionStep::new_arc(destination, Some(speed), None);
@@ -128,7 +128,7 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
     ) -> WithTransition<Self, L, P>
     where
         L::Value: Tweenable,
-        L::Object: Clone + PartialEq + Component,
+        L::Object: Clone + Component,
     {
         WithTransition {
             node: self,
@@ -146,7 +146,7 @@ impl<N: HierarchyNode> CanHaveTransition for N {}
 pub struct WithTransition<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>>
 where
     L::Value: Tweenable,
-    L::Object: Clone + PartialEq + Component,
+    L::Object: Clone + Component,
 {
     pub node: N,
 
@@ -161,7 +161,7 @@ impl<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> HasChild
     for WithTransition<N, L, P>
 where
     L::Value: Tweenable,
-    L::Object: Clone + PartialEq + Component,
+    L::Object: Clone + Component,
 {
     type ChildrenAspect = N::ChildrenAspect;
 
@@ -180,7 +180,7 @@ impl<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> HasConte
     for WithTransition<N, L, P>
 where
     L::Value: Tweenable,
-    L::Object: Clone + PartialEq + Component,
+    L::Object: Clone + Component,
 {
     type Context = N::Context;
 }
@@ -189,7 +189,7 @@ impl<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> Componen
     for WithTransition<N, L, P>
 where
     L::Value: Tweenable,
-    L::Object: Clone + PartialEq + Component,
+    L::Object: Clone + Component,
 {
     fn set_components<'r>(
         &self,
@@ -279,7 +279,7 @@ impl<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> PartialE
     for WithTransition<N, L, P>
 where
     L::Value: Tweenable,
-    L::Object: Clone + PartialEq + Component,
+    L::Object: Clone + Component,
 {
     fn eq(&self, other: &Self) -> bool {
         self.node == other.node
