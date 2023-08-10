@@ -89,7 +89,7 @@ impl UIState {
 pub fn get_button_left_top(state: &UIState, number: &u32) -> (Val, Val) {
     let index = state
         .dynamic_buttons
-        .binary_search(&number)
+        .binary_search(number)
         .map_or_else(|e| e, |f| f);
 
     let top = Val::Px((DYNAMIC_BOX_HEIGHT * (index / BOXES_PER_ROW) as f32) + 300.);
@@ -135,9 +135,9 @@ impl_static_components!(
 );
 
 impl ChildrenAspect for CommandGrid {
-    fn set_children<'r>(
+    fn set_children(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
         for command in [Command::AddNew, Command::Reset] {
@@ -163,9 +163,9 @@ impl HasContext for DynamicGrid {
 }
 
 impl ChildrenAspect for DynamicGrid {
-    fn set_children<'r>(
+    fn set_children(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
         for number in context.0.dynamic_buttons.iter().cloned() {
@@ -209,9 +209,9 @@ impl HasContext for Root {
 }
 
 impl ChildrenAspect for Root {
-    fn set_children<'r>(
+    fn set_children(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
         commands.add_child(0, CommandGrid, &context.1);

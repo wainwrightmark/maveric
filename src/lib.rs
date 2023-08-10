@@ -31,7 +31,6 @@ pub mod prelude {
     pub use crate::transition::prelude::*;
     pub use crate::widgets::prelude::*;
 
-
     pub(crate) use crate::concrete_component_commands::*;
     pub(crate) use crate::creation_commands::*;
     pub(crate) use crate::root_commands::*;

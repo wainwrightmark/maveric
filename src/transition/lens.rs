@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-pub trait Lens: std::fmt::Debug + Clone  + Send + Sync + 'static {
+pub trait Lens: std::fmt::Debug + Clone + Send + Sync + 'static {
     type Object;
     type Value: 'static;
 }

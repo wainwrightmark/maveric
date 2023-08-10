@@ -9,11 +9,11 @@ pub(crate) struct CreationCommands<'w, 's, 'a, 'b, R: HierarchyRoot> {
 }
 
 impl<'w, 's, 'a, 'b, R: HierarchyRoot> ChildCommands for CreationCommands<'w, 's, 'a, 'b, R> {
-    fn add_child<'c, NChild: HierarchyNode>(
+    fn add_child<NChild: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
         child: NChild,
-        context: &<NChild::Context as NodeContext>::Wrapper<'c>,
+        context: &<NChild::Context as NodeContext>::Wrapper<'_>,
     ) {
         self.ec.with_children(|cb| {
             let key = key.into();

@@ -67,12 +67,10 @@ fn step_transition<L: Lens + GetValueLens + SetValueLens>(
         let new_value =
             Tweenable::transition_towards(&from, &tp.step.destination, &speed, &delta_seconds);
 
-        if tp.step.destination.approx_eq(&new_value) {
-            if !tp.try_go_to_next_step() {
-                commands
-                    .entity(entity)
-                    .remove::<TransitionPathComponent<L>>();
-            }
+        if tp.step.destination.approx_eq(&new_value) && !tp.try_go_to_next_step() {
+            commands
+                .entity(entity)
+                .remove::<TransitionPathComponent<L>>();
         }
 
         <L as SetValueLens>::set(component, new_value);

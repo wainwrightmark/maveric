@@ -1,5 +1,5 @@
-use std::{marker::PhantomData, time::Duration};
 use crate::prelude::*;
+use std::{marker::PhantomData, time::Duration};
 
 pub struct Carousel<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> {
     current_page: u32,

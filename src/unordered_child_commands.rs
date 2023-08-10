@@ -11,14 +11,14 @@ pub(crate) struct UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, R: HierarchyRoot> 
     phantom: PhantomData<R>,
 }
 
-impl<'w, 's, 'a, 'b, 'w1, 'w_e, R: HierarchyRoot> ChildCommands
+impl<'w, 's, 'a, 'b, 'w1, R: HierarchyRoot> ChildCommands
     for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, R>
 {
-    fn add_child<'c, NChild: HierarchyNode>(
+    fn add_child<NChild: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
         child: NChild,
-        context: &<NChild::Context as NodeContext>::Wrapper<'c>,
+        context: &<NChild::Context as NodeContext>::Wrapper<'_>,
     ) {
         //let child_context = <NParent as HasChild<NChild>>::convert_context(self.context);
         //let context_changed = <NChild::Context as NodeContext>::has_changed(context);
@@ -30,8 +30,8 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, R: HierarchyRoot> ChildCommands
 
                 if entity_ref.contains::<HierarchyNodeComponent<NChild>>() {
                     update_recursive::<R, NChild>(
-                        &mut self.ec.commands(),
-                        entity_ref.clone(),
+                        self.ec.commands(),
+                        entity_ref,
                         child,
                         context,
                         self.all_child_nodes.clone(),
@@ -49,21 +49,21 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, R: HierarchyRoot> ChildCommands
 
                     self.ec.with_children(|cb| {
                         let mut cec = cb.spawn_empty();
-                        create_recursive::<R, NChild>(&mut cec, child, &context, key);
+                        create_recursive::<R, NChild>(&mut cec, child, context, key);
                     });
                 }
             }
             None => {
                 self.ec.with_children(|cb| {
                     let mut cec = cb.spawn_empty();
-                    create_recursive::<R, NChild>(&mut cec, child, &context, key);
+                    create_recursive::<R, NChild>(&mut cec, child, context, key);
                 });
             }
         }
     }
 }
 
-impl<'w, 's, 'a, 'b, 'w1, 'w_e, R: HierarchyRoot> UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, R> {
+impl<'w, 's, 'a, 'b, 'w1, R: HierarchyRoot> UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, R> {
     pub(crate) fn new(
         ec: &'b mut EntityCommands<'w, 's, 'a>,
         children: Option<&Children>,
@@ -74,12 +74,10 @@ impl<'w, 's, 'a, 'b, 'w1, 'w_e, R: HierarchyRoot> UnorderedChildCommands<'w, 's,
             Some(children) => {
                 let remaining_old_entities: HashMap<ChildKey, EntityRef<'w1>> = children
                     .iter()
-                    .flat_map(|x| match all_child_nodes.get(x) {
-                        Some((er, child)) => Some((child.key, er.clone())),
-                        None => {
-                            //new_entities.push(*x);
-                            None
-                        }
+                    .flat_map(|x| {
+                        all_child_nodes
+                            .get(x)
+                            .map(|(er, child)| (child.key, er.clone()))
                     })
                     .collect();
 

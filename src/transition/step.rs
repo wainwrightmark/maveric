@@ -44,11 +44,11 @@ where
     }
 
     /// Does this step contain the other step
-    pub fn contains(&self, other: &Self)-> bool{
+    pub fn contains(&self, other: &Self) -> bool {
         let mut current_step = self;
 
         'l: loop {
-            if current_step == other{
+            if current_step == other {
                 return true;
             }
 
@@ -93,7 +93,7 @@ where
         speed: Option<<L::Value as Tweenable>::Speed>,
         next: Option<Arc<Self>>,
     ) -> Arc<Self> {
-       Arc::new(  Self {
+        Arc::new(Self {
             destination,
             speed,
             next,

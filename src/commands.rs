@@ -2,11 +2,11 @@ use crate::prelude::*;
 use bevy::prelude::*;
 
 pub trait ChildCommands {
-    fn add_child<'c, NChild: HierarchyNode>(
+    fn add_child<NChild: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
         child: NChild,
-        context: &<NChild::Context as NodeContext>::Wrapper<'c>,
+        context: &<NChild::Context as NodeContext>::Wrapper<'_>,
     );
 }
 

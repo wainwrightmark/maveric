@@ -1,10 +1,5 @@
-
-
-use crate::{prelude::*};
-use bevy::{
-    ecs::system::EntityCommands,
-    prelude::*,
-};
+use crate::prelude::*;
+use bevy::{ecs::system::EntityCommands, prelude::*};
 
 pub struct ConcreteComponentCommands<'w_e, 'w, 's, 'a, 'b> {
     pub entity_ref: EntityRef<'w_e>,

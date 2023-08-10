@@ -3,13 +3,13 @@ use std::{any::type_name, rc::Rc};
 use crate::prelude::*;
 use bevy::{prelude::*, utils::hashbrown::HashMap};
 
-pub(crate) struct RootCommands<'w, 's, 'b, 'w1,  R: HierarchyRoot> {
+pub(crate) struct RootCommands<'w, 's, 'b, 'w1, R: HierarchyRoot> {
     commands: &'b mut Commands<'w, 's>,
     remaining_old_entities: HashMap<ChildKey, EntityRef<'w1>>,
-    all_child_nodes: Rc<HashMap<Entity, (EntityRef<'w1>, HierarchyChildComponent<R>)>>
+    all_child_nodes: Rc<HashMap<Entity, (EntityRef<'w1>, HierarchyChildComponent<R>)>>,
 }
 
-impl<'w, 's, 'b, 'w1,  R: HierarchyRoot> RootCommands<'w, 's, 'b, 'w1,  R> {
+impl<'w, 's, 'b, 'w1, R: HierarchyRoot> RootCommands<'w, 's, 'b, 'w1, R> {
     pub(crate) fn new(
         commands: &'b mut Commands<'w, 's>,
         all_child_nodes: Rc<HashMap<Entity, (EntityRef<'w1>, HierarchyChildComponent<R>)>>,
@@ -37,14 +37,12 @@ impl<'w, 's, 'b, 'w1,  R: HierarchyRoot> RootCommands<'w, 's, 'b, 'w1,  R> {
     }
 }
 
-impl<'w, 's, 'b, 'w1,  R: HierarchyRoot> ChildCommands
-    for RootCommands<'w, 's, 'b, 'w1,  R>
-{
-    fn add_child<'c, NChild: HierarchyNode>(
+impl<'w, 's, 'b, 'w1, R: HierarchyRoot> ChildCommands for RootCommands<'w, 's, 'b, 'w1, R> {
+    fn add_child<NChild: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
         child: NChild,
-        context: &<NChild::Context as NodeContext>::Wrapper<'c>,
+        context: &<NChild::Context as NodeContext>::Wrapper<'_>,
     ) {
         let key = key.into();
 
@@ -52,8 +50,8 @@ impl<'w, 's, 'b, 'w1,  R: HierarchyRoot> ChildCommands
             Some(entity_ref) => {
                 if entity_ref.contains::<HierarchyNodeComponent<NChild>>() {
                     update_recursive::<R, NChild>(
-                        &mut self.commands,
-                        entity_ref.clone(),
+                        self.commands,
+                        entity_ref,
                         child,
                         context,
                         self.all_child_nodes.clone(),
@@ -72,7 +70,7 @@ impl<'w, 's, 'b, 'w1,  R: HierarchyRoot> ChildCommands
             }
             None => {
                 let mut cec = self.commands.spawn_empty();
-                create_recursive::<R, NChild>(&mut cec, child, &context, key);
+                create_recursive::<R, NChild>(&mut cec, child, context, key);
             }
         }
     }

@@ -31,9 +31,9 @@ impl HasContext for Root {
 }
 
 impl ChildrenAspect for Root {
-    fn set_children<'r>(
+    fn set_children(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
         let text = context.0.number.to_string();
@@ -64,7 +64,7 @@ fn button_system(
     for interaction in &mut interaction_query {
         match interaction {
             Interaction::Pressed => {
-                state.number = state.number + 1;
+                state.number += 1;
             }
             Interaction::Hovered => {}
             Interaction::None => {}
@@ -91,8 +91,8 @@ lazy_static! {
 
             ..Default::default()
         },
-        background_color: TEXT_BUTTON_BACKGROUND.into(),
-        border_color: BUTTON_BORDER.into(),
+        background_color: TEXT_BUTTON_BACKGROUND,
+        border_color: BUTTON_BORDER,
         ..Default::default()
     });
     static ref TEXT_BUTTON_TEXT_STYLE: Arc<TextNodeStyle> = Arc::new(TextNodeStyle {
