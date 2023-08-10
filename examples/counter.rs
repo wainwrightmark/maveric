@@ -99,6 +99,7 @@ lazy_static! {
         font_size: BUTTON_FONT_SIZE,
         color: BUTTON_TEXT_COLOR,
         font: FONT_PATH,
+        alignment: TextAlignment::Center
     });
 }
 

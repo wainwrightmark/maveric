@@ -36,6 +36,7 @@ lazy_static! {
         font_size: 32.0,
         color: Color::WHITE,
         font: "fonts/FiraSans-Bold.ttf",
+        alignment: TextAlignment::Center
     });
 }
 

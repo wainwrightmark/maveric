@@ -394,11 +394,13 @@ lazy_static! {
         font_size: BUTTON_FONT_SIZE,
         color: BUTTON_TEXT_COLOR,
         font: FONT_PATH,
+        alignment: TextAlignment::Center
     });
     static ref ICON_BUTTON_TEXT_STYLE: Arc<TextNodeStyle> = Arc::new(TextNodeStyle {
         font_size: ICON_FONT_SIZE,
         color: BUTTON_TEXT_COLOR,
         font: FONT_PATH,
+        alignment: TextAlignment::Center
     });
 }
 

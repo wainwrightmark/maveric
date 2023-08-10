@@ -13,6 +13,7 @@ pub struct TextNode {
 pub struct TextNodeStyle {
     pub font_size: f32,
     pub color: Color,
+    pub alignment: TextAlignment,
     pub font: &'static str,
 }
 
@@ -37,7 +38,7 @@ impl ComponentsAspect for TextNode {
                 font_size: self.style.font_size,
                 color: self.style.color,
             },
-        ));
+        ).with_text_alignment(self.style.alignment));
     }
 }
 
