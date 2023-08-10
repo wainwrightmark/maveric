@@ -11,6 +11,7 @@ fn main() {
     let mut app = App::new();
 
     app.add_plugins(DefaultPlugins)
+    .add_plugins(StateTreePlugin)
         .init_resource::<MenuState>()
         .add_systems(Startup, setup)
         .add_systems(Update, button_system);
@@ -394,13 +395,15 @@ lazy_static! {
         font_size: BUTTON_FONT_SIZE,
         color: BUTTON_TEXT_COLOR,
         font: FONT_PATH,
-        alignment: TextAlignment::Center
+        alignment: TextAlignment::Center,
+        linebreak_behavior: bevy::text::BreakLineOn::NoWrap
     });
     static ref ICON_BUTTON_TEXT_STYLE: Arc<TextNodeStyle> = Arc::new(TextNodeStyle {
         font_size: ICON_FONT_SIZE,
         color: BUTTON_TEXT_COLOR,
         font: FONT_PATH,
-        alignment: TextAlignment::Center
+        alignment: TextAlignment::Center,
+        linebreak_behavior: bevy::text::BreakLineOn::NoWrap
     });
 }
 

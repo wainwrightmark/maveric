@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 pub use crate::prelude::*;
 pub use bevy::prelude::*;
+use bevy::text::BreakLineOn;
 
 #[derive(PartialEq, Debug)]
 pub struct TextNode {
@@ -15,6 +16,7 @@ pub struct TextNodeStyle {
     pub color: Color,
     pub alignment: TextAlignment,
     pub font: &'static str,
+    pub linebreak_behavior: BreakLineOn
 }
 
 impl HasContext for TextNode {
@@ -30,15 +32,19 @@ impl ComponentsAspect for TextNode {
     ) {
         let font = context.load(self.style.font);
 
-        //TODO only update text and node components
-        commands.insert(TextBundle::from_section(
+        let mut bundle = TextBundle::from_section(
             self.text.clone(),
             TextStyle {
                 font,
                 font_size: self.style.font_size,
                 color: self.style.color,
             },
-        ).with_text_alignment(self.style.alignment));
+        ).with_text_alignment(self.style.alignment);
+
+        bundle.text.linebreak_behavior = self.style.linebreak_behavior;
+
+        //TODO only update text and node components
+        commands.insert(bundle);
     }
 }
 

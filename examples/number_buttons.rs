@@ -36,7 +36,8 @@ lazy_static! {
         font_size: 32.0,
         color: Color::WHITE,
         font: "fonts/FiraSans-Bold.ttf",
-        alignment: TextAlignment::Center
+        alignment: TextAlignment::Center,
+        linebreak_behavior: bevy::text::BreakLineOn::NoWrap
     });
 }
 
@@ -44,6 +45,7 @@ fn main() {
     let mut app = App::new();
 
     app.add_plugins(DefaultPlugins)
+    .add_plugins(StateTreePlugin)
         .init_resource::<UIState>()
         .add_systems(Startup, setup)
         .add_systems(Update, button_system);

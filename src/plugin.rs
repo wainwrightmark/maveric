@@ -13,7 +13,6 @@ impl Plugin for StateTreePlugin {
 }
 
 pub fn register_state_tree<R: HierarchyRoot>(app: &mut App) {
-    app.add_plugins(StateTreePlugin);
     app.add_systems(First, sync_state::<R>);
 }
 

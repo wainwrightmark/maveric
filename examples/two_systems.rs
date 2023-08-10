@@ -14,6 +14,7 @@ fn main() {
         .add_systems(Update, button_system);
 
     register_state_tree::<Root>(&mut app);
+    register_state_tree::<Root2>(&mut app);
     app.run();
 }
 fn setup(mut commands: Commands) {
@@ -52,6 +53,34 @@ impl ChildrenAspect for Root {
 }
 
 impl_hierarchy_root!(Root);
+
+
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct Root2;
+
+impl HasContext for Root2 {
+    type Context = NC2<CounterState, AssetServer>;
+}
+
+impl ChildrenAspect for Root2 {
+    fn set_children(
+        &self,
+        context: &<Self::Context as NodeContext>::Wrapper<'_>,
+        commands: &mut impl ChildCommands,
+    ) {
+        let text = context.0.number.to_string();
+        commands.add_child(
+            0,
+            TextNode {
+                text,
+                style: TEXT_BUTTON_TEXT_STYLE.clone(),
+            },
+            &context.1,
+        )
+    }
+}
+
+impl_hierarchy_root!(Root2);
 
 #[derive(Debug, Clone, PartialEq, Resource, Default)]
 pub struct CounterState {
