@@ -81,9 +81,9 @@ impl HasContext for MenuRoot {
 }
 
 impl ChildrenAspect for MenuRoot {
-    fn set_children<'r>(
+    fn set_children(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
         let transition_duration: Duration = Duration::from_secs_f32(0.5);
@@ -103,7 +103,7 @@ impl ChildrenAspect for MenuRoot {
             }
             MenuState::ShowMainMenu => Carousel::new(0, get_carousel_child, transition_duration),
             MenuState::ShowLevelsPage(n) => {
-                Carousel::new(n + 1 as u32, get_carousel_child, transition_duration)
+                Carousel::new(n + 1_u32, get_carousel_child, transition_duration)
             }
         };
 
@@ -164,14 +164,18 @@ impl_static_components!(
 );
 
 impl ChildrenAspect for MainMenu {
-    fn set_children<'r>(
+    fn set_children(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
-        for (key, action) in ButtonAction::main_buttons().into_iter().enumerate() {
+        for (key, action) in ButtonAction::main_buttons().iter().enumerate() {
             let button = text_button_node(*action);
-            let button = button.with_transition_in::<BackgroundColorLens>(Color::WHITE.with_a(0.0), Color::WHITE, Duration::from_secs_f32(1.0));
+            let button = button.with_transition_in::<BackgroundColorLens>(
+                Color::WHITE.with_a(0.0),
+                Color::WHITE,
+                Duration::from_secs_f32(1.0),
+            );
 
             commands.add_child(key as u32, button, &context.1)
         }
@@ -204,9 +208,9 @@ impl_static_components!(
 );
 
 impl ChildrenAspect for LevelMenu {
-    fn set_children<'r>(
+    fn set_children(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
         let start = self.0 * LEVELS_PER_PAGE;
@@ -263,9 +267,9 @@ impl_static_components!(
 );
 
 impl ChildrenAspect for LevelMenuArrows {
-    fn set_children<'r>(
+    fn set_children(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
         if self.0 == 0 {
@@ -382,8 +386,8 @@ lazy_static! {
 
             ..Default::default()
         },
-        background_color: TEXT_BUTTON_BACKGROUND.into(),
-        border_color: BUTTON_BORDER.into(),
+        background_color: TEXT_BUTTON_BACKGROUND,
+        border_color: BUTTON_BORDER,
         ..Default::default()
     });
     static ref TEXT_BUTTON_TEXT_STYLE: Arc<TextNodeStyle> = Arc::new(TextNodeStyle {
