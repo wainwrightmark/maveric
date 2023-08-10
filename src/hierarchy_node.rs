@@ -27,7 +27,6 @@ pub trait ComponentsAspect: HasContext {
         event: SetComponentsEvent,
     );
 
-    #[allow(clippy::unused_variables)]
     fn on_deleted<'r>(&self, _commands: &mut impl ComponentCommands) -> DeletionPolicy {
         DeletionPolicy::DeleteImmediately
     }

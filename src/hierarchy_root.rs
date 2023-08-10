@@ -9,6 +9,7 @@ pub trait HierarchyRoot: ChildrenAspect + Default + Send + Sync + 'static {
     ) -> <<Self as HasContext>::Context as NodeContext>::Wrapper<'c>;
 }
 
+/// Implement HierarchyRoot for a node. The node must implement `HasContext`, `Default`, and `ChildrenAspect`
 #[macro_export]
 macro_rules! impl_hierarchy_root {
     ($node: ident) => {

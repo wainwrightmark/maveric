@@ -85,10 +85,7 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
         .get::<HierarchyNodeComponent<N>>()
         .map(|x| &x.node);
 
-    let args_changed = match old_args {
-        Some(a) => node.eq(a),
-        None => true,
-    };
+    let args_changed = !old_args.is_some_and(|oa| node.eq(oa));
 
     let children = entity_ref.get::<Children>();
 
@@ -97,14 +94,20 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     let children_args = N::as_children_aspect(&node);
     let children_context = N::children_context(context);
 
+    // info!(
+    //     "Update recursive {n} args_changed {args_changed}",
+    //     n = std::any::type_name::<N>()
+    // );
+
     let components_hot = undeleted
         || <<N::ComponentsAspect as HasContext>::Context as NodeContext>::has_changed(
             component_context,
         )
         || (args_changed
-            && old_args.is_some_and(|oa| N::as_component_aspect(&oa) == component_args));
+            && !old_args.is_some_and(|oa| N::as_component_aspect(&oa) == component_args));
 
     if components_hot {
+        //info!("Components hot {}", std::any::type_name::<N>());
         let mut component_commands = ConcreteComponentCommands::new(entity_ref, &mut ec);
 
         <N::ComponentsAspect as ComponentsAspect>::set_components(
@@ -122,9 +125,10 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     let children_hot =
         <<N::ChildrenAspect as HasContext>::Context as NodeContext>::has_changed(children_context)
             || (args_changed
-                && old_args.is_some_and(|oa| N::as_children_aspect(&oa) == children_args));
+                && !old_args.is_some_and(|oa| N::as_children_aspect(&oa) == children_args));
 
     if children_hot {
+        //info!("Children hot {}", std::any::type_name::<N>());
         let mut children_commands =
             UnorderedChildCommands::<R>::new(&mut ec, children, all_child_nodes.clone());
 
