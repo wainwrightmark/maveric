@@ -86,7 +86,21 @@ define_lens!(StyleRightLens, Style, Val, right);
 
 define_lens_transparent!(BackgroundColorLens, BackgroundColor, Color);
 define_lens_transparent!(BorderColorLens, BorderColor, Color);
-define_lens!(TextColorLens, TextStyle, Color, color);
+define_lens!(TextStyleColorLens, TextStyle, Color, color);
+
+// #[derive(Debug, Clone)]
+// struct TextStyleLens;
+
+// impl Lens for TextStyleLens{
+//     type Object = Text;
+//     type Value = TextStyle;
+// }
+
+// impl GetRefLens for TextStyleLens{
+//     fn get(object: &Self::Object) -> &Self::Value {
+//         object.sections.first().map(|x|x.style)
+//     }
+// }
 
 pub fn transform_speed(
     translation_units_per_second: f32,

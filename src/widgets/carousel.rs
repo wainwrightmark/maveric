@@ -115,19 +115,12 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
             };
 
             let child = child
-                .with_transition::<StyleLeftLens, ()>(
+                .with_transition_to::<StyleLeftLens>(
                     left,
-                    TransitionStep::<StyleLeftLens>::new_arc(left, Some(left_speed), None),
-                    (),
+                    left_speed,
                 )
-                .with_transition::<TransformScaleLens, ()>(
-                    current_scale,
-                    TransitionStep::<TransformScaleLens>::new_arc(
-                        current_scale,
-                        Some(scale_speed),
-                        None,
-                    ),
-                    (),
+                .with_transition_to::<TransformScaleLens>(
+                    current_scale,scale_speed
                 );
 
             commands.add_child(index, child, context);

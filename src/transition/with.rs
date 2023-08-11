@@ -120,6 +120,24 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
         )
     }
 
+    fn with_transition_to<L: Lens + GetValueLens>(
+        self,
+        destination: L::Value,
+        speed: <L::Value as Tweenable>::Speed
+    )-> WithTransition<Self, L, ()>
+    where
+        L::Value: Tweenable,
+        L::Object: Clone + Component,
+    {
+        let update_transition = TransitionStep::new_arc(destination.clone(), Some(speed), None);
+
+        self.with_transition(
+            destination,
+            update_transition,
+            ()
+        )
+    }
+
     fn with_transition<L: Lens + GetValueLens, P: DeletionPathMaker<L>>(
         self,
         initial_value: L::Value,
