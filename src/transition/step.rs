@@ -103,14 +103,14 @@ where
 }
 
 #[derive(Component)]
-pub(crate) struct TransitionPathComponent<L: Lens>
+pub struct Transition<L: Lens>
 where
     L::Value: Tweenable,
 {
     pub step: Arc<TransitionStep<L>>,
 }
 
-impl<L: Lens> TransitionPathComponent<L>
+impl<L: Lens> Transition<L>
 where
     L::Value: Tweenable,
 {
@@ -124,4 +124,4 @@ where
     }
 }
 
-impl<L: Lens> TransitionPathComponent<L> where L::Value: Tweenable {}
+impl<L: Lens> Transition<L> where L::Value: Tweenable {}

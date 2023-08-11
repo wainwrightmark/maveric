@@ -16,20 +16,20 @@ macro_rules! define_lens {
         }
 
         impl GetRefLens for $L {
-            fn get(object: &Self::Object) -> &Self::Value {
-                &object.$p
+            fn try_get_ref(object: &Self::Object) -> Option<&Self::Value>  {
+                Some(&object.$p)
             }
         }
 
         impl GetValueLens for $L {
-            fn get_value(object: &Self::Object) -> Self::Value {
-                object.$p
+            fn try_get_value(object: &Self::Object) -> Option<Self::Value> {
+                Some(object.$p)
             }
         }
 
         impl GetMutLens for $L {
-            fn get_mut(object: &mut Self::Object) -> &mut Self::Value {
-                &mut object.$p
+            fn try_get_mut(object: &mut Self::Object) -> Option<&mut Self::Value> {
+                Some(&mut object.$p)
             }
         }
     };
@@ -46,20 +46,20 @@ macro_rules! define_lens_transparent {
         }
 
         impl GetRefLens for $L {
-            fn get(object: &Self::Object) -> &Self::Value {
-                &object.0
+            fn try_get_ref(object: &Self::Object) -> Option<&Self::Value> {
+                Some(&object.0)
             }
         }
 
         impl GetValueLens for $L {
-            fn get_value(object: &Self::Object) -> Self::Value {
-                object.0
+            fn try_get_value(object: &Self::Object) -> Option<Self::Value> {
+                Some(object.0)
             }
         }
 
         impl GetMutLens for $L {
-            fn get_mut(object: &mut Self::Object) -> &mut Self::Value {
-                &mut object.0
+            fn try_get_mut(object: &mut Self::Object) -> Option<&mut Self::Value> {
+                Some(&mut object.0)
             }
         }
     };
@@ -88,19 +88,28 @@ define_lens_transparent!(BackgroundColorLens, BackgroundColor, Color);
 define_lens_transparent!(BorderColorLens, BorderColor, Color);
 define_lens!(TextStyleColorLens, TextStyle, Color, color);
 
-// #[derive(Debug, Clone)]
-// struct TextStyleLens;
+pub type TextColorLens<const SECTION: usize> = Prism2<TextStyleLens<SECTION>, TextStyleColorLens>;
 
-// impl Lens for TextStyleLens{
-//     type Object = Text;
-//     type Value = TextStyle;
-// }
+#[derive(Debug, Clone)]
+pub struct TextStyleLens<const SECTION: usize>;
 
-// impl GetRefLens for TextStyleLens{
-//     fn get(object: &Self::Object) -> &Self::Value {
-//         object.sections.first().map(|x|x.style)
-//     }
-// }
+impl<const SECTION: usize> Lens for TextStyleLens<SECTION>{
+    type Object = Text;
+    type Value = TextStyle;
+}
+
+impl<const SECTION: usize> GetRefLens for TextStyleLens<SECTION>{
+    fn try_get_ref(object: &Self::Object) -> Option<&Self::Value> {
+        object.sections.get(SECTION).map(|x|&x.style)
+    }
+}
+
+impl<const SECTION: usize> GetMutLens for TextStyleLens<SECTION>{
+    fn try_get_mut(object: &mut Self::Object) -> Option<&mut Self::Value> {
+        object.sections.get_mut(SECTION).map(|x|&mut x.style)
+    }
+}
+
 
 pub fn transform_speed(
     translation_units_per_second: f32,

@@ -36,7 +36,7 @@ where
 fn step_transition<L: Lens + GetValueLens + SetValueLens>(
     mut commands: Commands,
     time: Res<Time>,
-    mut query: Query<(Entity, &mut TransitionPathComponent<L>, &mut L::Object)>,
+    mut query: Query<(Entity, &mut Transition<L>, &mut L::Object)>,
 ) where
     L::Object: Component,
     L::Value: Tweenable,
@@ -51,28 +51,33 @@ fn step_transition<L: Lens + GetValueLens + SetValueLens>(
                 if let Some(speed) = tp.step.speed {
                     break speed;
                 } else {
-                    <L as SetValueLens>::set(component, tp.step.destination.clone());
+                    <L as SetValueLens>::try_set(component, tp.step.destination.clone());
                     if !tp.try_go_to_next_step() {
-                        commands
-                            .entity(entity)
-                            .remove::<TransitionPathComponent<L>>();
+                        commands.entity(entity).remove::<Transition<L>>();
                         return;
                     }
                 }
             }
         };
 
-        let from = L::get_value(&component);
+        // info!(
+        //     "Transition: {lens:?} {delta_seconds:?}",
+        //     lens = std::any::type_name::<L>()
+        // );
+
+        let from = L::try_get_value(&component);
+
+        let Some(from) = from else {return;};
 
         let new_value =
             Tweenable::transition_towards(&from, &tp.step.destination, &speed, &delta_seconds);
 
+        //info!("Transition from {from:?} to {new_value:?}");
+
         if tp.step.destination.approx_eq(&new_value) && !tp.try_go_to_next_step() {
-            commands
-                .entity(entity)
-                .remove::<TransitionPathComponent<L>>();
+            commands.entity(entity).remove::<Transition<L>>();
         }
 
-        <L as SetValueLens>::set(component, new_value);
+        <L as SetValueLens>::try_set(component, new_value);
     }
 }

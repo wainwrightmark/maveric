@@ -6,15 +6,15 @@ pub trait Lens: std::fmt::Debug + Clone + Send + Sync + 'static {
 }
 
 pub trait GetRefLens: Lens {
-    fn get(object: &Self::Object) -> &Self::Value;
+    fn try_get_ref(object: &Self::Object) -> Option<&Self::Value>;
 }
 
 pub trait GetMutLens: GetRefLens {
-    fn get_mut(object: &mut Self::Object) -> &mut Self::Value;
+    fn try_get_mut(object: &mut Self::Object) -> Option<&mut Self::Value>;
 }
 
 pub trait GetValueLens: Lens {
-    fn get_value(object: &<Self as Lens>::Object) -> <Self as Lens>::Value;
+    fn try_get_value(object: &<Self as Lens>::Object) -> Option<<Self as Lens>::Value>;
 }
 
 // impl<V: Copy + 'static, L: GetRefLens<Value = V>> GetValueLens for L {
@@ -24,12 +24,15 @@ pub trait GetValueLens: Lens {
 // }
 
 pub trait SetValueLens: Lens {
-    fn set(object: &mut <Self as Lens>::Object, value: <Self as Lens>::Value);
+    fn try_set(object: &mut <Self as Lens>::Object, value: <Self as Lens>::Value);
 }
 
 impl<L: GetMutLens> SetValueLens for L {
-    fn set(object: &mut <Self as Lens>::Object, value: <Self as Lens>::Value) {
-        *L::get_mut(object) = value
+    fn try_set(object: &mut <Self as Lens>::Object, value: <Self as Lens>::Value) {
+        match L::try_get_mut(object) {
+            Some(o) => *o = value,
+            None => {}
+        }
     }
 }
 
@@ -40,20 +43,20 @@ pub struct IdentityLens<T: std::fmt::Debug + Send + Sync + 'static> {
 }
 
 impl<T: std::fmt::Debug + Send + Sync + 'static> GetRefLens for IdentityLens<T> {
-    fn get(object: &Self::Object) -> &Self::Value {
-        object
+    fn try_get_ref(object: &Self::Object) -> Option<&Self::Value> {
+        Some(object)
     }
 }
 
 impl<T: std::fmt::Debug + Clone + Send + Sync + 'static> GetValueLens for IdentityLens<T> {
-    fn get_value(object: &<Self as Lens>::Object) -> <Self as Lens>::Value {
-        object.clone()
+    fn try_get_value(object: &<Self as Lens>::Object) -> Option<<Self as Lens>::Value> {
+        Some(object.clone())
     }
 }
 
 impl<T: std::fmt::Debug + Send + Sync + 'static> GetMutLens for IdentityLens<T> {
-    fn get_mut(object: &mut Self::Object) -> &mut Self::Value {
-        object
+    fn try_get_mut(object: &mut Self::Object) -> Option<&mut Self::Value> {
+        Some(object)
     }
 }
 
@@ -91,20 +94,20 @@ impl<L1: Lens, L2: Lens<Object = L1::Value>> Lens for Prism2<L1, L2> {
 }
 
 impl<L1: GetRefLens, L2: GetRefLens + Lens<Object = L1::Value>> GetRefLens for Prism2<L1, L2> {
-    fn get(object: &Self::Object) -> &Self::Value {
-        L2::get(L1::get(object))
+    fn try_get_ref(object: &Self::Object) -> Option<&Self::Value> {
+        L2::try_get_ref(L1::try_get_ref(object)?)
     }
 }
 
 impl<L1: GetRefLens, L2: GetValueLens + Lens<Object = L1::Value>> GetValueLens for Prism2<L1, L2> {
-    fn get_value(object: &<Self as Lens>::Object) -> <Self as Lens>::Value {
-        L2::get_value(L1::get(object))
+    fn try_get_value(object: &<Self as Lens>::Object) -> Option<<Self as Lens>::Value> {
+        L2::try_get_value(L1::try_get_ref(object)?)
     }
 }
 
 impl<L1: GetMutLens, L2: Lens<Object = L1::Value> + GetMutLens> GetMutLens for Prism2<L1, L2> {
-    fn get_mut(object: &mut Self::Object) -> &mut Self::Value {
-        L2::get_mut(L1::get_mut(object))
+    fn try_get_mut(object: &mut Self::Object) -> Option<&mut Self::Value> {
+        L2::try_get_mut(L1::try_get_mut(object)?)
     }
 }
 
@@ -128,8 +131,8 @@ impl<
         L3: GetRefLens + Lens<Object = L2::Value>,
     > GetRefLens for Prism3<L1, L2, L3>
 {
-    fn get(object: &Self::Object) -> &Self::Value {
-        L3::get(L2::get(L1::get(object)))
+    fn try_get_ref(object: &Self::Object) -> Option<&Self::Value> {
+        L3::try_get_ref(L2::try_get_ref(L1::try_get_ref(object)?)?)
     }
 }
 
@@ -139,8 +142,8 @@ impl<
         L3: GetValueLens + Lens<Object = L2::Value>,
     > GetValueLens for Prism3<L1, L2, L3>
 {
-    fn get_value(object: &<Self as Lens>::Object) -> <Self as Lens>::Value {
-        L3::get_value(L2::get(L1::get(object)))
+    fn try_get_value(object: &<Self as Lens>::Object) -> Option<<Self as Lens>::Value> {
+        L3::try_get_value(L2::try_get_ref(L1::try_get_ref(object)?)?)
     }
 }
 
@@ -150,8 +153,8 @@ impl<
         L3: Lens<Object = L2::Value> + GetMutLens,
     > GetMutLens for Prism3<L1, L2, L3>
 {
-    fn get_mut(object: &mut Self::Object) -> &mut Self::Value {
-        L3::get_mut(L2::get_mut(L1::get_mut(object)))
+    fn try_get_mut(object: &mut Self::Object) -> Option<&mut Self::Value> {
+        L3::try_get_mut(L2::try_get_mut(L1::try_get_mut(object)?)?)
     }
 }
 
@@ -169,8 +172,8 @@ macro_rules! impl_lens {
 macro_rules! impl_get_value_lens {
     ($L0:ident, $($L:ident),*) => {
         impl<$L0 : GetValueLens, $($L : GetValueLens + Lens<Object = $L0::Object>),*> GetValueLens for ($L0, $($L,)*) {
-            fn get_value(object: &<Self as Lens>::Object) -> <Self as Lens>::Value {
-                ($L0::get_value(object), $($L::get_value(object),)*)
+            fn try_get_value(object: &<Self as Lens>::Object) -> Option<<Self as Lens>::Value> {
+                Some( ($L0::try_get_value(object)?, $($L::try_get_value(object)?,)*))
             }
         }
     };
@@ -179,12 +182,12 @@ macro_rules! impl_get_value_lens {
 macro_rules! impl_set_lens {
     (($L0:ident, $l0:ident), $(($L:ident, $l:ident)),*) => {
         impl<$L0 : SetValueLens, $($L : SetValueLens + Lens<Object = $L0::Object>),*> SetValueLens for ($L0, $($L,)*) {
-            fn set(object: &mut <Self as Lens>::Object, value: <Self as Lens>::Value) {
+            fn try_set(object: &mut <Self as Lens>::Object, value: <Self as Lens>::Value) {
                 let ($l0, $($l,)*) = value;
 
 
-                $L0::set(object, $l0);
-                $($L::set(object, $l);)*
+                $L0::try_set(object, $l0);
+                $($L::try_set(object, $l);)*
             }
         }
     };

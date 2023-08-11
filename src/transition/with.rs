@@ -123,19 +123,15 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
     fn with_transition_to<L: Lens + GetValueLens>(
         self,
         destination: L::Value,
-        speed: <L::Value as Tweenable>::Speed
-    )-> WithTransition<Self, L, ()>
+        speed: <L::Value as Tweenable>::Speed,
+    ) -> WithTransition<Self, L, ()>
     where
         L::Value: Tweenable,
         L::Object: Clone + Component,
     {
         let update_transition = TransitionStep::new_arc(destination.clone(), Some(speed), None);
 
-        self.with_transition(
-            destination,
-            update_transition,
-            ()
-        )
+        self.with_transition(destination, update_transition, ())
     }
 
     fn with_transition<L: Lens + GetValueLens, P: DeletionPathMaker<L>>(
@@ -229,39 +225,43 @@ where
                     Some(self.update_transition.clone()),
                 );
 
-                commands.insert(TransitionPathComponent {
+                commands.insert(Transition {
                     step: in_transition,
                 });
             }
             SetComponentsEvent::Updated => {
-                if let Some(previous_path) = commands.get::<TransitionPathComponent<L>>() {
+                if let Some(previous_path) = commands.get::<Transition<L>>() {
                     if self.update_transition.contains(&previous_path.step) {
                         //info!("Same path found - no change");
                     } else {
                         //info!("New path found");
-                        commands.insert(TransitionPathComponent {
+                        commands.insert(Transition {
                             step: self.update_transition.clone(),
                         });
                     }
                 } else {
                     //info!("No path found");
-                    commands.insert(TransitionPathComponent {
+                    commands.insert(Transition {
                         step: self.update_transition.clone(),
                     });
                 }
             }
             SetComponentsEvent::Undeleted => {
                 let step = if let Some(existing_value) = commands.get::<L::Object>() {
-                    TransitionStep::<L>::new_arc(
-                        L::get_value(existing_value),
-                        None,
-                        Some(self.update_transition.clone()),
-                    )
+                    if let Some(destination) = L::try_get_value(existing_value) {
+                        TransitionStep::<L>::new_arc(
+                            destination,
+                            None,
+                            Some(self.update_transition.clone()),
+                        )
+                    } else {
+                        self.update_transition.clone()
+                    }
                 } else {
                     self.update_transition.clone()
                 };
 
-                commands.insert(TransitionPathComponent { step });
+                commands.insert(Transition { step });
             }
         }
     }
@@ -272,7 +272,9 @@ where
         let Some(component) = commands
                 .get::<L::Object>() else {return base;};
 
-        let previous = &<L as GetValueLens>::get_value(component);
+        let previous = &<L as GetValueLens>::try_get_value(component);
+
+        let Some(previous) = previous else {return  base;};
 
         let Some(deletion_path) = self.deletion.get_step(previous) else{return  base;};
 
@@ -285,7 +287,7 @@ where
             DeletionPolicy::Linger(d) => duration.max(d),
         };
 
-        commands.insert(TransitionPathComponent {
+        commands.insert(Transition {
             step: deletion_path,
         });
 
