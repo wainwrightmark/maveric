@@ -72,24 +72,13 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
             Next,
         }
 
-        const FAR_LEFT: Val = Val::Percent(0.0);
+        const FAR_LEFT: Val = Val::Percent(-150.0);
         const CENTER: Val = Val::Percent(50.0);
-        const FAR_RIGHT: Val = Val::Percent(100.0);
+        const FAR_RIGHT: Val = Val::Percent(200.0);
 
         let left_speed =
             crate::transition::speed::calculate_speed(&FAR_LEFT, &CENTER, self.transition_duration);
 
-        const ZERO_VEC: Vec3 = Vec3 {
-            x: 1.0,
-            y: 0.0,
-            z: 1.0,
-        };
-
-        let scale_speed = crate::transition::speed::calculate_speed(
-            &ZERO_VEC,
-            &Vec3::ONE,
-            self.transition_duration,
-        );
 
         let children = [
             (Position::Prev, FAR_LEFT),
@@ -108,20 +97,7 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
 
             let Some(child) = (self.get_child)(index) else {continue;};
 
-            let current_scale = if position == Position::Current {
-                Vec3::ONE
-            } else {
-                ZERO_VEC
-            };
-
-            let child = child
-                .with_transition_to::<StyleLeftLens>(
-                    left,
-                    left_speed,
-                )
-                .with_transition_to::<TransformScaleLens>(
-                    current_scale,scale_speed
-                );
+            let child = child.with_transition_to::<StyleLeftLens>(left, left_speed);
 
             commands.add_child(index, child, context);
         }
