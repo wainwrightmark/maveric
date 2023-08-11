@@ -102,9 +102,9 @@ impl ChildrenAspect for MenuRoot {
                 commands.add_child("open_icon", menu_button_node(), &context.1);
                 return;
             }
-            MenuState::ShowMainMenu => Carousel::new(0, get_carousel_child, transition_duration),
+            MenuState::ShowMainMenu => Carousel::new(0,6, get_carousel_child, transition_duration),
             MenuState::ShowLevelsPage(n) => {
-                Carousel::new(n + 1_u32, get_carousel_child, transition_duration)
+                Carousel::new(n + 1_u32,6,  get_carousel_child, transition_duration)
             }
         };
 
