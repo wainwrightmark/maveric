@@ -72,30 +72,23 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ChildCommands,
     ) {
-        // #[derive(Debug, PartialEq)]
-        // enum Position {
-        //     Prev,
-        //     Current,
-        //     Next,
-        // }
+        const CENTER: f32 = 50.0;
 
-        const FAR_LEFT: Val = Val::Percent(-150.0);
-        const CENTER: Val = Val::Percent(50.0);
-        const FAR_RIGHT: Val = Val::Percent(200.0);
+        const PAGE_WIDTH: f32 = 200.0;
 
-        let left_speed =
-            crate::transition::speed::calculate_speed(&FAR_LEFT, &CENTER, self.transition_duration);
+        let left_speed = crate::transition::speed::calculate_speed(
+            &0.0f32,
+            &PAGE_WIDTH,
+            self.transition_duration,
+        );
 
         for index in 0..self.total_pages {
             let Some(child) = (self.get_child)(index) else {continue;};
 
-            let left = match self.current_page.cmp(&index){
-                std::cmp::Ordering::Less => FAR_RIGHT,
-                std::cmp::Ordering::Equal => CENTER,
-                std::cmp::Ordering::Greater => FAR_LEFT,
-            };
+            let percentage = CENTER + (((index as f32) - (self.current_page as f32)) * PAGE_WIDTH);
 
-            let child = child.with_transition_to::<StyleLeftLens>(left, left_speed);
+
+            let child = child.with_transition_to::<StyleLeftLens>(Val::Percent(percentage), left_speed);
 
             commands.add_child(index, child, context);
         }
