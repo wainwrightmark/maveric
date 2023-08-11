@@ -1,0 +1,5 @@
+- [ ] Documentation
+- [ ] Incorporate acceleration into the transition system
+- [ ] Do not create a hashmap for every update
+- [ ] Ordered Children
+- [ ] Feature flags
