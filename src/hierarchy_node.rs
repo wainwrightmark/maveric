@@ -89,7 +89,7 @@ impl HasContext for () {
     type Context = NoContext;
 }
 
-impl ChildrenAspect for () {
+impl<T: NoChildrenAspect + HasContext> ChildrenAspect for T {
     fn set_children<'r>(
         &self,
         _context: &<Self::Context as NodeContext>::Wrapper<'r>,
@@ -97,3 +97,7 @@ impl ChildrenAspect for () {
     ) {
     }
 }
+
+pub trait NoChildrenAspect {}
+
+impl NoChildrenAspect for () {}
