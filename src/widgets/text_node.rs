@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 pub use crate::prelude::*;
 pub use bevy::prelude::*;
-use bevy::text::BreakLineOn;
 
 #[derive(PartialEq, Debug)]
 pub struct TextNode {
@@ -16,7 +15,7 @@ pub struct TextNodeStyle {
     pub color: Color,
     pub alignment: TextAlignment,
     pub font: &'static str,
-    pub linebreak_behavior: BreakLineOn
+    pub linebreak_behavior: bevy::text::BreakLineOn
 }
 
 impl HasContext for TextNode {

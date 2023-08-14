@@ -1,4 +1,4 @@
-use crate::widgets::prelude::{ChildrenAspect, ComponentsAspect, HasContext, NodeContext};
+use crate::prelude::*;
 
 macro_rules! impl_either {
     ($Either:ident, $T0:ident, $Case0:ident, $t0:ident, $(($T:ident, $C:ident, $t:ident)),*) =>
@@ -23,8 +23,8 @@ macro_rules! impl_either {
                 &self,
                 previous: Option<&Self>,
                 context: &<Self::Context as NodeContext>::Wrapper<'r>,
-                commands: &mut impl crate::widgets::prelude::ComponentCommands,
-                event: crate::widgets::prelude::SetComponentsEvent,
+                commands: &mut impl crate::prelude::ComponentCommands,
+                event: crate::prelude::SetComponentsEvent,
             ) {
                 use $Either::*;
                 match (self, previous) {
@@ -38,8 +38,8 @@ macro_rules! impl_either {
 
             fn on_deleted<'r>(
                 &self,
-                commands: &mut impl crate::widgets::prelude::ComponentCommands,
-            ) -> crate::widgets::prelude::DeletionPolicy {
+                commands: &mut impl crate::prelude::ComponentCommands,
+            ) -> crate::prelude::DeletionPolicy {
                 use $Either::*;
                 match self {
                     $Case0(node) => node.on_deleted(commands),
@@ -58,7 +58,7 @@ macro_rules! impl_either {
                 &self,
                 previous: Option<&Self>,
                 context: &<Self::Context as NodeContext>::Wrapper<'r>,
-                commands: &mut impl crate::widgets::prelude::ChildCommands,
+                commands: &mut impl crate::prelude::ChildCommands,
             ) {
                 use $Either::*;
                 match (self, previous) {

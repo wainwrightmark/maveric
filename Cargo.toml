@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.11.0", default-features = false, features = ["bevy_render", "bevy_ui"]}
+bevy = { version = "0.11.0", default-features = false}
 
 
 
@@ -14,3 +14,28 @@ bevy = { version = "0.11.0", default-features = false, features = ["bevy_render"
 bevy = "0.11.0"
 lazy_static = "1.4.0"
 strum = { version = "0.25.0", features = ["derive"] }
+
+
+[features]
+more_bevy = ["bevy/bevy_render", "bevy/bevy_ui"]
+
+
+[[example]]
+name = "menu"
+path = "examples/menu.rs"
+required-features = ["more_bevy"]
+
+[[example]]
+name = "counter"
+path = "examples/counter.rs"
+required-features = ["more_bevy"]
+
+[[example]]
+name = "two_systems"
+path = "examples/two_systems.rs"
+required-features = ["more_bevy"]
+
+[[example]]
+name = "number_buttons"
+path = "examples/number_buttons.rs"
+required-features = ["more_bevy"]
