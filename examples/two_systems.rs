@@ -40,10 +40,10 @@ impl ChildrenAspect for Root {
         let text = context.0.number.to_string();
         commands.add_child(
             0,
-            ButtonNode {
+            TextButtonNode {
                 text,
                 text_node_style: TEXT_BUTTON_TEXT_STYLE.clone(),
-                button_node_style: TEXT_BUTTON_STYLE.clone(),
+                button_node_style: BUTTON_STYLE.clone(),
                 marker: Marker,
             },
             &context.1,
@@ -67,12 +67,13 @@ impl ChildrenAspect for Root2 {
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
-        let text = context.0.number.to_string();
+
         commands.add_child(
-            0,
-            TextNode {
-                text,
-                style: TEXT_BUTTON_TEXT_STYLE.clone(),
+            1,
+            ImageButtonNode{
+                image_handle: r#"images\google-play-badge.png"#,
+                button_node_style: BUTTON_STYLE.clone(),
+                marker: Marker,
             },
             &context.1,
         )
@@ -102,15 +103,15 @@ fn button_system(
 }
 
 lazy_static! {
-    static ref TEXT_BUTTON_STYLE: Arc<ButtonNodeStyle> = Arc::new(ButtonNodeStyle {
+    static ref BUTTON_STYLE: Arc<ButtonNodeStyle> = Arc::new(ButtonNodeStyle {
         style: Style {
-            width: Val::Px(TEXT_BUTTON_WIDTH),
-            height: Val::Px(TEXT_BUTTON_HEIGHT),
+            width: Val::Px(BUTTON_WIDTH),
+            height: Val::Px(BUTTON_HEIGHT),
             margin: UiRect {
                 left: Val::Auto,
                 right: Val::Auto,
-                top: Val::Px(5.0),
-                bottom: Val::Px(5.0),
+                top: Val::Auto,
+                bottom: Val::Auto,
             },
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,
@@ -136,8 +137,8 @@ lazy_static! {
 pub const ICON_BUTTON_WIDTH: f32 = 65.;
 pub const ICON_BUTTON_HEIGHT: f32 = 65.;
 
-pub const TEXT_BUTTON_WIDTH: f32 = 360.;
-pub const TEXT_BUTTON_HEIGHT: f32 = 60.;
+pub const BUTTON_WIDTH: f32 = 646.;
+pub const BUTTON_HEIGHT: f32 = 250.;
 
 pub const MENU_OFFSET: f32 = 10.;
 

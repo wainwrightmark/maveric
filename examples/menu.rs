@@ -111,8 +111,8 @@ impl ChildrenAspect for MenuRoot {
     }
 }
 
-fn menu_button_node() -> ButtonNode<ButtonAction> {
-    ButtonNode {
+fn menu_button_node() -> TextButtonNode<ButtonAction> {
+    TextButtonNode {
         text: ButtonAction::OpenMenu.icon(),
         text_node_style: ICON_BUTTON_TEXT_STYLE.clone(),
         button_node_style: OPEN_MENU_BUTTON_STYLE.clone(),
@@ -120,8 +120,8 @@ fn menu_button_node() -> ButtonNode<ButtonAction> {
     }
 }
 
-fn icon_button_node(button_action: ButtonAction) -> ButtonNode<ButtonAction> {
-    ButtonNode {
+fn icon_button_node(button_action: ButtonAction) -> TextButtonNode<ButtonAction> {
+    TextButtonNode {
         text: button_action.icon(),
         text_node_style: ICON_BUTTON_TEXT_STYLE.clone(),
         button_node_style: ICON_BUTTON_STYLE.clone(),
@@ -129,8 +129,8 @@ fn icon_button_node(button_action: ButtonAction) -> ButtonNode<ButtonAction> {
     }
 }
 
-fn text_button_node(button_action: ButtonAction) -> ButtonNode<ButtonAction> {
-    ButtonNode {
+fn text_button_node(button_action: ButtonAction) -> TextButtonNode<ButtonAction> {
+    TextButtonNode {
         text: button_action.text(),
         text_node_style: TEXT_BUTTON_TEXT_STYLE.clone(),
         button_node_style: TEXT_BUTTON_STYLE.clone(),

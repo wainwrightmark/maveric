@@ -38,7 +38,7 @@ impl ChildrenAspect for Root {
         let text = context.0.number.to_string();
         commands.add_child(
             0,
-            ButtonNode {
+            TextButtonNode {
                 text,
                 text_node_style: TEXT_BUTTON_TEXT_STYLE.clone(),
                 button_node_style: TEXT_BUTTON_STYLE.clone(),

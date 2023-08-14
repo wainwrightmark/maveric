@@ -147,7 +147,7 @@ impl ChildrenAspect for CommandGrid {
         for command in [Command::AddNew, Command::Reset] {
             let key: &'static str = command.into();
 
-            let node = ButtonNode {
+            let node = TextButtonNode {
                 text: command.to_string(),
                 text_node_style: TEXT_NODE_STYLE.clone(),
                 button_node_style: BUTTON_NODE_STYLE.clone(),
@@ -173,7 +173,7 @@ impl ChildrenAspect for DynamicGrid {
         commands: &mut impl ChildCommands,
     ) {
         for number in context.0.dynamic_buttons.iter().cloned() {
-            let node = ButtonNode {
+            let node = TextButtonNode {
                 text: number.to_string(),
                 text_node_style: TEXT_NODE_STYLE.clone(),
                 button_node_style: BUTTON_NODE_STYLE.clone(),
