@@ -26,6 +26,7 @@ impl HasContext for TextNode {
 impl ComponentsAspect for TextNode {
     fn set_components<'r>(
         &self,
+        _previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ComponentCommands,
         _event: SetComponentsEvent,

@@ -23,6 +23,7 @@ pub trait ChildrenAspect: HasContext {
 pub trait ComponentsAspect: HasContext {
     fn set_components<'r>(
         &self,
+        previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ComponentCommands,
         event: SetComponentsEvent,

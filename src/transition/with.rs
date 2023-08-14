@@ -134,11 +134,16 @@ where
 {
     fn set_components<'r>(
         &self,
+        previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ComponentCommands,
         event: SetComponentsEvent,
     ) {
+
+        let previous = previous.map(|x| N::as_component_aspect(&x.node));
+
         self.node.as_component_aspect().set_components(
+            previous,
             N::components_context(context),
             commands,
             event,

@@ -34,7 +34,7 @@ impl HasContext for Root {
 impl ChildrenAspect for Root {
     fn set_children(
         &self,
-        previous: Option<&Self>,
+        _previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
@@ -65,7 +65,7 @@ impl HasContext for Root2 {
 impl ChildrenAspect for Root2 {
     fn set_children(
         &self,
-        previous: Option<&Self>,
+        _previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {

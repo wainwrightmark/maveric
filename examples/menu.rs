@@ -83,7 +83,7 @@ impl HasContext for MenuRoot {
 impl ChildrenAspect for MenuRoot {
     fn set_children(
         &self,
-        previous: Option<&Self>,
+        _previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
@@ -102,9 +102,9 @@ impl ChildrenAspect for MenuRoot {
                 commands.add_child("open_icon", menu_button_node(), &context.1);
                 return;
             }
-            MenuState::ShowMainMenu => Carousel::new(0, 6, get_carousel_child, transition_duration),
+            MenuState::ShowMainMenu => Carousel::new(0, get_carousel_child, transition_duration),
             MenuState::ShowLevelsPage(n) => {
-                Carousel::new(n + 1_u32, 6, get_carousel_child, transition_duration)
+                Carousel::new(n + 1_u32, get_carousel_child, transition_duration)
             }
         };
 
@@ -170,7 +170,7 @@ impl StaticComponentsAspect for MainMenu {
 impl ChildrenAspect for MainMenu {
     fn set_children(
         &self,
-        previous: Option<&Self>,
+        _previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
@@ -218,7 +218,7 @@ impl StaticComponentsAspect for LevelMenu {
 impl ChildrenAspect for LevelMenu {
     fn set_children(
         &self,
-        previous: Option<&Self>,
+        _previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
@@ -281,7 +281,7 @@ impl StaticComponentsAspect for LevelMenuArrows {
 impl ChildrenAspect for LevelMenuArrows {
     fn set_children(
         &self,
-        previous: Option<&Self>,
+        _previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {

@@ -10,6 +10,7 @@ pub trait StaticComponentsAspect: HasContext {
 impl<T: StaticComponentsAspect> ComponentsAspect for T {
     fn set_components<'r>(
         &self,
+        _previous: Option<&Self>,
         _context: &<Self::Context as super::prelude::NodeContext>::Wrapper<'r>,
         commands: &mut impl super::prelude::ComponentCommands,
         event: super::prelude::SetComponentsEvent,

@@ -19,9 +19,10 @@ impl<Marker: Component + PartialEq + Clone> NoChildrenAspect for ImageButtonNode
 impl<Marker: Component + PartialEq + Clone> ComponentsAspect for ImageButtonNode<Marker> {
     fn set_components<'r>(
         &self,
+        _previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ComponentCommands,
-        _event: SetComponentsEvent,
+        event: SetComponentsEvent,
     ) {
         let texture = context.load(self.image_handle);
 
@@ -36,6 +37,9 @@ impl<Marker: Component + PartialEq + Clone> ComponentsAspect for ImageButtonNode
             },
             ..default()
         });
-        commands.insert(self.marker.clone());
+
+        if event == SetComponentsEvent::Created {
+            commands.insert(self.marker.clone());
+        }
     }
 }

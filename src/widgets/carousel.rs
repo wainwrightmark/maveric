@@ -3,7 +3,6 @@ use std::{marker::PhantomData, time::Duration};
 
 pub struct Carousel<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> {
     current_page: u32,
-    total_pages: u32,
     get_child: F,
     transition_duration: Duration,
     phantom: PhantomData<Child>,
@@ -12,13 +11,11 @@ pub struct Carousel<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> 
 impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Carousel<Child, F> {
     pub fn new(
         current_page: u32,
-        total_pages: u32,
         get_child: F,
         transition_duration: Duration,
     ) -> Self {
         Self {
             current_page,
-            total_pages,
             get_child,
             transition_duration,
             phantom: PhantomData,
@@ -47,6 +44,7 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
 {
     fn set_components<'r>(
         &self,
+        _previous: Option<&Self>,
         _context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ComponentCommands,
         event: SetComponentsEvent,

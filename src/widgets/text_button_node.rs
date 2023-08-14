@@ -27,7 +27,7 @@ impl<Marker: Component + PartialEq + Clone> HasContext for TextButtonNode<Marker
 impl<Marker: Component + PartialEq + Clone> ChildrenAspect for TextButtonNode<Marker> {
     fn set_children<'r>(
         &self,
-        previous: Option<&Self>,
+        _previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ChildCommands,
     ) {
@@ -45,9 +45,10 @@ impl<Marker: Component + PartialEq + Clone> ChildrenAspect for TextButtonNode<Ma
 impl<Marker: Component + PartialEq + Clone> ComponentsAspect for TextButtonNode<Marker> {
     fn set_components<'r>(
         &self,
+        _previous: Option<&Self>,
         _context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ComponentCommands,
-        _event: SetComponentsEvent,
+        event: SetComponentsEvent,
     ) {
         commands.insert(ButtonBundle {
             style: self.button_node_style.style.clone(),
@@ -55,6 +56,10 @@ impl<Marker: Component + PartialEq + Clone> ComponentsAspect for TextButtonNode<
             background_color: BackgroundColor(self.button_node_style.background_color),
             ..default()
         });
-        commands.insert(self.marker.clone());
+
+        if event == SetComponentsEvent::Created{
+            commands.insert(self.marker.clone());
+        }
+
     }
 }

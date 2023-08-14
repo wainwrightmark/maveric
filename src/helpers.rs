@@ -22,6 +22,7 @@ pub(crate) fn create_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
 
     <N::ComponentsAspect as ComponentsAspect>::set_components(
         component_args,
+        None,
         &component_context,
         &mut child_commands,
         SetComponentsEvent::Created,
@@ -100,12 +101,14 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     //     n = std::any::type_name::<N>()
     // );
 
+    let old_component_args = old_args.map(|x| N::as_component_aspect(&x));
+
     let components_hot = undeleted
         || <<N::ComponentsAspect as HasContext>::Context as NodeContext>::has_changed(
             component_context,
         )
         || (args_changed
-            && !old_args.is_some_and(|oa| N::as_component_aspect(&oa) == component_args));
+            && !old_component_args.is_some_and(|oa| oa == component_args));
 
     if components_hot {
         //info!("Components hot {}", std::any::type_name::<N>());
@@ -113,6 +116,7 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
 
         <N::ComponentsAspect as ComponentsAspect>::set_components(
             component_args,
+            old_component_args,
             &component_context,
             &mut component_commands,
             if undeleted {

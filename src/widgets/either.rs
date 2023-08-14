@@ -21,14 +21,17 @@ macro_rules! impl_either {
         {
             fn set_components<'r>(
                 &self,
+                previous: Option<&Self>,
                 context: &<Self::Context as NodeContext>::Wrapper<'r>,
                 commands: &mut impl crate::widgets::prelude::ComponentCommands,
                 event: crate::widgets::prelude::SetComponentsEvent,
             ) {
                 use $Either::*;
-                match self {
-                    $Case0($t0) => $t0.set_components(context, commands, event),
-                    $($C($t) => $t.set_components(context, commands, event),)*
+                match (self, previous) {
+                    ($Case0(node), Some($Case0(prev))) => node.set_components(Some(prev), context, commands, event),
+                    ($Case0(node),_)=> node.set_components(None, context, commands, event),
+                    $(($C(node), Some($C(prev))) => node.set_components(Some(prev),context, commands, event),)*
+                    $(($C(node), _) => node.set_components(None, context, commands, event),)*
 
                 }
             }
@@ -39,8 +42,8 @@ macro_rules! impl_either {
             ) -> crate::widgets::prelude::DeletionPolicy {
                 use $Either::*;
                 match self {
-                    $Case0($t0) => $t0.on_deleted(commands),
-                    $($C($t) => $t.on_deleted(commands),)*
+                    $Case0(node) => node.on_deleted(commands),
+                    $($C(node) => node.on_deleted(commands),)*
 
                 }
             }
