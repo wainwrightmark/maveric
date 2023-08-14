@@ -14,6 +14,7 @@ pub trait HasContext: PartialEq + Sized + Send + Sync + 'static {
 pub trait ChildrenAspect: HasContext {
     fn set_children<'r>(
         &self,
+        previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ChildCommands,
     );
@@ -92,6 +93,7 @@ impl HasContext for () {
 impl<T: NoChildrenAspect + HasContext> ChildrenAspect for T {
     fn set_children<'r>(
         &self,
+        _previous: Option<&Self>,
         _context: &<Self::Context as NodeContext>::Wrapper<'r>,
         _commands: &mut impl ChildCommands,
     ) {

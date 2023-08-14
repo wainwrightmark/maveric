@@ -28,6 +28,7 @@ pub(crate) fn create_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     );
     <N::ChildrenAspect as ChildrenAspect>::set_children(
         children_args,
+        None,
         &children_context,
         &mut child_commands,
     );
@@ -122,10 +123,12 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
         );
     }
 
+    let old_children_args = old_args.map(|x| N::as_children_aspect(&x));
+
     let children_hot =
         <<N::ChildrenAspect as HasContext>::Context as NodeContext>::has_changed(children_context)
             || (args_changed
-                && !old_args.is_some_and(|oa| N::as_children_aspect(&oa) == children_args));
+                && !old_children_args.is_some_and(|oa| oa == children_args));
 
     if children_hot {
         //info!("Children hot {}", std::any::type_name::<N>());
@@ -134,6 +137,7 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
 
         <N::ChildrenAspect as ChildrenAspect>::set_children(
             children_args,
+            old_children_args,
             &children_context,
             &mut children_commands,
         );

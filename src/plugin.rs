@@ -61,6 +61,6 @@ fn sync_state<'a, R: HierarchyRoot>(
 
     let mut root_commands = RootCommands::new(&mut commands, all_child_nodes, root_query);
 
-    R::set_children(&R::default(), &context, &mut root_commands);
+    R::set_children(&R::default(), Some(&R::default()), &context, &mut root_commands);
     root_commands.finish();
 }

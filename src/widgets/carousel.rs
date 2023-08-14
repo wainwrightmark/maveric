@@ -64,33 +64,57 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
     }
 }
 
+
 impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> ChildrenAspect
     for Carousel<Child, F>
 {
     fn set_children<'r>(
         &self,
+        previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ChildCommands,
     ) {
         const CENTER: f32 = 50.0;
-
         const PAGE_WIDTH: f32 = 200.0;
+        const LEFT: f32 = CENTER - PAGE_WIDTH;
+        const RIGHT: f32 = CENTER + PAGE_WIDTH;
 
-        let left_speed = crate::transition::speed::calculate_speed(
-            &0.0f32,
-            &PAGE_WIDTH,
-            self.transition_duration,
-        );
+        let Some(current_page) = (self.get_child)(self.current_page) else {return;};
 
-        for index in 0..self.total_pages {
-            let Some(child) = (self.get_child)(index) else {continue;};
+        'previous: {
+            if let Some(Self {
+                current_page: previous_page_number,..
+            }) = previous
+            {
+                let (current_position, previous_position) =
+                    match previous_page_number.cmp(&self.current_page) {
+                        std::cmp::Ordering::Less => (RIGHT, LEFT),
+                        std::cmp::Ordering::Equal => {
+                            break 'previous;
+                        }
+                        std::cmp::Ordering::Greater => (LEFT, RIGHT),
+                    };
 
-            let percentage = CENTER + (((index as f32) - (self.current_page as f32)) * PAGE_WIDTH);
+                let Some(previous_page) = (self.get_child)(*previous_page_number) else {break 'previous;};
 
+                let previous_page = previous_page.with_transition_in::<StyleLeftLens>(
+                    Val::Percent(CENTER),
+                    Val::Percent(previous_position),
+                    self.transition_duration,
+                );
 
-            let child = child.with_transition_to::<StyleLeftLens>(Val::Percent(percentage), left_speed);
+                let current_page = current_page.with_transition_in::<StyleLeftLens>(
+                    Val::Percent(current_position),
+                    Val::Percent(CENTER),
+                    self.transition_duration,
+                );
 
-            commands.add_child(index, child, context);
+                commands.add_child(*previous_page_number, previous_page, context);
+                commands.add_child(self.current_page, current_page, context);
+                return;
+            }
         }
+
+        commands.add_child(self.current_page, current_page, context);
     }
 }

@@ -83,6 +83,7 @@ impl HasContext for MenuRoot {
 impl ChildrenAspect for MenuRoot {
     fn set_children(
         &self,
+        previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
@@ -169,6 +170,7 @@ impl StaticComponentsAspect for MainMenu {
 impl ChildrenAspect for MainMenu {
     fn set_children(
         &self,
+        previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
@@ -216,6 +218,7 @@ impl StaticComponentsAspect for LevelMenu {
 impl ChildrenAspect for LevelMenu {
     fn set_children(
         &self,
+        previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
@@ -278,6 +281,7 @@ impl StaticComponentsAspect for LevelMenuArrows {
 impl ChildrenAspect for LevelMenuArrows {
     fn set_children(
         &self,
+        previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {

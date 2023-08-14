@@ -53,18 +53,23 @@ macro_rules! impl_either {
         {
             fn set_children<'r>(
                 &self,
+                previous: Option<&Self>,
                 context: &<Self::Context as NodeContext>::Wrapper<'r>,
                 commands: &mut impl crate::widgets::prelude::ChildCommands,
             ) {
                 use $Either::*;
-                match self {
-                    $Case0($t0) => $t0.set_children(context, commands),
-                    $($C($t) => $t.set_children(context, commands),)*
+                match (self, previous) {
+                    ($Case0(node), Some($Case0(previous)))=> node.set_children(Some(previous), context, commands),
+                    ($Case0(node),_)=> node.set_children(None, context, commands),
+                    $(($C(node), Some($C(previous))) => node.set_children(Some(previous), context, commands),)*
+                    $(($C(node), _) => node.set_children(None, context, commands),)*
 
                 }
             }
         }
     }
+
+
 }
 
 impl_either!(Either2, T0, Case0, t0, (T1, Case1, t1));

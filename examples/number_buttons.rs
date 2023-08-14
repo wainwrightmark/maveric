@@ -141,6 +141,7 @@ impl StaticComponentsAspect for CommandGrid {
 impl ChildrenAspect for CommandGrid {
     fn set_children(
         &self,
+        previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
@@ -169,6 +170,7 @@ impl HasContext for DynamicGrid {
 impl ChildrenAspect for DynamicGrid {
     fn set_children(
         &self,
+        previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
@@ -218,6 +220,7 @@ impl HasContext for Root {
 impl ChildrenAspect for Root {
     fn set_children(
         &self,
+        previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {

@@ -27,6 +27,7 @@ impl<Marker: Component + PartialEq + Clone> HasContext for TextButtonNode<Marker
 impl<Marker: Component + PartialEq + Clone> ChildrenAspect for TextButtonNode<Marker> {
     fn set_children<'r>(
         &self,
+        previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ChildCommands,
     ) {
