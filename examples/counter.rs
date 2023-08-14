@@ -8,12 +8,10 @@ fn main() {
     let mut app = App::new();
 
     app.add_plugins(DefaultPlugins)
-    .add_plugins(StateTreePlugin)
         .init_resource::<CounterState>()
         .add_systems(Startup, setup)
-        .add_systems(Update, button_system);
-
-    register_state_tree::<Root>(&mut app);
+        .add_systems(Update, button_system)
+        .register_state_hierarchy::<Root>();
     app.run();
 }
 fn setup(mut commands: Commands) {

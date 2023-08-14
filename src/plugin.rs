@@ -4,16 +4,28 @@ use crate::prelude::*;
 use bevy::{ecs::system::StaticSystemParam, prelude::*, utils::hashbrown::HashMap};
 
 #[derive(Debug, Default)]
-pub struct StateTreePlugin;
+struct ScheduleForRemovalPlugin;
 
-impl Plugin for StateTreePlugin {
+impl Plugin for ScheduleForRemovalPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Last, handle_scheduled_for_removal);
     }
 }
 
-pub fn register_state_tree<R: HierarchyRoot>(app: &mut App) {
-    app.add_systems(First, sync_state::<R>);
+pub trait CanRegisterStateHierarchy {
+    fn register_state_hierarchy<R: HierarchyRoot>(&mut self) -> &mut Self;
+}
+
+impl CanRegisterStateHierarchy for App {
+    fn register_state_hierarchy<R: HierarchyRoot>(&mut self)  -> &mut Self{
+        if !self.is_plugin_added::<ScheduleForRemovalPlugin>() {
+            self.add_plugins(ScheduleForRemovalPlugin::default());
+        }
+
+        self.add_systems(First, sync_state::<R>);
+
+        self
+    }
 }
 
 fn handle_scheduled_for_removal(

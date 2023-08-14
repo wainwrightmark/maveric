@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use lazy_static::lazy_static;
 use state_hierarchy::transition::prelude::*;
-use state_hierarchy::{impl_hierarchy_root, impl_static_components, prelude::*};
+use state_hierarchy::{impl_hierarchy_root, prelude::*};
 use std::f32::consts;
 use std::time::Duration;
 use std::{string::ToString, sync::Arc};
@@ -45,18 +45,16 @@ fn main() {
     let mut app = App::new();
 
     app.add_plugins(DefaultPlugins)
-    .add_plugins(StateTreePlugin)
+        .register_state_hierarchy::<Root>()
         .init_resource::<UIState>()
         .add_systems(Startup, setup)
         .add_systems(Update, button_system);
 
-    //app.add_plugins(TransitionPlugin::<Prism2<TransformRotationLens, QuatZLens>>::default());
     app.add_plugins(TransitionPlugin::<(
         TransformRotationLens,
         TransformScaleLens,
     )>::default());
 
-    register_state_tree::<Root>(&mut app);
     app.run();
 }
 
@@ -122,20 +120,23 @@ impl HasContext for CommandGrid {
     type Context = AssetServer;
 }
 
-impl_static_components!(
-    CommandGrid,
-    NodeBundle {
-        style: Style {
-            width: Val::Percent(100.0),
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::Center,
-            display: Display::Flex,
-            flex_direction: FlexDirection::Row,
+impl StaticComponentsAspect for CommandGrid {
+    type B = NodeBundle;
+
+    fn get_bundle() -> Self::B {
+        NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                display: Display::Flex,
+                flex_direction: FlexDirection::Row,
+                ..default()
+            },
             ..default()
-        },
-        ..default()
+        }
     }
-);
+}
 
 impl ChildrenAspect for CommandGrid {
     fn set_children(
@@ -192,20 +193,23 @@ impl ChildrenAspect for DynamicGrid {
     }
 }
 
-impl_static_components!(
-    DynamicGrid,
-    NodeBundle {
-        style: Style {
-            width: Val::Percent(100.0),
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::Center,
-            display: Display::Flex,
-            flex_direction: FlexDirection::Row,
+impl StaticComponentsAspect for DynamicGrid {
+    type B = NodeBundle;
+
+    fn get_bundle() -> Self::B {
+        NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                display: Display::Flex,
+                flex_direction: FlexDirection::Row,
+                ..default()
+            },
             ..default()
-        },
-        ..default()
+        }
     }
-);
+}
 
 impl HasContext for Root {
     type Context = NC2<UIState, AssetServer>;
