@@ -22,15 +22,15 @@ pub(crate) struct HierarchyChildComponent<R: HierarchyRoot> {
     phantom: PhantomData<R>,
 }
 
-impl<R: HierarchyRoot> Clone for HierarchyChildComponent<R> {
-    fn clone(&self) -> Self {
-        Self {
-            key: self.key.clone(),
-            deleter: self.deleter.clone(),
-            phantom: self.phantom.clone(),
-        }
-    }
-}
+// impl<R: HierarchyRoot> Clone for HierarchyChildComponent<R> {
+//     fn clone(&self) -> Self {
+//         Self {
+//             key: self.key.clone(),
+//             deleter: self.deleter.clone(),
+//             phantom: self.phantom.clone(),
+//         }
+//     }
+// }
 
 impl<R: HierarchyRoot> HierarchyChildComponent<R> {
     pub(crate) fn new<N: HierarchyNode>(key: ChildKey) -> Self {

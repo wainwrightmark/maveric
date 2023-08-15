@@ -2,7 +2,7 @@
 
 pub use crate::prelude::*;
 pub use bevy::prelude::*;
-use bevy::{ecs::system::EntityCommands};
+use bevy::ecs::system::EntityCommands;
 
 pub(crate) fn create_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     mut cec: &mut EntityCommands,

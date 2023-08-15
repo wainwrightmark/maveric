@@ -14,7 +14,7 @@ impl<Marker: Component + PartialEq + Clone> HasContext for ImageButtonNode<Marke
     type Context = AssetServer;
 }
 
-impl<Marker: Component + PartialEq + Clone> NoChildrenAspect for ImageButtonNode<Marker> {}
+impl<Marker: Component + PartialEq + Clone> HasNoChildren for ImageButtonNode<Marker> {}
 
 impl<Marker: Component + PartialEq + Clone> ComponentsAspect for ImageButtonNode<Marker> {
     fn set_components<'r>(

@@ -87,11 +87,15 @@ impl<N: ComponentsAspect> HasComponentsAspect for N {
 
 impl<N: HasChildrenAspect + HasComponentsAspect> HierarchyNode for N {}
 
-impl HasContext for () {
+pub trait HasNoContext : PartialEq + Sized + Send + Sync + 'static {}
+
+impl<T: HasNoContext> HasContext for T{
     type Context = NoContext;
 }
 
-impl<T: NoChildrenAspect + HasContext> ChildrenAspect for T {
+impl HasNoContext for (){}
+
+impl<T: HasNoChildren> ChildrenAspect for T {
     fn set_children<'r>(
         &self,
         _previous: Option<&Self>,
@@ -101,6 +105,8 @@ impl<T: NoChildrenAspect + HasContext> ChildrenAspect for T {
     }
 }
 
-pub trait NoChildrenAspect {}
+pub trait HasNoChildren : HasContext {}
 
-impl NoChildrenAspect for () {}
+impl HasNoChildren for () {}
+
+

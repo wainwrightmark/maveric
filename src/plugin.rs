@@ -73,42 +73,55 @@ mod tests {
 
         app.add_plugins(TimePlugin::default());
 
-        app.init_resource::<CounterState>()
+        app.init_resource::<TreeState>()
             .register_state_hierarchy::<Root>();
         app.update();
 
-        check_marker(&mut app, 0);
+        check_leaves(&mut app, 0, 0);
 
-        let mut counter_res = app.world.resource_mut::<CounterState>();
-        counter_res.number = 2;
-
-        check_marker(&mut app, 0);
+        update_state(&mut app, TreeState { branch_count: 5, blue_leaf_count: 5, red_leaf_count: 0 });
+        check_leaves(&mut app, 0, 0);
 
         app.update();
 
-        check_marker(&mut app, 2);
+        check_leaves(&mut app, 25, 0);
+
+        update_state(&mut app, TreeState { branch_count: 5, blue_leaf_count: 5, red_leaf_count: 5 });
+        app.update();
+        check_leaves(&mut app, 25, 25);
+
+
+        update_state(&mut app, TreeState { branch_count: 4, blue_leaf_count: 6, red_leaf_count: 5 });
+        app.update();
+        check_leaves(&mut app, 24, 20);
     }
 
-    fn check_marker(app: &mut App, expected: usize) {
-        let marker = app.world.query::<&Marker>().get_single(&app.world).unwrap();
-        assert_eq!(marker.number, expected);
+    fn update_state(app: &mut App, new_state: TreeState){
+        let mut state = app.world.resource_mut::<TreeState>();
+        *state = new_state;
     }
 
-    #[derive(Debug, Clone, PartialEq, Default, Component)]
-    struct Marker {
-        number: usize,
+    fn check_leaves(app: &mut App,expected_blues: usize, expected_reds: usize, ) {
+        let leaves: Vec<Leaf> = app.world.query::<&Leaf>().iter(&app.world).cloned().collect();
+        let reds = leaves.iter().filter(|x|*x == &Leaf::Red).count();
+        let blues = leaves.iter().filter(|x|*x == &Leaf::Blue).count();
+
+        assert_eq!(reds, expected_reds);
+        assert_eq!(blues, expected_blues);
     }
 
     #[derive(Debug, Clone, PartialEq, Resource, Default)]
-    pub struct CounterState {
-        number: usize,
+    pub struct TreeState {
+        branch_count: u32,
+        blue_leaf_count: u32,
+        red_leaf_count: u32
     }
 
     #[derive(Debug, Clone, PartialEq, Default)]
     struct Root;
 
     impl HasContext for Root {
-        type Context = CounterState;
+        type Context = TreeState;
     }
 
     impl ChildrenAspect for Root {
@@ -118,31 +131,64 @@ mod tests {
             context: &<Self::Context as NodeContext>::Wrapper<'_>,
             commands: &mut impl ChildCommands,
         ) {
-            commands.add_child(0, Child, context);
+            for x in 0..(context.branch_count){
+                commands.add_child(x, Branch, context);
+            }
         }
     }
 
     impl_hierarchy_root!(Root);
 
     #[derive(Debug, Clone, PartialEq, Default)]
-    struct Child;
+    struct Branch;
 
-    impl HasContext for Child {
-        type Context = CounterState;
+    impl HasContext for Branch {
+        type Context = TreeState;
     }
 
-    impl NoChildrenAspect for Child {}
-
-    impl ComponentsAspect for Child {
-        fn set_components<'r>(
+    impl ChildrenAspect for Branch{
+        fn set_children<'r>(
             &self,
             _previous: Option<&Self>,
             context: &<Self::Context as NodeContext>::Wrapper<'r>,
+            commands: &mut impl ChildCommands,
+        ) {
+            for x in 0..(context.blue_leaf_count){
+                commands.add_child(x, Leaf::Blue, &());
+            }
+
+            for x in (context.blue_leaf_count)..(context.blue_leaf_count + context.red_leaf_count){
+                commands.add_child(x, Leaf::Red, &());
+            }
+        }
+    }
+
+    impl StaticComponentsAspect for Branch {
+        type B = ();
+
+        fn get_bundle() -> Self::B {}
+    }
+
+    #[derive(Debug, Clone, PartialEq, Component)]
+    enum Leaf {
+        Blue,
+        Red,
+
+    }
+
+    impl HasNoContext for Leaf {}
+
+    impl HasNoChildren for Leaf {}
+
+    impl ComponentsAspect for Leaf {
+        fn set_components<'r>(
+            &self,
+            _previous: Option<&Self>,
+            _context: &<Self::Context as NodeContext>::Wrapper<'r>,
             commands: &mut impl ComponentCommands,
             _event: SetComponentsEvent,
         ) {
-            let number = context.number;
-            commands.insert(Marker { number });
+            commands.insert(self.clone())
         }
     }
 }
