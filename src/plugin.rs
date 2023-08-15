@@ -1,7 +1,5 @@
-use std::rc::Rc;
-
 use crate::prelude::*;
-use bevy::{ecs::system::StaticSystemParam, prelude::*, utils::hashbrown::HashMap};
+use bevy::{ecs::system::StaticSystemParam, prelude::*};
 
 #[derive(Debug, Default)]
 struct ScheduleForRemovalPlugin;
@@ -44,8 +42,8 @@ fn handle_scheduled_for_removal(
 fn sync_state<'a, R: HierarchyRoot>(
     mut commands: Commands,
     param: StaticSystemParam<R::ContextParam<'a>>,
-    root_query: Query<Entity, (Without<Parent>, With<HierarchyChildComponent<R>>)>,
-    tree: Query<(EntityRef, &HierarchyChildComponent<R>)>, //TODO just pass in all entities
+    root_query: Query<(Entity, &HierarchyChildComponent<R>), Without<Parent>>,
+    world: &World,
 ) {
     let context = R::get_context(param);
 
@@ -54,12 +52,7 @@ fn sync_state<'a, R: HierarchyRoot>(
         return;
     }
 
-    let all_child_nodes: HashMap<Entity, (EntityRef, HierarchyChildComponent<R>)> =
-        tree.iter().map(|(e, c)| (e.id(), (e, c.clone()))).collect(); //TODO pass the query directly somehow
-
-    let all_child_nodes = Rc::new(all_child_nodes);
-
-    let mut root_commands = RootCommands::new(&mut commands, all_child_nodes, root_query);
+    let mut root_commands = RootCommands::new(&mut commands, world, root_query);
 
     R::set_children(
         &R::default(),
@@ -84,7 +77,6 @@ mod tests {
             .register_state_hierarchy::<Root>();
         app.update();
 
-
         check_marker(&mut app, 0);
 
         let mut counter_res = app.world.resource_mut::<CounterState>();
@@ -97,13 +89,15 @@ mod tests {
         check_marker(&mut app, 2);
     }
 
-    fn check_marker(app: &mut App, expected: usize){
+    fn check_marker(app: &mut App, expected: usize) {
         let marker = app.world.query::<&Marker>().get_single(&app.world).unwrap();
         assert_eq!(marker.number, expected);
     }
 
     #[derive(Debug, Clone, PartialEq, Default, Component)]
-    struct Marker{number: usize}
+    struct Marker {
+        number: usize,
+    }
 
     #[derive(Debug, Clone, PartialEq, Resource, Default)]
     pub struct CounterState {
@@ -148,7 +142,7 @@ mod tests {
             _event: SetComponentsEvent,
         ) {
             let number = context.number;
-            commands.insert(Marker{number});
+            commands.insert(Marker { number });
         }
     }
 }

@@ -1,8 +1,8 @@
-use std::rc::Rc;
+
 
 pub use crate::prelude::*;
 pub use bevy::prelude::*;
-use bevy::{ecs::system::EntityCommands, utils::HashMap};
+use bevy::{ecs::system::EntityCommands};
 
 pub(crate) fn create_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     mut cec: &mut EntityCommands,
@@ -73,7 +73,7 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     entity_ref: EntityRef,
     node: N,
     context: &<<N as HasContext>::Context as NodeContext>::Wrapper<'c>,
-    all_child_nodes: Rc<HashMap<Entity, (EntityRef, HierarchyChildComponent<R>)>>,
+    world: &World
 ) {
     let mut ec = commands.entity(entity_ref.id());
     let undeleted = if entity_ref.contains::<ScheduledForDeletion>() {
@@ -137,7 +137,7 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     if children_hot {
         //info!("Children hot {}", std::any::type_name::<N>());
         let mut children_commands =
-            UnorderedChildCommands::<R>::new(&mut ec, children, all_child_nodes.clone());
+            UnorderedChildCommands::<R>::new(&mut ec, children, world);
 
         <N::ChildrenAspect as ChildrenAspect>::set_children(
             children_args,

@@ -3,7 +3,6 @@ pub mod child_key;
 pub mod commands;
 pub mod components;
 pub mod deleter;
-pub mod desired_transform;
 pub mod hierarchy_node;
 pub mod hierarchy_root;
 pub mod node_context;
@@ -27,7 +26,6 @@ pub mod prelude {
     pub use crate::child_deletion_policy::*;
     pub use crate::child_key::*;
     pub use crate::deleter::*;
-    pub use crate::desired_transform::*;
     pub use crate::hierarchy_node::*;
     pub use crate::hierarchy_root::*;
     pub use crate::node_context::*;

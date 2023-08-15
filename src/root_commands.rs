@@ -1,32 +1,32 @@
-use std::{any::type_name, rc::Rc};
+use std::{any::type_name, marker::PhantomData};
 
 use crate::prelude::*;
 use bevy::{prelude::*, utils::hashbrown::HashMap};
 
-pub(crate) struct RootCommands<'w, 's, 'b, 'w1, R: HierarchyRoot> {
+pub(crate) struct RootCommands<'w, 's, 'b, 'w1, 'q, R: HierarchyRoot> {
     commands: &'b mut Commands<'w, 's>,
     remaining_old_entities: HashMap<ChildKey, EntityRef<'w1>>,
-    all_child_nodes: Rc<HashMap<Entity, (EntityRef<'w1>, HierarchyChildComponent<R>)>>,
+    world: &'q World,
+    phantom: PhantomData<R>
 }
 
-impl<'w, 's, 'b, 'w1, R: HierarchyRoot> RootCommands<'w, 's, 'b, 'w1, R> {
-    pub(crate) fn new(
+impl<'w, 's, 'b, 'w1,'q : 'w1, R: HierarchyRoot> RootCommands<'w, 's, 'b, 'w1,'q, R> {
+    pub(crate) fn new<'w2, 's2>(
         commands: &'b mut Commands<'w, 's>,
-        all_child_nodes: Rc<HashMap<Entity, (EntityRef<'w1>, HierarchyChildComponent<R>)>>,
-        query: Query<Entity, (Without<Parent>, With<HierarchyChildComponent<R>>)>,
+        world: &'q World,
+        query: Query< (Entity, &HierarchyChildComponent<R>), Without<Parent>>,
     ) -> Self {
         let remaining_old_entities: HashMap<ChildKey, EntityRef<'w1>> = query
             .into_iter()
-            .flat_map(|x| match all_child_nodes.get(&x) {
-                Some((er, child)) => Some((child.key, er.clone())),
-                None => None,
-            })
+            .map(|x| (x.1.key, x.0))
+            .flat_map(|(key, entity)| world.get_entity(entity).map(|er| (key, er)) )
             .collect();
 
         Self {
             commands,
             remaining_old_entities,
-            all_child_nodes,
+            world,
+            phantom: PhantomData::default(),
         }
     }
 
@@ -37,7 +37,7 @@ impl<'w, 's, 'b, 'w1, R: HierarchyRoot> RootCommands<'w, 's, 'b, 'w1, R> {
     }
 }
 
-impl<'w, 's, 'b, 'w1, R: HierarchyRoot> ChildCommands for RootCommands<'w, 's, 'b, 'w1, R> {
+impl<'w, 's, 'b, 'w1,'q, R: HierarchyRoot> ChildCommands for RootCommands<'w, 's, 'b, 'w1,'q, R> {
     fn add_child<NChild: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
@@ -54,7 +54,7 @@ impl<'w, 's, 'b, 'w1, R: HierarchyRoot> ChildCommands for RootCommands<'w, 's, '
                         entity_ref,
                         child,
                         context,
-                        self.all_child_nodes.clone(),
+                        self.world,
                     );
                 } else {
                     warn!(

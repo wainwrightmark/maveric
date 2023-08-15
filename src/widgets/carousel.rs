@@ -77,7 +77,8 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
         const LEFT: f32 = CENTER - PAGE_WIDTH;
         const RIGHT: f32 = CENTER + PAGE_WIDTH;
 
-        let Some(current_page) = (self.get_child)(self.current_page) else {return;};
+        let Some(center_page) = (self.get_child)(self.current_page) else {return;};
+        let mut center_page_initial = CENTER;
 
         'previous: {
             if let Some(Self {
@@ -93,6 +94,8 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
                         std::cmp::Ordering::Greater => (LEFT, RIGHT),
                     };
 
+                center_page_initial = current_position;
+
                 let Some(previous_page) = (self.get_child)(*previous_page_number) else {break 'previous;};
 
                 let previous_page = previous_page.with_transition_in::<StyleLeftLens>(
@@ -101,18 +104,19 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
                     self.transition_duration,
                 );
 
-                let current_page = current_page.with_transition_in::<StyleLeftLens>(
-                    Val::Percent(current_position),
-                    Val::Percent(CENTER),
-                    self.transition_duration,
-                );
+
 
                 commands.add_child(*previous_page_number, previous_page, context);
-                commands.add_child(self.current_page, current_page, context);
-                return;
             }
         }
 
-        commands.add_child(self.current_page, current_page, context);
+        let center_page = center_page.with_transition_in::<StyleLeftLens>(
+            Val::Percent(center_page_initial),
+            Val::Percent(CENTER),
+            self.transition_duration,
+        );
+
+
+        commands.add_child(self.current_page, center_page, context);
     }
 }
