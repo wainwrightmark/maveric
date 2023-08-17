@@ -48,16 +48,4 @@ impl ComponentsAspect for TextNode {
     }
 }
 
-impl HasChildrenAspect for TextNode {
-    type ChildrenAspect = ();
-
-    fn children_context<'a, 'r>(
-        _context: &'a <<Self as HasContext>::Context as NodeContext>::Wrapper<'r>,
-    ) -> &'a <<Self::ChildrenAspect as HasContext>::Context as NodeContext>::Wrapper<'r> {
-        &()
-    }
-
-    fn as_children_aspect<'a>(&'a self) -> &'a Self::ChildrenAspect {
-        &()
-    }
-}
+impl HasNoChildren for TextNode{}

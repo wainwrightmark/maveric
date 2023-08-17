@@ -176,14 +176,24 @@ impl ChildrenAspect for MainMenu {
     ) {
         for (key, action) in ButtonAction::main_buttons().iter().enumerate() {
             let button = text_button_node(*action);
-            let button = button.with_transition_in::<BackgroundColorLens>(
-                Color::WHITE.with_a(0.0),
-                Color::WHITE,
-                Duration::from_secs_f32(1.0),
-            );
+            let button: WithTransition<TextButtonNode<ButtonAction>, BackgroundColorLens, ()> =
+                button.with_transition_in::<BackgroundColorLens>(
+                    Color::WHITE.with_a(0.0),
+                    Color::WHITE,
+                    Duration::from_secs_f32(1.0),
+                );
 
             commands.add_child(key as u32, button, &context.1)
         }
+
+        commands.add_child(
+            "image",
+            ImageNode {
+                image_node_style: IMAGE_NODE_STYLE.clone(),
+                path: r#"images\google-play-badge.png"#,
+            },
+            &context.1,
+        )
     }
 }
 
@@ -349,6 +359,25 @@ pub const TEXT_BUTTON_BACKGROUND: Color = Color::WHITE;
 pub const DISABLED_BUTTON_BACKGROUND: Color = Color::GRAY;
 
 lazy_static! {
+    static ref IMAGE_NODE_STYLE: Arc<ImageNodeStyle> = Arc::new(ImageNodeStyle {
+        background_color: Color::ALICE_BLUE,
+        style: Style {
+            width: Val::Px(TEXT_BUTTON_WIDTH),
+            height: Val::Px(TEXT_BUTTON_HEIGHT),
+            margin: UiRect {
+                left: Val::Auto,
+                right: Val::Auto,
+                top: Val::Px(5.0),
+                bottom: Val::Px(5.0),
+            },
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            flex_grow: 0.0,
+            flex_shrink: 0.0,
+            border: UiRect::all(UI_BORDER_WIDTH),
+            ..default()
+        }
+    });
     static ref ICON_BUTTON_STYLE: Arc<ButtonNodeStyle> = Arc::new(ButtonNodeStyle {
         style: Style {
             width: Val::Px(ICON_BUTTON_WIDTH),
@@ -423,27 +452,11 @@ lazy_static! {
 pub enum ButtonAction {
     OpenMenu,
     Resume,
-    ResetLevel,
-    GoFullscreen,
-    Tutorial,
-    Infinite,
-    DailyChallenge,
-    Share,
     ChooseLevel,
-    ClipboardImport,
     GotoLevel { level: u32 },
-    NextLevel,
-    MinimizeSplash,
-    RestoreSplash,
-    MinimizeApp,
 
     NextLevelsPage,
     PreviousLevelsPage,
-    Credits,
-
-    GooglePlay,
-    Apple,
-    Steam,
 
     None,
 }
@@ -451,48 +464,18 @@ pub enum ButtonAction {
 impl ButtonAction {
     pub fn main_buttons() -> &'static [Self] {
         use ButtonAction::*;
-        &[
-            Resume,
-            ChooseLevel,
-            DailyChallenge,
-            Infinite,
-            Tutorial,
-            Share,
-            ClipboardImport, //TODO
-            #[cfg(all(feature = "web", target_arch = "wasm32"))]
-            GoFullscreen,
-            #[cfg(all(feature = "android", target_arch = "wasm32"))]
-            MinimizeApp,
-            Credits,
-        ]
+        &[Resume, ChooseLevel]
     }
 
     pub fn icon(&self) -> String {
         use ButtonAction::*;
         match self {
-            OpenMenu => "\u{f0c9}".to_string(),       // "Menu",
-            Resume => "\u{e817}".to_string(),         // "Menu",
-            ResetLevel => "\u{e800}".to_string(),     //"Reset Level",image
-            GoFullscreen => "\u{f0b2}".to_string(),   //"Fullscreen",
-            Tutorial => "\u{e801}".to_string(),       //"Tutorial",
-            Infinite => "\u{e802}".to_string(),       //"Infinite",
-            DailyChallenge => "\u{e803}".to_string(), // "Challenge",
-            Share => "\u{f1e0}".to_string(),          // "Share",
-            ChooseLevel => "\u{e812}".to_string(),    // "\u{e812};".to_string(),
+            OpenMenu => "\u{f0c9}".to_string(),    // "Menu",
+            Resume => "\u{e817}".to_string(),      // "Menu",
+            ChooseLevel => "\u{e812}".to_string(), // "\u{e812};".to_string(),
             GotoLevel { level } => level.to_string(),
-            NextLevel => "\u{e808}".to_string(), //play
-
-            MinimizeApp => "\u{e813}".to_string(),     //logout
-            ClipboardImport => "\u{e818}".to_string(), //clipboard
             PreviousLevelsPage => "\u{e81b}".to_string(),
             NextLevelsPage => "\u{e81a}".to_string(),
-            Credits => "\u{e811}".to_string(),
-            RestoreSplash => "\u{f149}".to_string(),
-            MinimizeSplash => "\u{f148}".to_string(),
-
-            GooglePlay => "\u{f1a0}".to_string(),
-            Apple => "\u{f179}".to_string(),
-            Steam => "\u{f1b6}".to_string(),
             None => "".to_string(),
         }
     }
@@ -502,28 +485,13 @@ impl ButtonAction {
         match self {
             OpenMenu => "Menu".to_string(),
             Resume => "Resume".to_string(),
-            ResetLevel => "Reset".to_string(),
-            GoFullscreen => "Fullscreen".to_string(),
-            Tutorial => "Tutorial".to_string(),
-            Infinite => "Infinite Mode".to_string(),
-            DailyChallenge => "Daily Challenge".to_string(),
-            Share => "Share".to_string(),
             ChooseLevel => "Choose Level".to_string(),
-            ClipboardImport => "Import Level".to_string(),
             GotoLevel { level } => {
                 format!("Level {level}")
             }
-            NextLevel => "Next Level".to_string(),
-            MinimizeSplash => "Minimize Splash".to_string(),
-            RestoreSplash => "Restore Splash".to_string(),
-            MinimizeApp => "Quit".to_string(),
             NextLevelsPage => "Next Levels".to_string(),
             PreviousLevelsPage => "Previous Levels".to_string(),
-            Credits => "Credits".to_string(),
 
-            GooglePlay => "Google Play".to_string(),
-            Apple => "Apple".to_string(),
-            Steam => "Steam".to_string(),
             None => "".to_string(),
         }
     }
