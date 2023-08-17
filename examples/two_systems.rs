@@ -41,10 +41,10 @@ impl ChildrenAspect for Root {
         let text = context.0.number.to_string();
         commands.add_child(
             0,
-            TextButtonNode {
-                text,
-                text_node_style: TEXT_BUTTON_TEXT_STYLE.clone(),
-                button_node_style: BUTTON_STYLE.clone(),
+            ButtonNode {
+                text: Some((text, TEXT_BUTTON_TEXT_STYLE.clone())),
+                image_handle: None,
+                button_node_style: TEXT_BUTTON_STYLE.clone(),
                 marker: Marker,
             },
             &context.1,
@@ -70,11 +70,19 @@ impl ChildrenAspect for Root2 {
         commands: &mut impl ChildCommands,
     ) {
 
+
+        let path  = match context.0.number % 4 {
+            0=>r#"images\MedalsBlack.png"#,
+            1=>r#"images\MedalsBronze.png"#,
+            2=>r#"images\MedalsSilver.png"#,
+            _=>r#"images\MedalsGold.png"#,
+        };
         commands.add_child(
             1,
-            ImageButtonNode{
-                image_handle: r#"images\google-play-badge.png"#,
-                button_node_style: BUTTON_STYLE.clone(),
+            ButtonNode{
+                text: None,
+                image_handle: Some( path),
+                button_node_style: IMAGE_BUTTON_STYLE.clone(),
                 marker: Marker,
             },
             &context.1,
@@ -105,7 +113,7 @@ fn button_system(
 }
 
 lazy_static! {
-    static ref BUTTON_STYLE: Arc<ButtonNodeStyle> = Arc::new(ButtonNodeStyle {
+    static ref TEXT_BUTTON_STYLE: Arc<ButtonNodeStyle> = Arc::new(ButtonNodeStyle {
         style: Style {
             width: Val::Px(BUTTON_WIDTH),
             height: Val::Px(BUTTON_HEIGHT),
@@ -127,6 +135,29 @@ lazy_static! {
         border_color: BUTTON_BORDER,
         ..Default::default()
     });
+
+    static ref IMAGE_BUTTON_STYLE: Arc<ButtonNodeStyle> = Arc::new(ButtonNodeStyle {
+        style: Style {
+            width: Val::Px(BUTTON_WIDTH),
+            height: Val::Px(BUTTON_HEIGHT),
+            margin: UiRect {
+                left: Val::Auto,
+                right: Val::Auto,
+                top: Val::Auto,
+                bottom: Val::Auto,
+            },
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            flex_grow: 0.0,
+            flex_shrink: 0.0,
+            border: UiRect::all(UI_BORDER_WIDTH),
+
+            ..Default::default()
+        },
+        background_color: IMAGE_BUTTON_BACKGROUND,
+        border_color: BUTTON_BORDER,
+        ..Default::default()
+    });
     static ref TEXT_BUTTON_TEXT_STYLE: Arc<TextNodeStyle> = Arc::new(TextNodeStyle {
         font_size: BUTTON_FONT_SIZE,
         color: BUTTON_TEXT_COLOR,
@@ -139,8 +170,8 @@ lazy_static! {
 pub const ICON_BUTTON_WIDTH: f32 = 65.;
 pub const ICON_BUTTON_HEIGHT: f32 = 65.;
 
-pub const BUTTON_WIDTH: f32 = 646.;
-pub const BUTTON_HEIGHT: f32 = 250.;
+pub const BUTTON_WIDTH: f32 = 256.;
+pub const BUTTON_HEIGHT: f32 = 128.;
 
 pub const MENU_OFFSET: f32 = 10.;
 
@@ -162,6 +193,6 @@ pub const LEVEL_TEXT_ALT_COLOR: Color = Color::WHITE;
 pub const BUTTON_BORDER: Color = Color::BLACK;
 pub const BUTTON_TEXT_COLOR: Color = Color::rgb(0.1, 0.1, 0.1);
 
-pub const ICON_BUTTON_BACKGROUND: Color = Color::NONE;
+pub const  IMAGE_BUTTON_BACKGROUND: Color = Color::WHITE;
 pub const TEXT_BUTTON_BACKGROUND: Color = Color::WHITE;
 pub const DISABLED_BUTTON_BACKGROUND: Color = Color::GRAY;

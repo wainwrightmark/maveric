@@ -3,6 +3,8 @@ use std::sync::Arc;
 pub use crate::prelude::*;
 pub use bevy::prelude::*;
 
+use super::get_or_load_asset;
+
 #[derive(PartialEq, Debug)]
 pub struct TextNode {
     pub text: String,
@@ -30,7 +32,7 @@ impl ComponentsAspect for TextNode {
         commands: &mut impl ComponentCommands,
         _event: SetComponentsEvent,
     ) {
-        let font = context.load(self.style.font);
+        let font = get_or_load_asset(self.style.font, &context);
 
         let mut bundle = TextBundle::from_section(
             self.text.clone(),

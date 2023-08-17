@@ -112,28 +112,29 @@ impl ChildrenAspect for MenuRoot {
     }
 }
 
-fn menu_button_node() -> TextButtonNode<ButtonAction> {
-    TextButtonNode {
-        text: ButtonAction::OpenMenu.icon(),
-        text_node_style: ICON_BUTTON_TEXT_STYLE.clone(),
+fn menu_button_node() -> ButtonNode<ButtonAction> {
+    ButtonNode {
+        text: Some((ButtonAction::OpenMenu.icon(), ICON_BUTTON_TEXT_STYLE.clone())),
+        image_handle: None,
         button_node_style: OPEN_MENU_BUTTON_STYLE.clone(),
         marker: ButtonAction::OpenMenu,
     }
 }
 
-fn icon_button_node(button_action: ButtonAction) -> TextButtonNode<ButtonAction> {
-    TextButtonNode {
-        text: button_action.icon(),
-        text_node_style: ICON_BUTTON_TEXT_STYLE.clone(),
+fn icon_button_node(button_action: ButtonAction) -> ButtonNode<ButtonAction> {
+    ButtonNode {
+        text: Some((button_action.icon(), ICON_BUTTON_TEXT_STYLE.clone())),
+        image_handle: None,
         button_node_style: ICON_BUTTON_STYLE.clone(),
         marker: button_action,
     }
 }
 
-fn text_button_node(button_action: ButtonAction) -> TextButtonNode<ButtonAction> {
-    TextButtonNode {
-        text: button_action.text(),
-        text_node_style: TEXT_BUTTON_TEXT_STYLE.clone(),
+fn text_button_node(button_action: ButtonAction) -> ButtonNode<ButtonAction> {
+    ButtonNode {
+
+        text: Some((button_action.text(), TEXT_BUTTON_TEXT_STYLE.clone())),
+        image_handle: None,
         button_node_style: TEXT_BUTTON_STYLE.clone(),
         marker: button_action,
     }
@@ -176,7 +177,7 @@ impl ChildrenAspect for MainMenu {
     ) {
         for (key, action) in ButtonAction::main_buttons().iter().enumerate() {
             let button = text_button_node(*action);
-            let button: WithTransition<TextButtonNode<ButtonAction>, BackgroundColorLens, ()> =
+            let button: WithTransition<ButtonNode<ButtonAction>, BackgroundColorLens, ()> =
                 button.with_transition_in::<BackgroundColorLens>(
                     Color::WHITE.with_a(0.0),
                     Color::WHITE,

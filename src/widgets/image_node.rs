@@ -3,6 +3,8 @@ use std::sync::Arc;
 pub use crate::prelude::*;
 pub use bevy::prelude::*;
 
+use super::get_or_load_asset;
+
 #[derive(PartialEq, Debug)]
 pub struct ImageNode {
     pub path: &'static str,
@@ -27,7 +29,7 @@ impl ComponentsAspect for ImageNode {
         commands: &mut impl ComponentCommands,
         _event: SetComponentsEvent,
     ) {
-        let texture = context.load(self.path);
+        let texture: Handle<Image> = get_or_load_asset(self.path, context);
 
         let bundle = ImageBundle {
 
