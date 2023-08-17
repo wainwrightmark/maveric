@@ -41,7 +41,7 @@ impl ChildrenAspect for Root {
             0,
             ButtonNode {
                 text: Some((text,TEXT_BUTTON_TEXT_STYLE.clone() )),
-                image_handle: None,
+                image: None,
                 button_node_style: TEXT_BUTTON_STYLE.clone(),
                 marker: Marker,
             },

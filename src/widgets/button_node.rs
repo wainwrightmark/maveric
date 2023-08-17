@@ -3,8 +3,6 @@ use std::sync::Arc;
 pub use crate::prelude::*;
 pub use bevy::prelude::*;
 
-use super::get_or_load_asset;
-
 #[derive(PartialEq, Debug, Default)]
 pub struct ButtonNodeStyle {
     pub style: Style,
@@ -16,8 +14,7 @@ pub struct ButtonNodeStyle {
 #[derive(PartialEq, Debug)]
 pub struct ButtonNode<Marker: Component + PartialEq + Clone> {
     pub text: Option<(String, Arc<TextNodeStyle>)>,
-
-    pub image_handle: Option<&'static str>,
+    pub image: Option<(&'static str, Arc<ImageNodeStyle>)>,
     pub button_node_style: Arc<ButtonNodeStyle>,
 
     pub marker: Marker,
@@ -44,6 +41,19 @@ impl<Marker: Component + PartialEq + Clone> ChildrenAspect for ButtonNode<Marker
                 context,
             )
         }
+
+        if let Some((path, image_node_style)) = self.image.clone() {
+            //let texture: Handle<Image> = get_or_load_asset(path, context);
+
+            commands.add_child(
+                1,
+                ImageNode {
+                    path,
+                    image_node_style,
+                },
+                context,
+            );
+        };
     }
 }
 
@@ -51,26 +61,15 @@ impl<Marker: Component + PartialEq + Clone> ComponentsAspect for ButtonNode<Mark
     fn set_components<'r>(
         &self,
         _previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ComponentCommands,
         event: SetComponentsEvent,
     ) {
-        let image: UiImage = if let Some(path) = self.image_handle {
-            let texture: Handle<Image> = get_or_load_asset(path, context);
-            UiImage {
-                texture,
-                flip_x: false,
-                flip_y: false,
-            }
-        } else {
-            UiImage::default()
-        };
-
         commands.insert(ButtonBundle {
             style: self.button_node_style.style.clone(),
             border_color: BorderColor(self.button_node_style.border_color),
             background_color: BackgroundColor(self.button_node_style.background_color),
-            image,
+            //image,
             ..default()
         });
 

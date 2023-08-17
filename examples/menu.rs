@@ -115,7 +115,7 @@ impl ChildrenAspect for MenuRoot {
 fn menu_button_node() -> ButtonNode<ButtonAction> {
     ButtonNode {
         text: Some((ButtonAction::OpenMenu.icon(), ICON_BUTTON_TEXT_STYLE.clone())),
-        image_handle: None,
+        image: None,
         button_node_style: OPEN_MENU_BUTTON_STYLE.clone(),
         marker: ButtonAction::OpenMenu,
     }
@@ -124,7 +124,7 @@ fn menu_button_node() -> ButtonNode<ButtonAction> {
 fn icon_button_node(button_action: ButtonAction) -> ButtonNode<ButtonAction> {
     ButtonNode {
         text: Some((button_action.icon(), ICON_BUTTON_TEXT_STYLE.clone())),
-        image_handle: None,
+        image: None,
         button_node_style: ICON_BUTTON_STYLE.clone(),
         marker: button_action,
     }
@@ -134,7 +134,17 @@ fn text_button_node(button_action: ButtonAction) -> ButtonNode<ButtonAction> {
     ButtonNode {
 
         text: Some((button_action.text(), TEXT_BUTTON_TEXT_STYLE.clone())),
-        image_handle: None,
+        image: None,
+        button_node_style: TEXT_BUTTON_STYLE.clone(),
+        marker: button_action,
+    }
+}
+
+fn text_and_image_button_node(button_action: ButtonAction, image_path: &'static str) -> ButtonNode<ButtonAction> {
+    ButtonNode {
+
+        text: Some((button_action.text(), TEXT_BUTTON_TEXT_STYLE.clone())),
+        image: Some((image_path, SMALL_IMAGE_NODE_STYLE.clone())),
         button_node_style: TEXT_BUTTON_STYLE.clone(),
         marker: button_action,
     }
@@ -190,8 +200,8 @@ impl ChildrenAspect for MainMenu {
         commands.add_child(
             "image",
             ImageNode {
-                image_node_style: IMAGE_NODE_STYLE.clone(),
-                path: r#"images\google-play-badge.png"#,
+                image_node_style: BIG_IMAGE_NODE_STYLE.clone(),
+                path: r#"images\MedalsGold.png"#,
             },
             &context.1,
         )
@@ -212,8 +222,8 @@ impl StaticComponentsAspect for LevelMenu {
         NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
-                left: Val::Percent(50.0),  // Val::Px(MENU_OFFSET),
-                right: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
+                left: Val::Percent(50.0),
+                right: Val::Percent(50.0),
                 top: Val::Px(MENU_OFFSET),
                 display: Display::Flex,
                 flex_direction: FlexDirection::Column,
@@ -239,7 +249,7 @@ impl ChildrenAspect for LevelMenu {
         for (key, level) in (start..end).enumerate() {
             commands.add_child(
                 key as u32,
-                text_button_node(ButtonAction::GotoLevel { level }),
+                text_and_image_button_node(ButtonAction::GotoLevel { level }, r#"images/MedalsBlack.png"#),
                 &context.1,
             )
         }
@@ -360,10 +370,10 @@ pub const TEXT_BUTTON_BACKGROUND: Color = Color::WHITE;
 pub const DISABLED_BUTTON_BACKGROUND: Color = Color::GRAY;
 
 lazy_static! {
-    static ref IMAGE_NODE_STYLE: Arc<ImageNodeStyle> = Arc::new(ImageNodeStyle {
-        background_color: Color::ALICE_BLUE,
+    static ref BIG_IMAGE_NODE_STYLE: Arc<ImageNodeStyle> = Arc::new(ImageNodeStyle {
+        background_color: Color::WHITE,
         style: Style {
-            width: Val::Px(TEXT_BUTTON_WIDTH),
+            width: Val::Px(TEXT_BUTTON_HEIGHT * 2.0),
             height: Val::Px(TEXT_BUTTON_HEIGHT),
             margin: UiRect {
                 left: Val::Auto,
@@ -373,6 +383,27 @@ lazy_static! {
             },
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,
+            flex_grow: 0.0,
+            flex_shrink: 0.0,
+            border: UiRect::all(UI_BORDER_WIDTH),
+            ..default()
+        }
+    });
+
+    static ref SMALL_IMAGE_NODE_STYLE: Arc<ImageNodeStyle> = Arc::new(ImageNodeStyle {
+        background_color: Color::WHITE,
+        style: Style {
+            width: Val::Px((TEXT_BUTTON_HEIGHT - 10.0) * 2.0),
+            height: Val::Px(TEXT_BUTTON_HEIGHT - 10.0),
+            margin: UiRect {
+                left: Val::Auto,
+                right: Val::Px(0.0),
+                top: Val::Px(5.0),
+                bottom: Val::Px(5.0),
+            },
+            align_self: AlignSelf::Center,
+            justify_self: JustifySelf::End,
+
             flex_grow: 0.0,
             flex_shrink: 0.0,
             border: UiRect::all(UI_BORDER_WIDTH),

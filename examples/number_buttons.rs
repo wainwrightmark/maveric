@@ -150,7 +150,7 @@ impl ChildrenAspect for CommandGrid {
 
             let node = ButtonNode {
                 text: Some((command.to_string(), TEXT_NODE_STYLE.clone())),
-                image_handle: None,
+                image: None,
                 button_node_style: BUTTON_NODE_STYLE.clone(),
                 marker: command,
             };
@@ -177,7 +177,7 @@ impl ChildrenAspect for DynamicGrid {
         for number in context.0.dynamic_buttons.iter().cloned() {
             let node = ButtonNode {
                 text: Some((number.to_string(), TEXT_NODE_STYLE.clone())),
-                image_handle: None,
+                image: None,
                 button_node_style: BUTTON_NODE_STYLE.clone(),
                 marker: DynamicButtonComponent(number),
             };

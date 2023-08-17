@@ -43,7 +43,7 @@ impl ChildrenAspect for Root {
             0,
             ButtonNode {
                 text: Some((text, TEXT_BUTTON_TEXT_STYLE.clone())),
-                image_handle: None,
+                image: None,
                 button_node_style: TEXT_BUTTON_STYLE.clone(),
                 marker: Marker,
             },
@@ -81,7 +81,7 @@ impl ChildrenAspect for Root2 {
             1,
             ButtonNode{
                 text: None,
-                image_handle: Some( path),
+                image: Some((path, BIG_IMAGE_NODE_STYLE.clone()) ),
                 button_node_style: IMAGE_BUTTON_STYLE.clone(),
                 marker: Marker,
             },
@@ -113,6 +113,27 @@ fn button_system(
 }
 
 lazy_static! {
+
+    static ref BIG_IMAGE_NODE_STYLE: Arc<ImageNodeStyle> = Arc::new(ImageNodeStyle {
+        background_color: Color::WHITE,
+        style: Style {
+            width: Val::Px(BUTTON_HEIGHT * 2.0),
+            height: Val::Px(BUTTON_HEIGHT),
+            margin: UiRect {
+                left: Val::Auto,
+                right: Val::Auto,
+                top: Val::Auto,
+                bottom: Val::Auto,
+            },
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            flex_grow: 0.0,
+            flex_shrink: 0.0,
+            border: UiRect::all(UI_BORDER_WIDTH),
+            ..default()
+        }
+    });
+
     static ref TEXT_BUTTON_STYLE: Arc<ButtonNodeStyle> = Arc::new(ButtonNodeStyle {
         style: Style {
             width: Val::Px(BUTTON_WIDTH),
