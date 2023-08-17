@@ -63,7 +63,7 @@ impl<Marker: Component + PartialEq + Clone> ComponentsAspect for ButtonNode<Mark
         _previous: Option<&Self>,
         _context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ComponentCommands,
-        event: SetComponentsEvent,
+        _event: SetComponentsEvent,
     ) {
         commands.insert(ButtonBundle {
             style: self.button_node_style.style.clone(),
@@ -73,8 +73,6 @@ impl<Marker: Component + PartialEq + Clone> ComponentsAspect for ButtonNode<Mark
             ..default()
         });
 
-        if event == SetComponentsEvent::Created {
-            commands.insert(self.marker.clone());
-        }
+        commands.insert(self.marker.clone());
     }
 }
