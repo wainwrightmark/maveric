@@ -20,11 +20,11 @@ pub struct ImageNodeStyle {
 impl HierarchyNode for ImageNode {
     type Context = AssetServer;
 
-    fn set_components<'r>(
+    fn set<'r>(
         &self,
         _previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
+        commands: &mut impl NodeCommands,
         _event: SetComponentsEvent,
     ) {
         let texture: Handle<Image> = get_or_load_asset(self.path, context);
@@ -37,14 +37,6 @@ impl HierarchyNode for ImageNode {
             ..default()
         };
         commands.insert(bundle);
-    }
-
-    fn set_children<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands,
-    ) {
     }
 
     const CHILDREN_TYPE: ChildrenType = ChildrenType::Unordered;

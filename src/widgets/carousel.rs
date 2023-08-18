@@ -34,11 +34,11 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
 {
     type Context = <Child as HierarchyNode>::Context;
 
-    fn set_components<'r>(
+    fn set<'r>(
         &self,
-        _previous: Option<&Self>,
-        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
+        previous: Option<&Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl NodeCommands,
         event: SetComponentsEvent,
     ) {
         if event == SetComponentsEvent::Created {
@@ -51,14 +51,8 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
                 ..Default::default()
             });
         }
-    }
 
-    fn set_children<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands,
-    ) {
+
         const CENTER: f32 = 50.0;
         const PAGE_WIDTH: f32 = 200.0;
         const LEFT: f32 = CENTER - PAGE_WIDTH;

@@ -18,11 +18,11 @@ pub trait HierarchyNode : Send + Sync + Sized + PartialEq + 'static {
     type Context: NodeContext;
     const DELETER: &'static dyn Deleter = &NodeDeleter::<Self>::new();
 
-    fn set_components<'r>(
+    fn set<'r>(
         &self,
         previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
+        commands: &mut impl NodeCommands,
         event: SetComponentsEvent,
     );
 
@@ -30,12 +30,12 @@ pub trait HierarchyNode : Send + Sync + Sized + PartialEq + 'static {
         DeletionPolicy::DeleteImmediately
     }
 
-    fn set_children<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands,
-    );
+    // fn set_children<'r>(
+    //     &self,
+    //     previous: Option<&Self>,
+    //     context: &<Self::Context as NodeContext>::Wrapper<'r>,
+    //     commands: &mut impl ChildCommands,
+    // );
 
     const CHILDREN_TYPE: ChildrenType = ChildrenType::Ordered;
 }

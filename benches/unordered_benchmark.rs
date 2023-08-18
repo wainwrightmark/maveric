@@ -132,11 +132,15 @@ struct Branch;
 impl HierarchyNode for Branch {
     type Context = TreeState;
 
-    fn set_children<'r>(
+
+    const CHILDREN_TYPE: ChildrenType = ChildrenType::Unordered;
+
+    fn set<'r>(
         &self,
-        _previous: Option<&Self>,
+        previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands,
+        commands: &mut impl NodeCommands,
+        event: SetComponentsEvent,
     ) {
         for x in 0..(context.blue_leaf_count) {
             commands.add_child(x, Leaf::Blue, &());
@@ -145,18 +149,7 @@ impl HierarchyNode for Branch {
         for x in (context.blue_leaf_count)..(context.blue_leaf_count + context.red_leaf_count) {
             commands.add_child(x, Leaf::Red, &());
         }
-    }
-
-    const CHILDREN_TYPE: ChildrenType = ChildrenType::Unordered;
-
-    fn set_components<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
-        event: SetComponentsEvent,
-    ) {
-    }
+        }
 }
 
 #[derive(Debug, Clone, PartialEq, Component)]
@@ -168,21 +161,13 @@ enum Leaf {
 impl HierarchyNode for Leaf {
     type Context = NoContext;
 
-    fn set_components<'r>(
+    fn set<'r>(
         &self,
         _previous: Option<&Self>,
         _context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
+        commands: &mut impl NodeCommands,
         _event: SetComponentsEvent,
     ) {
         commands.insert(self.clone())
-    }
-
-    fn set_children<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands,
-    ) {
     }
 }

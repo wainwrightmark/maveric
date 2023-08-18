@@ -3,16 +3,32 @@ use std::{any::type_name, marker::PhantomData};
 use crate::prelude::*;
 use bevy::{ecs::system::EntityCommands, prelude::*, utils::hashbrown::HashMap};
 
-pub(crate) struct UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRootChildren> {
+pub(crate) struct UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, 'w_e, R: HierarchyRootChildren> {
     ec: &'b mut EntityCommands<'w, 's, 'a>,
-
+    entity_ref: EntityRef<'w_e>,
     remaining_old_entities: HashMap<ChildKey, EntityRef<'w1>>,
     world: &'q World,
     phantom: PhantomData<R>,
 }
 
-impl<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRootChildren> ChildCommands
-    for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R>
+impl<'w, 's, 'a, 'b, 'w1, 'q, 'w_e, R: HierarchyRootChildren> ComponentCommands
+    for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, 'w_e, R>
+{
+    fn get<T: Component>(&self) -> Option<&T> {
+        self.entity_ref.get()
+    }
+
+    fn insert<T: Bundle>(&mut self, bundle: T) {
+        self.ec.insert(bundle);
+    }
+
+    fn remove<T: Bundle>(&mut self) {
+        self.ec.remove::<T>();
+    }
+}
+
+impl<'w, 's, 'a, 'b, 'w1, 'q, 'w_e, R: HierarchyRootChildren> ChildCommands
+    for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, 'w_e, R>
 {
     fn add_child<NChild: HierarchyNode>(
         &mut self,
@@ -53,11 +69,12 @@ impl<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRootChildren> ChildCommands
     }
 }
 
-impl<'w, 's, 'a, 'b, 'w1, 'q: 'w1, R: HierarchyRootChildren>
-    UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R>
+impl<'w, 's, 'a, 'b, 'w1, 'q: 'w1, 'w_e, R: HierarchyRootChildren>
+    UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, 'w_e, R>
 {
     pub(crate) fn new(
         ec: &'b mut EntityCommands<'w, 's, 'a>,
+        entity_ref: EntityRef<'w_e>,
         children: Option<&Children>,
         world: &'q World,
     ) -> Self {
@@ -74,6 +91,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'q: 'w1, R: HierarchyRootChildren>
 
                 Self {
                     ec,
+                    entity_ref,
                     remaining_old_entities,
                     world,
                     phantom: PhantomData,
@@ -81,6 +99,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'q: 'w1, R: HierarchyRootChildren>
             }
             None => Self {
                 ec,
+                entity_ref,
                 remaining_old_entities: Default::default(),
                 world,
                 phantom: PhantomData,

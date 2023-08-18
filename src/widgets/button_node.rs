@@ -12,7 +12,8 @@ pub struct ButtonNodeStyle {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct ButtonNode<Marker: Component + PartialEq + Clone> { //TODO refactor
+pub struct ButtonNode<Marker: Component + PartialEq + Clone> {
+    //TODO refactor
     pub text: Option<(String, Arc<TextNodeStyle>)>,
     pub image: Option<(&'static str, Arc<ImageNodeStyle>)>,
     pub button_node_style: Arc<ButtonNodeStyle>,
@@ -23,12 +24,23 @@ pub struct ButtonNode<Marker: Component + PartialEq + Clone> { //TODO refactor
 impl<Marker: Component + PartialEq + Clone> HierarchyNode for ButtonNode<Marker> {
     type Context = AssetServer;
 
-    fn set_children<'r>(
+    fn set<'r>(
         &self,
         _previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands,
+        commands: &mut impl NodeCommands,
+        _event: SetComponentsEvent,
     ) {
+        commands.insert(ButtonBundle {
+            style: self.button_node_style.style.clone(),
+            border_color: BorderColor(self.button_node_style.border_color),
+            background_color: BackgroundColor(self.button_node_style.background_color),
+            //image,
+            ..default()
+        });
+
+        commands.insert(self.marker.clone());
+
         if let Some((text, style)) = &self.text {
             commands.add_child(
                 0,
@@ -52,22 +64,5 @@ impl<Marker: Component + PartialEq + Clone> HierarchyNode for ButtonNode<Marker>
                 context,
             );
         };
-    }
-    fn set_components<'r>(
-        &self,
-        _previous: Option<&Self>,
-        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
-        _event: SetComponentsEvent,
-    ) {
-        commands.insert(ButtonBundle {
-            style: self.button_node_style.style.clone(),
-            border_color: BorderColor(self.button_node_style.border_color),
-            background_color: BackgroundColor(self.button_node_style.background_color),
-            //image,
-            ..default()
-        });
-
-        commands.insert(self.marker.clone());
     }
 }

@@ -12,14 +12,12 @@ pub(crate) fn create_recursive<'c, R: HierarchyRootChildren, N: HierarchyNode>(
 
     let mut child_commands = CreationCommands::<R>::new(&mut cec);
 
-    node.set_components(
+    node.set(
         None,
         &context,
         &mut child_commands,
         SetComponentsEvent::Created,
     );
-
-    node.set_children(None, &context, &mut child_commands);
 
     let hnc = HierarchyNodeComponent::new(node);
     let hcc = HierarchyChildComponent::<R>::new::<N>(key.into());
@@ -84,35 +82,30 @@ pub(crate) fn update_recursive<'c, R: HierarchyRootChildren, N: HierarchyNode>(
 
     let children = entity_ref.get::<Children>();
 
-    let hot = undeleted || <N ::Context as NodeContext>::has_changed(context) || node_changed;
+    let hot = undeleted || <N::Context as NodeContext>::has_changed(context) || node_changed;
     if !hot {
         return;
     }
 
-    let mut component_commands = ConcreteComponentCommands::new(entity_ref, &mut ec);
-
-    (&node).set_components(
-        old_node,
-        &context,
-        &mut component_commands,
-        if undeleted {
-            SetComponentsEvent::Undeleted
-        } else {
-            SetComponentsEvent::Updated
-        },
-    );
+    let event = if undeleted {
+        SetComponentsEvent::Undeleted
+    } else {
+        SetComponentsEvent::Updated
+    };
 
     match N::CHILDREN_TYPE {
         ChildrenType::Ordered => {
-            let mut children_commands = OrderedChildCommands::<R>::new(&mut ec, children, world);
+            let mut children_commands =
+                OrderedChildCommands::<R>::new(&mut ec, entity_ref, children, world);
 
-            (&node).set_children(old_node, &context, &mut children_commands);
+            (&node).set(old_node, &context, &mut children_commands, event);
             children_commands.finish();
         }
         ChildrenType::Unordered => {
-            let mut children_commands = UnorderedChildCommands::<R>::new(&mut ec, children, world);
+            let mut children_commands =
+                UnorderedChildCommands::<R>::new(&mut ec, entity_ref, children, world);
 
-            (&node).set_children(old_node, &context, &mut children_commands);
+            (&node).set(old_node, &context, &mut children_commands, event);
             children_commands.finish();
         }
     }

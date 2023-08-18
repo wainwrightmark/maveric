@@ -13,19 +13,19 @@ macro_rules! impl_either {
         impl<$T0: HierarchyNode, $($T: HierarchyNode<Context = T0::Context>,)*> HierarchyNode for $Either<$T0, $($T,)*> {
             type Context = $T0::Context;
 
-            fn set_components<'r>(
+            fn set<'r>(
                 &self,
                 previous: Option<&Self>,
                 context: &<Self::Context as NodeContext>::Wrapper<'r>,
-                commands: &mut impl crate::prelude::ComponentCommands,
+                commands: &mut impl crate::prelude::NodeCommands,
                 event: crate::prelude::SetComponentsEvent,
             ) {
                 use $Either::*;
                 match (self, previous) {
-                    ($Case0(node), Some($Case0(prev))) => node.set_components(Some(prev), context, commands, event),
-                    ($Case0(node),_)=> node.set_components(None, context, commands, event),
-                    $(($C(node), Some($C(prev))) => node.set_components(Some(prev),context, commands, event),)*
-                    $(($C(node), _) => node.set_components(None, context, commands, event),)*
+                    ($Case0(node), Some($Case0(prev))) => node.set(Some(prev), context, commands, event),
+                    ($Case0(node),_)=> node.set(None, context, commands, event),
+                    $(($C(node), Some($C(prev))) => node.set(Some(prev),context, commands, event),)*
+                    $(($C(node), _) => node.set(None, context, commands, event),)*
 
                 }
             }
@@ -38,22 +38,6 @@ macro_rules! impl_either {
                 match self {
                     $Case0(node) => node.on_deleted(commands),
                     $($C(node) => node.on_deleted(commands),)*
-
-                }
-            }
-
-            fn set_children<'r>(
-                &self,
-                previous: Option<&Self>,
-                context: &<Self::Context as NodeContext>::Wrapper<'r>,
-                commands: &mut impl crate::prelude::ChildCommands,
-            ) {
-                use $Either::*;
-                match (self, previous) {
-                    ($Case0(node), Some($Case0(previous)))=> node.set_children(Some(previous), context, commands),
-                    ($Case0(node),_)=> node.set_children(None, context, commands),
-                    $(($C(node), Some($C(previous))) => node.set_children(Some(previous), context, commands),)*
-                    $(($C(node), _) => node.set_children(None, context, commands),)*
 
                 }
             }

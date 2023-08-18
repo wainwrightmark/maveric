@@ -156,12 +156,30 @@ pub struct MainMenu;
 impl HierarchyNode for MainMenu {
     type Context = NC2<MenuState, AssetServer>;
 
-    fn set_children(
+
+
+    fn set<'r>(
         &self,
-        _previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'_>,
-        commands: &mut impl ChildCommands,
+        previous: Option<&Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl NodeCommands,
+        event: SetComponentsEvent,
     ) {
+        commands.insert(NodeBundle {
+            style: Style {
+                position_type: PositionType::Absolute,
+                left: Val::Percent(50.0),  // Val::Px(MENU_OFFSET),
+                right: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
+                top: Val::Px(MENU_OFFSET),
+                display: Display::Flex,
+                flex_direction: FlexDirection::Column,
+
+                ..Default::default()
+            },
+            z_index: ZIndex::Global(10),
+            ..Default::default()
+        });
+
         for (key, action) in ButtonAction::main_buttons().iter().enumerate() {
             let button = text_button_node(*action);
             let button: WithTransition<ButtonNode<ButtonAction>, BackgroundColorLens, ()> =
@@ -183,29 +201,6 @@ impl HierarchyNode for MainMenu {
             &context.1,
         )
     }
-
-    fn set_components<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
-        event: SetComponentsEvent,
-    ) {
-        commands.insert(NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                left: Val::Percent(50.0),  // Val::Px(MENU_OFFSET),
-                right: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
-                top: Val::Px(MENU_OFFSET),
-                display: Display::Flex,
-                flex_direction: FlexDirection::Column,
-
-                ..Default::default()
-            },
-            z_index: ZIndex::Global(10),
-            ..Default::default()
-        })
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
@@ -214,12 +209,28 @@ pub struct LevelMenu(u32);
 impl HierarchyNode for LevelMenu {
     type Context = NC2<MenuState, AssetServer>;
 
-    fn set_children(
+    fn set<'r>(
         &self,
-        _previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'_>,
-        commands: &mut impl ChildCommands,
+        previous: Option<&Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl NodeCommands,
+        event: SetComponentsEvent,
     ) {
+        commands.insert(NodeBundle {
+            style: Style {
+                position_type: PositionType::Absolute,
+                left: Val::Percent(50.0),
+                right: Val::Percent(50.0),
+                top: Val::Px(MENU_OFFSET),
+                display: Display::Flex,
+                flex_direction: FlexDirection::Column,
+
+                ..Default::default()
+            },
+            z_index: ZIndex::Global(10),
+            ..Default::default()
+        });
+
         let start = self.0 * LEVELS_PER_PAGE;
         let end = start + LEVELS_PER_PAGE;
 
@@ -236,29 +247,6 @@ impl HierarchyNode for LevelMenu {
 
         commands.add_child("buttons", LevelMenuArrows(self.0), &context.1);
     }
-
-    fn set_components<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
-        event: SetComponentsEvent,
-    ) {
-        commands.insert(NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                left: Val::Percent(50.0),
-                right: Val::Percent(50.0),
-                top: Val::Px(MENU_OFFSET),
-                display: Display::Flex,
-                flex_direction: FlexDirection::Column,
-
-                ..Default::default()
-            },
-            z_index: ZIndex::Global(10),
-            ..Default::default()
-        })
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
@@ -267,38 +255,11 @@ pub struct LevelMenuArrows(u32);
 impl HierarchyNode for LevelMenuArrows {
     type Context = AssetServer;
 
-    fn set_children(
-        &self,
-        _previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'_>,
-        commands: &mut impl ChildCommands,
-    ) {
-        if self.0 == 0 {
-            commands.add_child("left", icon_button_node(ButtonAction::OpenMenu), context)
-        } else {
-            commands.add_child(
-                "left",
-                icon_button_node(ButtonAction::PreviousLevelsPage),
-                context,
-            )
-        }
-
-        if self.0 < 4 {
-            commands.add_child(
-                "right",
-                icon_button_node(ButtonAction::NextLevelsPage),
-                context,
-            )
-        } else {
-            commands.add_child("right", icon_button_node(ButtonAction::None), context)
-        }
-    }
-
-    fn set_components<'r>(
+    fn set<'r>(
         &self,
         previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
+        commands: &mut impl NodeCommands,
         event: SetComponentsEvent,
     ) {
         commands.insert(NodeBundle {
@@ -327,10 +288,29 @@ impl HierarchyNode for LevelMenuArrows {
             background_color: BackgroundColor(TEXT_BUTTON_BACKGROUND),
             border_color: BorderColor(BUTTON_BORDER),
             ..Default::default()
-        })
+        });
+
+        if self.0 == 0 {
+            commands.add_child("left", icon_button_node(ButtonAction::OpenMenu), context)
+        } else {
+            commands.add_child(
+                "left",
+                icon_button_node(ButtonAction::PreviousLevelsPage),
+                context,
+            )
+        }
+
+        if self.0 < 4 {
+            commands.add_child(
+                "right",
+                icon_button_node(ButtonAction::NextLevelsPage),
+                context,
+            )
+        } else {
+            commands.add_child("right", icon_button_node(ButtonAction::None), context)
+        }
     }
 }
-
 
 pub const ICON_BUTTON_WIDTH: f32 = 65.;
 pub const ICON_BUTTON_HEIGHT: f32 = 65.;

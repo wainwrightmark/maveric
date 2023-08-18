@@ -3,9 +3,9 @@ use std::{any::type_name, marker::PhantomData};
 use crate::prelude::*;
 use bevy::{ecs::system::EntityCommands, prelude::*, utils::hashbrown::HashMap};
 
-pub(crate) struct OrderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRootChildren> {
+pub(crate) struct OrderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, 'w_e, R: HierarchyRootChildren> {
     ec: &'b mut EntityCommands<'w, 's, 'a>,
-
+    entity_ref: EntityRef<'w_e>,
     remaining_old_entities: HashMap<ChildKey, (usize, EntityRef<'w1>)>,
     world: &'q World,
     phantom: PhantomData<R>,
@@ -14,8 +14,23 @@ pub(crate) struct OrderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRoot
     new_indices: Vec<Option<usize>>,
 }
 
-impl<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRootChildren> ChildCommands
-    for OrderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R>
+impl<'w, 's, 'a, 'b, 'w1, 'q, 'w_e,R: HierarchyRootChildren> ComponentCommands for OrderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q,'w_e, R> {
+    fn get<T: Component>(&self) -> Option<&T> {
+        self.entity_ref.get()
+    }
+
+    fn insert<T: Bundle>(&mut self, bundle: T) {
+        self.ec.insert(bundle);
+    }
+
+    fn remove<T: Bundle>(&mut self) {
+        self.ec.remove::<T>();
+    }
+}
+
+
+impl<'w, 's, 'a, 'b, 'w1, 'q,'w_e, R: HierarchyRootChildren> ChildCommands
+    for OrderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q,'w_e, R>
 {
     fn add_child<NChild: HierarchyNode>(
         &mut self,
@@ -58,11 +73,12 @@ impl<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRootChildren> ChildCommands
     }
 }
 
-impl<'w, 's, 'a, 'b, 'w1, 'q: 'w1, R: HierarchyRootChildren>
-    OrderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R>
+impl<'w, 's, 'a, 'b, 'w1, 'q: 'w1,'w_e, R: HierarchyRootChildren>
+    OrderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, 'w_e,R>
 {
     pub(crate) fn new(
         ec: &'b mut EntityCommands<'w, 's, 'a>,
+        entity_ref: EntityRef<'w_e>,
         children: Option<&Children>,
         world: &'q World,
     ) -> Self {
@@ -81,6 +97,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'q: 'w1, R: HierarchyRootChildren>
 
                 Self {
                     ec,
+                    entity_ref,
                     remaining_old_entities,
                     world,
                     phantom: PhantomData,
@@ -90,6 +107,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'q: 'w1, R: HierarchyRootChildren>
             }
             None => Self {
                 ec,
+                entity_ref,
                 remaining_old_entities: Default::default(),
                 world,
                 phantom: PhantomData,
@@ -313,20 +331,12 @@ mod tests {
     impl HierarchyNode for Branch {
         type Context = NC2<TreeState, LingerState>;
 
-        fn set_components<'r>(
+        fn set<'r>(
             &self,
             previous: Option<&Self>,
             context: &<Self::Context as NodeContext>::Wrapper<'r>,
-            commands: &mut impl ComponentCommands,
+            commands: &mut impl NodeCommands,
             event: SetComponentsEvent,
-        ) {
-        }
-
-        fn set_children<'r>(
-            &self,
-            previous: Option<&Self>,
-            context: &<Self::Context as NodeContext>::Wrapper<'r>,
-            commands: &mut impl ChildCommands,
         ) {
             for &number in context.0 .0.iter() {
                 let linger = context.1 .0.contains(&number);
@@ -344,20 +354,12 @@ mod tests {
     impl HierarchyNode for Leaf {
         type Context = NoContext;
 
-        fn set_components<'r>(
+        fn set<'r>(
             &self,
             previous: Option<&Self>,
             context: &<Self::Context as NodeContext>::Wrapper<'r>,
-            commands: &mut impl ComponentCommands,
+            commands: &mut impl NodeCommands,
             event: SetComponentsEvent,
-        ) {
-        }
-
-        fn set_children<'r>(
-            &self,
-            previous: Option<&Self>,
-            context: &<Self::Context as NodeContext>::Wrapper<'r>,
-            commands: &mut impl ChildCommands,
         ) {
         }
 

@@ -15,3 +15,8 @@ pub trait ComponentCommands {
     fn insert<T: Bundle>(&mut self, bundle: T);
     fn remove<T: Bundle>(&mut self);
 }
+
+pub trait NodeCommands: ChildCommands + ComponentCommands {}
+
+
+impl <T : ChildCommands + ComponentCommands> NodeCommands for T{}

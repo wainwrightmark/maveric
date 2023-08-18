@@ -119,12 +119,26 @@ pub struct CommandGrid;
 impl HierarchyNode for CommandGrid {
     type Context = AssetServer;
 
-    fn set_children(
-        &self,
-        _previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'_>,
-        commands: &mut impl ChildCommands,
-    ) {
+
+    fn set<'r>(
+            &self,
+            previous: Option<&Self>,
+            context: &<Self::Context as NodeContext>::Wrapper<'r>,
+            commands: &mut impl NodeCommands,
+            event: SetComponentsEvent,
+        ) {
+        commands.insert( NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                display: Display::Flex,
+                flex_direction: FlexDirection::Row,
+                ..default()
+            },
+            ..default()
+        });
+
         for command in [Command::AddNew, Command::Reset] {
             let key: &'static str = command.into();
 
@@ -138,26 +152,6 @@ impl HierarchyNode for CommandGrid {
             commands.add_child(key, node, context);
         }
     }
-
-    fn set_components<'r>(
-            &self,
-            previous: Option<&Self>,
-            context: &<Self::Context as NodeContext>::Wrapper<'r>,
-            commands: &mut impl ComponentCommands,
-            event: SetComponentsEvent,
-        ) {
-        commands.insert( NodeBundle {
-            style: Style {
-                width: Val::Percent(100.0),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                display: Display::Flex,
-                flex_direction: FlexDirection::Row,
-                ..default()
-            },
-            ..default()
-        })
-    }
 }
 
 
@@ -168,12 +162,26 @@ pub struct DynamicGrid;
 impl HierarchyNode for DynamicGrid {
     type Context = NC2<UIState, AssetServer>;
 
-    fn set_children(
+
+    fn set<'r>(
         &self,
-        _previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'_>,
-        commands: &mut impl ChildCommands,
+        previous: Option<&Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl NodeCommands,
+        event: SetComponentsEvent,
     ) {
+        commands.insert(NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                display: Display::Flex,
+                flex_direction: FlexDirection::Row,
+                ..default()
+            },
+            ..default()
+        });
+
         for number in context.0.dynamic_buttons.iter().cloned() {
             let node = ButtonNode {
                 text: Some((number.to_string(), TEXT_NODE_STYLE.clone())),
@@ -192,26 +200,6 @@ impl HierarchyNode for DynamicGrid {
 
             commands.add_child(number, node, &context.1);
         }
-    }
-
-    fn set_components<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
-        event: SetComponentsEvent,
-    ) {
-        commands.insert(NodeBundle {
-            style: Style {
-                width: Val::Percent(100.0),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                display: Display::Flex,
-                flex_direction: FlexDirection::Row,
-                ..default()
-            },
-            ..default()
-        })
     }
 }
 
