@@ -2,12 +2,16 @@ use bevy::{prelude::*, time::TimePlugin};
 use criterion::{criterion_group, criterion_main, Criterion, BenchmarkId};
 use state_hierarchy::prelude::*;
 
+criterion_group!(benches, delete_leaves_benchmark, create_leaves_benchmark, morph_leaves_benchmark);
+criterion_main!(benches);
 
+const SIZES: [u32;8] = [1u32,2,4,8,16,32,64,128];
+//const SIZES: [u32;0] = [];
 
 fn delete_leaves_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("delete_leaves");
 
-    for size in [1u32,2,4,8,16,32,64,128]{
+    for size in SIZES{
         group.throughput(criterion::Throughput::Elements((size * size) as u64));
         group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, &size|
 
@@ -19,7 +23,7 @@ fn delete_leaves_benchmark(c: &mut Criterion) {
 fn create_leaves_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("create_leaves");
 
-    for size in [1u32,2,4,8,16,32,64,128]{
+    for size in SIZES{
         group.throughput(criterion::Throughput::Elements((size * size) as u64));
         group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, &size|
 
@@ -31,7 +35,7 @@ fn create_leaves_benchmark(c: &mut Criterion) {
 fn morph_leaves_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("morph_leaves");
 
-    for size in [1u32,2,4,8,16,32,64,128]{
+    for size in SIZES{
         group.throughput(criterion::Throughput::Elements((size * size) as u64));
         group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, &size|
 
@@ -40,8 +44,7 @@ fn morph_leaves_benchmark(c: &mut Criterion) {
     }
 }
 
-criterion_group!(benches, delete_leaves_benchmark, create_leaves_benchmark, morph_leaves_benchmark);
-criterion_main!(benches);
+
 
 pub fn run_state_transition(s1: TreeState, s2: TreeState) {
     let mut app = App::new();
@@ -110,6 +113,8 @@ impl ChildrenAspect for Branch {
             commands.add_child(x, Leaf::Red, &());
         }
     }
+
+    const CHILDREN_TYPE: ChildrenType = ChildrenType::Unordered;
 }
 
 impl StaticComponentsAspect for Branch {
