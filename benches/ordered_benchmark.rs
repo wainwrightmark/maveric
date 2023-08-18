@@ -67,18 +67,25 @@ struct Branch;
 impl HierarchyNode for Branch {
     type Context = NC2<TreeState, LingerState>;
 
-
-    fn set<'r>(
+    fn set_children<'r>(
         &self,
-        previous: Option<&Self>,
+        _previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl NodeCommands,
-        event: SetComponentsEvent,
+        commands: &mut impl ChildCommands,
     ) {
         for &number in context.0 .0.iter() {
             let linger = context.1 .0;
             commands.add_child(number, Leaf { number, linger }, &());
         }
+    }
+
+    fn set_components<'r>(
+        &self,
+        previous: Option<&Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ComponentCommands,
+        event: SetComponentsEvent,
+    ) {
     }
 }
 
@@ -91,11 +98,18 @@ struct Leaf {
 impl HierarchyNode for Leaf {
     type Context = NoContext;
 
-    fn set<'r>(
+    fn set_children<'r>(
+        &self,
+        previous: Option<&Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ChildCommands,
+    ) {
+    }
+    fn set_components<'r>(
         &self,
         _previous: Option<&Self>,
         _context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        _commands: &mut impl NodeCommands,
+        _commands: &mut impl ComponentCommands,
         _event: SetComponentsEvent,
     ) {
     }

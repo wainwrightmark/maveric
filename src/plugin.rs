@@ -165,12 +165,20 @@ mod tests {
     impl HierarchyNode for Branch {
         type Context = TreeState;
 
-        fn set<'r>(
+        fn set_components<'r>(
             &self,
             previous: Option<&Self>,
             context: &<Self::Context as NodeContext>::Wrapper<'r>,
-            commands: &mut impl NodeCommands,
+            commands: &mut impl ComponentCommands,
             event: SetComponentsEvent,
+        ) {
+        }
+
+        fn set_children<'r>(
+            &self,
+            previous: Option<&Self>,
+            context: &<Self::Context as NodeContext>::Wrapper<'r>,
+            commands: &mut impl ChildCommands,
         ) {
             for x in 0..(context.blue_leaf_count) {
                 commands.add_child(x, Leaf::Blue, &());
@@ -191,12 +199,20 @@ mod tests {
     impl HierarchyNode for Leaf{
         type Context = NoContext;
 
-        fn set<'r>(
+        fn set_components<'r>(
             &self,
             previous: Option<&Self>,
             context: &<Self::Context as NodeContext>::Wrapper<'r>,
-            commands: &mut impl NodeCommands,
+            commands: &mut impl ComponentCommands,
             event: SetComponentsEvent,
+        ) {
+        }
+
+        fn set_children<'r>(
+            &self,
+            previous: Option<&Self>,
+            context: &<Self::Context as NodeContext>::Wrapper<'r>,
+            commands: &mut impl ChildCommands,
         ) {
         }
     }

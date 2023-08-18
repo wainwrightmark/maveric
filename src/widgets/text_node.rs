@@ -23,11 +23,11 @@ pub struct TextNodeStyle {
 impl HierarchyNode for TextNode {
     type Context = AssetServer;
 
-    fn set<'r>(
+    fn set_components<'r>(
         &self,
         previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl NodeCommands,
+        commands: &mut impl ComponentCommands,
         event: SetComponentsEvent,
     ) {
         let font = get_or_load_asset(self.style.font, &context);
@@ -46,6 +46,14 @@ impl HierarchyNode for TextNode {
 
         //TODO only update text and node components
         commands.insert(bundle);
+    }
+
+    fn set_children<'r>(
+        &self,
+        previous: Option<&Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ChildCommands,
+    ) {
     }
 
     const CHILDREN_TYPE: ChildrenType = ChildrenType::Unordered;

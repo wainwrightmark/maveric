@@ -106,18 +106,17 @@ where
 {
     type Context = N::Context;
 
-    fn set<'r>(
+    fn set_components<'r>(
         &self,
         previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl NodeCommands,
+        commands: &mut impl ComponentCommands,
         event: SetComponentsEvent,
     ) {
         let previous = previous.map(|x| &x.node);
 
-
         self.node
-            .set(previous, context, commands, event);
+            .set_components(previous, context, commands, event);
 
         match event {
             SetComponentsEvent::Created => {
@@ -196,6 +195,15 @@ where
         DeletionPolicy::Linger(duration)
     }
 
+    fn set_children<'r>(
+        &self,
+        previous: Option<&Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ChildCommands,
+    ) {
+        self.node
+            .set_children(previous.map(|x| &x.node), context, commands)
+    }
 }
 
 impl<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> PartialEq
