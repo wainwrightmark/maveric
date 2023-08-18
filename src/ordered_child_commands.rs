@@ -10,7 +10,8 @@ pub(crate) struct OrderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRoot
     world: &'q World,
     phantom: PhantomData<R>,
 
-    new_children: Vec<(Option<usize>, Entity)>,
+    new_children: Vec<Entity>,
+    new_indices: Vec<Option<usize>>,
 }
 
 impl<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRoot> ChildCommands
@@ -35,7 +36,8 @@ impl<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRoot> ChildCommands
                     context,
                     self.world,
                 );
-                self.new_children.push((Some(old_index), entity_ref.id()));
+                self.new_children.push(entity_ref.id());
+                self.new_indices.push(Some(old_index));
                 return; //do not spawn a new child
             }
             warn!(
@@ -51,7 +53,8 @@ impl<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRoot> ChildCommands
 
         let mut new_commands = self.ec.commands().spawn_empty();
         create_recursive::<R, NChild>(&mut new_commands, child, context, key);
-        self.new_children.push((None, new_commands.id()));
+        self.new_children.push(new_commands.id());
+        self.new_indices.push(None);
     }
 }
 
@@ -82,6 +85,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'q: 'w1, R: HierarchyRoot>
                     world,
                     phantom: PhantomData,
                     new_children: vec![],
+                    new_indices: vec![],
                 }
             }
             None => Self {
@@ -90,6 +94,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'q: 'w1, R: HierarchyRoot>
                 world,
                 phantom: PhantomData,
                 new_children: vec![],
+                new_indices: vec![],
             },
         }
     }
@@ -100,7 +105,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'q: 'w1, R: HierarchyRoot>
         let order_changed = {
             let mut changed = false;
             let mut last = 0;
-            'oc: for (old_index, _) in self.new_children.iter() {
+            'oc: for old_index in self.new_indices.iter() {
                 let Some(old_index) = *old_index else{ changed = true; break 'oc;};
                 if old_index < last {
                     changed = true;
@@ -115,12 +120,12 @@ impl<'w, 's, 'a, 'b, 'w1, 'q: 'w1, R: HierarchyRoot>
         for (_key, (old_deleted_index, entity_ref)) in self.remaining_old_entities {
             let Some(lingering_entity) = delete_recursive::<R>(ec.commands(), entity_ref) else {continue;};
 
-            if !order_changed{
+            if !order_changed {
                 continue;
             }
 
             let mut closest_to_next: Option<(usize, usize)> = None;
-            'inner: for (new_index, (old_index, _)) in self.new_children.iter().enumerate() {
+            'inner: for (new_index, old_index) in self.new_indices.iter().enumerate() {
                 let Some(old_index) = old_index else {continue;};
                 let Some(distance) = old_index.checked_sub(old_deleted_index) else{continue;};
 
@@ -140,23 +145,15 @@ impl<'w, 's, 'a, 'b, 'w1, 'q: 'w1, R: HierarchyRoot>
             }
 
             if let Some((_, new_index)) = closest_to_next {
-                self.new_children
-                    .insert(new_index, (Some(old_deleted_index), lingering_entity));
+                self.new_children.insert(new_index, lingering_entity);
+                self.new_indices.insert(new_index, Some(old_deleted_index));
             } else {
-                self.new_children
-                    .push((Some(old_deleted_index), lingering_entity));
+                self.new_children.push(lingering_entity);
+                self.new_indices.push(Some(old_deleted_index));
             }
         }
-
-        // todo store entities and indices in separate collections
         if order_changed {
-            let new_entities: Vec<_> = self
-                .new_children
-                .into_iter()
-                .map(|(_, entity)| entity)
-                .collect();
-
-            ec.replace_children(&new_entities);
+            ec.replace_children(&self.new_children);
         }
     }
 }

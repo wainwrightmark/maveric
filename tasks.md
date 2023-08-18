@@ -4,3 +4,4 @@
 - [x] Ordered Children
 - [x] Feature flags
 - [ ] Simplify
+- [ ] Reuse child commands to reduce allocations
