@@ -11,7 +11,7 @@ bevy = { version = "0.11.0", default-features = false}
 
 
 [dev-dependencies]
-bevy = {version = "0.11.0", features = ["bevy_render", "bevy_ui"]}
+bevy = {version = "0.11.0", default-features = false, features = ["bevy_render", "bevy_ui", "bevy_winit", "png"]}
 lazy_static = "1.4.0"
 strum = { version = "0.25.0", features = ["derive"] }
 criterion = { version = "0.5", features = ["html_reports"] }
