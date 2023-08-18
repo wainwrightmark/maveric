@@ -116,29 +116,9 @@ impl_hierarchy_root!(Root);
 #[derive(Eq, PartialEq, Debug, Default)]
 pub struct CommandGrid;
 
-impl HasContext for CommandGrid {
+impl HierarchyNode for CommandGrid {
     type Context = AssetServer;
-}
 
-impl StaticComponentsAspect for CommandGrid {
-    type B = NodeBundle;
-
-    fn get_bundle() -> Self::B {
-        NodeBundle {
-            style: Style {
-                width: Val::Percent(100.0),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                display: Display::Flex,
-                flex_direction: FlexDirection::Row,
-                ..default()
-            },
-            ..default()
-        }
-    }
-}
-
-impl ChildrenAspect for CommandGrid {
     fn set_children(
         &self,
         _previous: Option<&Self>,
@@ -158,16 +138,36 @@ impl ChildrenAspect for CommandGrid {
             commands.add_child(key, node, context);
         }
     }
+
+    fn set_components<'r>(
+            &self,
+            previous: Option<&Self>,
+            context: &<Self::Context as NodeContext>::Wrapper<'r>,
+            commands: &mut impl ComponentCommands,
+            event: SetComponentsEvent,
+        ) {
+        commands.insert( NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                display: Display::Flex,
+                flex_direction: FlexDirection::Row,
+                ..default()
+            },
+            ..default()
+        })
+    }
 }
+
+
 
 #[derive(Eq, PartialEq, Debug, Default)]
 pub struct DynamicGrid;
 
-impl HasContext for DynamicGrid {
+impl HierarchyNode for DynamicGrid {
     type Context = NC2<UIState, AssetServer>;
-}
 
-impl ChildrenAspect for DynamicGrid {
     fn set_children(
         &self,
         _previous: Option<&Self>,
@@ -193,13 +193,15 @@ impl ChildrenAspect for DynamicGrid {
             commands.add_child(number, node, &context.1);
         }
     }
-}
 
-impl StaticComponentsAspect for DynamicGrid {
-    type B = NodeBundle;
-
-    fn get_bundle() -> Self::B {
-        NodeBundle {
+    fn set_components<'r>(
+        &self,
+        previous: Option<&Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ComponentCommands,
+        event: SetComponentsEvent,
+    ) {
+        commands.insert(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
                 align_items: AlignItems::Center,
@@ -209,18 +211,14 @@ impl StaticComponentsAspect for DynamicGrid {
                 ..default()
             },
             ..default()
-        }
+        })
     }
 }
 
-impl HasContext for Root {
+impl HierarchyRootChildren for Root {
     type Context = NC2<UIState, AssetServer>;
-}
 
-impl ChildrenAspect for Root {
     fn set_children(
-        &self,
-        _previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {

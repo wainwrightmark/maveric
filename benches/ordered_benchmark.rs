@@ -2,7 +2,6 @@ use bevy::{prelude::*, time::TimePlugin};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use state_hierarchy::prelude::*;
 
-
 fn reverse_leaves_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("reverse_leaves");
 
@@ -13,17 +12,14 @@ fn reverse_leaves_benchmark(c: &mut Criterion) {
                 run_state_transition(
                     TreeState((0..size).collect()),
                     TreeState((0..size).rev().collect()),
-                    LingerState(false)
+                    LingerState(false),
                 )
             })
         });
     }
 }
 
-criterion_group!(
-    benches,
-    reverse_leaves_benchmark
-);
+criterion_group!(benches, reverse_leaves_benchmark);
 criterion_main!(benches);
 
 pub fn run_state_transition(s1: TreeState, s2: TreeState, linger_state: LingerState) {
@@ -52,14 +48,10 @@ pub struct LingerState(bool);
 #[derive(Debug, Clone, PartialEq, Default)]
 struct Root;
 
-impl HasContext for Root {
+impl HierarchyRootChildren for Root {
     type Context = NC2<TreeState, LingerState>;
-}
 
-impl ChildrenAspect for Root {
     fn set_children(
-        &self,
-        _previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
@@ -72,11 +64,9 @@ impl_hierarchy_root!(Root);
 #[derive(Debug, Clone, PartialEq, Default)]
 struct Branch;
 
-impl HasContext for Branch {
+impl HierarchyNode for Branch {
     type Context = NC2<TreeState, LingerState>;
-}
 
-impl ChildrenAspect for Branch {
     fn set_children<'r>(
         &self,
         _previous: Option<&Self>,
@@ -88,12 +78,15 @@ impl ChildrenAspect for Branch {
             commands.add_child(number, Leaf { number, linger }, &());
         }
     }
-}
 
-impl StaticComponentsAspect for Branch {
-    type B = ();
-
-    fn get_bundle() -> Self::B {}
+    fn set_components<'r>(
+        &self,
+        previous: Option<&Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ComponentCommands,
+        event: SetComponentsEvent,
+    ) {
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -102,11 +95,16 @@ struct Leaf {
     linger: bool,
 }
 
-impl HasNoContext for Leaf {}
+impl HierarchyNode for Leaf {
+    type Context = NoContext;
 
-impl HasNoChildren for Leaf {}
-
-impl ComponentsAspect for Leaf {
+    fn set_children<'r>(
+        &self,
+        previous: Option<&Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ChildCommands,
+    ) {
+    }
     fn set_components<'r>(
         &self,
         _previous: Option<&Self>,

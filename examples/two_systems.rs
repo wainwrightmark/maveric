@@ -8,12 +8,12 @@ fn main() {
     let mut app = App::new();
 
     app.add_plugins(DefaultPlugins)
-
         .init_resource::<CounterState>()
         .add_systems(Startup, setup)
         .add_systems(Update, button_system);
 
-    app.register_state_hierarchy::<Root>().register_state_hierarchy::<Root2>();
+    app.register_state_hierarchy::<Root>()
+        .register_state_hierarchy::<Root2>();
     app.run();
 }
 fn setup(mut commands: Commands) {
@@ -27,14 +27,10 @@ pub struct Marker;
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Root;
 
-impl HasContext for Root {
+impl HierarchyRootChildren for Root {
     type Context = NC2<CounterState, AssetServer>;
-}
 
-impl ChildrenAspect for Root {
     fn set_children(
-        &self,
-        _previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
@@ -54,34 +50,27 @@ impl ChildrenAspect for Root {
 
 impl_hierarchy_root!(Root);
 
-
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Root2;
 
-impl HasContext for Root2 {
+impl HierarchyRootChildren for Root2 {
     type Context = NC2<CounterState, AssetServer>;
-}
 
-impl ChildrenAspect for Root2 {
     fn set_children(
-        &self,
-        _previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
-
-
-        let path  = match context.0.number % 4 {
-            0=>r#"images\MedalsBlack.png"#,
-            1=>r#"images\MedalsBronze.png"#,
-            2=>r#"images\MedalsSilver.png"#,
-            _=>r#"images\MedalsGold.png"#,
+        let path = match context.0.number % 4 {
+            0 => r#"images\MedalsBlack.png"#,
+            1 => r#"images\MedalsBronze.png"#,
+            2 => r#"images\MedalsSilver.png"#,
+            _ => r#"images\MedalsGold.png"#,
         };
         commands.add_child(
             1,
-            ButtonNode{
+            ButtonNode {
                 text: None,
-                image: Some((path, BIG_IMAGE_NODE_STYLE.clone()) ),
+                image: Some((path, BIG_IMAGE_NODE_STYLE.clone())),
                 button_node_style: IMAGE_BUTTON_STYLE.clone(),
                 marker: Marker,
             },
@@ -113,7 +102,6 @@ fn button_system(
 }
 
 lazy_static! {
-
     static ref BIG_IMAGE_NODE_STYLE: Arc<ImageNodeStyle> = Arc::new(ImageNodeStyle {
         background_color: Color::WHITE,
         style: Style {
@@ -133,7 +121,6 @@ lazy_static! {
             ..default()
         }
     });
-
     static ref TEXT_BUTTON_STYLE: Arc<ButtonNodeStyle> = Arc::new(ButtonNodeStyle {
         style: Style {
             width: Val::Px(BUTTON_WIDTH),
@@ -156,7 +143,6 @@ lazy_static! {
         border_color: BUTTON_BORDER,
         ..Default::default()
     });
-
     static ref IMAGE_BUTTON_STYLE: Arc<ButtonNodeStyle> = Arc::new(ButtonNodeStyle {
         style: Style {
             width: Val::Px(BUTTON_WIDTH),
@@ -214,6 +200,6 @@ pub const LEVEL_TEXT_ALT_COLOR: Color = Color::WHITE;
 pub const BUTTON_BORDER: Color = Color::BLACK;
 pub const BUTTON_TEXT_COLOR: Color = Color::rgb(0.1, 0.1, 0.1);
 
-pub const  IMAGE_BUTTON_BACKGROUND: Color = Color::WHITE;
+pub const IMAGE_BUTTON_BACKGROUND: Color = Color::WHITE;
 pub const TEXT_BUTTON_BACKGROUND: Color = Color::WHITE;
 pub const DISABLED_BUTTON_BACKGROUND: Color = Color::GRAY;

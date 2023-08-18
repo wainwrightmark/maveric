@@ -5,20 +5,14 @@ macro_rules! impl_either {
     {
 
         #[derive(Debug, Clone, PartialEq)]
-        pub enum $Either<$T0: HasContext, $($T: HasContext<Context = $T0::Context>,)*> {
+        pub enum $Either<$T0: HierarchyNode, $($T: HierarchyNode<Context = $T0::Context>,)*> {
             $Case0($T0),
             $($C($T),)*
         }
 
-        impl<$T0: HasContext, $($T: HasContext<Context = T0::Context>,)*> HasContext for $Either<$T0, $($T,)*> {
+        impl<$T0: HierarchyNode, $($T: HierarchyNode<Context = T0::Context>,)*> HierarchyNode for $Either<$T0, $($T,)*> {
             type Context = $T0::Context;
-        }
 
-        impl<$T0: HasContext, $($T: HasContext<Context = T0::Context>,)*> ComponentsAspect for $Either<$T0, $($T,)*>
-        where
-            $T0: ComponentsAspect,
-            $($T: ComponentsAspect,)*
-        {
             fn set_components<'r>(
                 &self,
                 previous: Option<&Self>,
@@ -47,13 +41,7 @@ macro_rules! impl_either {
 
                 }
             }
-        }
 
-        impl<$T0: HasContext, $($T: HasContext<Context = T0::Context>,)*> ChildrenAspect for $Either<$T0, $($T,)*>
-        where
-            $T0: ChildrenAspect,
-            $($T: ChildrenAspect,)*
-        {
             fn set_children<'r>(
                 &self,
                 previous: Option<&Self>,
@@ -69,6 +57,8 @@ macro_rules! impl_either {
 
                 }
             }
+
+            //TODO children_type
         }
     }
 

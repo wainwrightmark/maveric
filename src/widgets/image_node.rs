@@ -17,11 +17,9 @@ pub struct ImageNodeStyle {
     pub style: Style,
 }
 
-impl HasContext for ImageNode {
+impl HierarchyNode for ImageNode {
     type Context = AssetServer;
-}
 
-impl ComponentsAspect for ImageNode {
     fn set_components<'r>(
         &self,
         _previous: Option<&Self>,
@@ -40,6 +38,14 @@ impl ComponentsAspect for ImageNode {
         };
         commands.insert(bundle);
     }
-}
 
-impl HasNoChildren for ImageNode {}
+    fn set_children<'r>(
+        &self,
+        previous: Option<&Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ChildCommands,
+    ) {
+    }
+
+    const CHILDREN_TYPE: ChildrenType = ChildrenType::Unordered;
+}

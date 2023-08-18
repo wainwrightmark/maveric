@@ -3,7 +3,7 @@ use std::{any::type_name, marker::PhantomData};
 use crate::prelude::*;
 use bevy::{ecs::system::EntityCommands, prelude::*, utils::hashbrown::HashMap};
 
-pub(crate) struct OrderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRoot> {
+pub(crate) struct OrderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRootChildren> {
     ec: &'b mut EntityCommands<'w, 's, 'a>,
 
     remaining_old_entities: HashMap<ChildKey, (usize, EntityRef<'w1>)>,
@@ -14,7 +14,7 @@ pub(crate) struct OrderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRoot
     new_indices: Vec<Option<usize>>,
 }
 
-impl<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRoot> ChildCommands
+impl<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRootChildren> ChildCommands
     for OrderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R>
 {
     fn add_child<NChild: HierarchyNode>(
@@ -58,7 +58,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRoot> ChildCommands
     }
 }
 
-impl<'w, 's, 'a, 'b, 'w1, 'q: 'w1, R: HierarchyRoot>
+impl<'w, 's, 'a, 'b, 'w1, 'q: 'w1, R: HierarchyRootChildren>
     OrderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R>
 {
     pub(crate) fn new(
@@ -161,7 +161,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'q: 'w1, R: HierarchyRoot>
 #[cfg(test)]
 mod tests {
 
-    use crate::prelude::*;
+    use crate::{prelude::*, impl_hierarchy_root};
     use bevy::{time::TimePlugin, utils::HashSet};
     #[test]
     pub fn test_ordering() {
@@ -294,34 +294,37 @@ mod tests {
     #[derive(Debug, Clone, PartialEq, Default)]
     struct Root;
 
-    impl HasContext for Root {
-        type Context = NC2<TreeState, LingerState>;
-    }
+    impl_hierarchy_root!(Root);
 
-    impl ChildrenAspect for Root {
-        fn set_children(
-            &self,
-            _previous: Option<&Self>,
-            context: &<Self::Context as NodeContext>::Wrapper<'_>,
+    impl HierarchyRootChildren for Root {
+        type Context = NC2<TreeState, LingerState>;
+
+        fn set_children<'r>(
+            context: &<Self::Context as NodeContext>::Wrapper<'r>,
             commands: &mut impl ChildCommands,
         ) {
             commands.add_child("branch", Branch, context);
         }
     }
 
-    impl_hierarchy_root!(Root);
-
     #[derive(Debug, Clone, PartialEq, Default)]
     struct Branch;
 
-    impl HasContext for Branch {
+    impl HierarchyNode for Branch {
         type Context = NC2<TreeState, LingerState>;
-    }
 
-    impl ChildrenAspect for Branch {
+        fn set_components<'r>(
+            &self,
+            previous: Option<&Self>,
+            context: &<Self::Context as NodeContext>::Wrapper<'r>,
+            commands: &mut impl ComponentCommands,
+            event: SetComponentsEvent,
+        ) {
+        }
+
         fn set_children<'r>(
             &self,
-            _previous: Option<&Self>,
+            previous: Option<&Self>,
             context: &<Self::Context as NodeContext>::Wrapper<'r>,
             commands: &mut impl ChildCommands,
         ) {
@@ -332,29 +335,29 @@ mod tests {
         }
     }
 
-    impl StaticComponentsAspect for Branch {
-        type B = ();
-
-        fn get_bundle() -> Self::B {}
-    }
-
     #[derive(Debug, Clone, PartialEq)]
     struct Leaf {
         number: u32,
         linger: bool,
     }
 
-    impl HasNoContext for Leaf {}
+    impl HierarchyNode for Leaf {
+        type Context = NoContext;
 
-    impl HasNoChildren for Leaf {}
-
-    impl ComponentsAspect for Leaf {
         fn set_components<'r>(
             &self,
-            _previous: Option<&Self>,
-            _context: &<Self::Context as NodeContext>::Wrapper<'r>,
-            _commands: &mut impl ComponentCommands,
-            _event: SetComponentsEvent,
+            previous: Option<&Self>,
+            context: &<Self::Context as NodeContext>::Wrapper<'r>,
+            commands: &mut impl ComponentCommands,
+            event: SetComponentsEvent,
+        ) {
+        }
+
+        fn set_children<'r>(
+            &self,
+            previous: Option<&Self>,
+            context: &<Self::Context as NodeContext>::Wrapper<'r>,
+            commands: &mut impl ChildCommands,
         ) {
         }
 

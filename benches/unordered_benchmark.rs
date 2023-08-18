@@ -1,50 +1,89 @@
 use bevy::{prelude::*, time::TimePlugin};
-use criterion::{criterion_group, criterion_main, Criterion, BenchmarkId};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use state_hierarchy::prelude::*;
 
-criterion_group!(benches, delete_leaves_benchmark, create_leaves_benchmark, morph_leaves_benchmark);
+criterion_group!(
+    benches,
+    delete_leaves_benchmark,
+    create_leaves_benchmark,
+    morph_leaves_benchmark
+);
 criterion_main!(benches);
 
-const SIZES: [u32;8] = [1u32,2,4,8,16,32,64,128];
+const SIZES: [u32; 8] = [1u32, 2, 4, 8, 16, 32, 64, 128];
 //const SIZES: [u32;0] = [];
 
 fn delete_leaves_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("delete_leaves");
 
-    for size in SIZES{
+    for size in SIZES {
         group.throughput(criterion::Throughput::Elements((size * size) as u64));
-        group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, &size|
-
-        b.iter(|| run_state_transition(TreeState { branch_count: size, blue_leaf_count: size, red_leaf_count: 0 }, TreeState { branch_count: size, blue_leaf_count: 0, red_leaf_count: 0 })));
-
+        group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, &size| {
+            b.iter(|| {
+                run_state_transition(
+                    TreeState {
+                        branch_count: size,
+                        blue_leaf_count: size,
+                        red_leaf_count: 0,
+                    },
+                    TreeState {
+                        branch_count: size,
+                        blue_leaf_count: 0,
+                        red_leaf_count: 0,
+                    },
+                )
+            })
+        });
     }
 }
 
 fn create_leaves_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("create_leaves");
 
-    for size in SIZES{
+    for size in SIZES {
         group.throughput(criterion::Throughput::Elements((size * size) as u64));
-        group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, &size|
-
-        b.iter(|| run_state_transition(TreeState { branch_count: 0, blue_leaf_count: size, red_leaf_count: 0 },TreeState { branch_count: size, blue_leaf_count: size, red_leaf_count: 0 }, )));
-
+        group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, &size| {
+            b.iter(|| {
+                run_state_transition(
+                    TreeState {
+                        branch_count: 0,
+                        blue_leaf_count: size,
+                        red_leaf_count: 0,
+                    },
+                    TreeState {
+                        branch_count: size,
+                        blue_leaf_count: size,
+                        red_leaf_count: 0,
+                    },
+                )
+            })
+        });
     }
 }
 
 fn morph_leaves_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("morph_leaves");
 
-    for size in SIZES{
+    for size in SIZES {
         group.throughput(criterion::Throughput::Elements((size * size) as u64));
-        group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, &size|
-
-        b.iter(|| run_state_transition(TreeState { branch_count: size, blue_leaf_count: size, red_leaf_count: 0 },TreeState { branch_count: size, blue_leaf_count: 0, red_leaf_count: size }, )));
-
+        group.bench_with_input(BenchmarkId::from_parameter(size), &size, |b, &size| {
+            b.iter(|| {
+                run_state_transition(
+                    TreeState {
+                        branch_count: size,
+                        blue_leaf_count: size,
+                        red_leaf_count: 0,
+                    },
+                    TreeState {
+                        branch_count: size,
+                        blue_leaf_count: 0,
+                        red_leaf_count: size,
+                    },
+                )
+            })
+        });
     }
 }
-
-
 
 pub fn run_state_transition(s1: TreeState, s2: TreeState) {
     let mut app = App::new();
@@ -72,14 +111,10 @@ pub struct TreeState {
 #[derive(Debug, Clone, PartialEq, Default)]
 struct Root;
 
-impl HasContext for Root {
+impl HierarchyRootChildren for Root {
     type Context = TreeState;
-}
 
-impl ChildrenAspect for Root {
     fn set_children(
-        &self,
-        _previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
@@ -94,11 +129,9 @@ impl_hierarchy_root!(Root);
 #[derive(Debug, Clone, PartialEq, Default)]
 struct Branch;
 
-impl HasContext for Branch {
+impl HierarchyNode for Branch {
     type Context = TreeState;
-}
 
-impl ChildrenAspect for Branch {
     fn set_children<'r>(
         &self,
         _previous: Option<&Self>,
@@ -115,12 +148,15 @@ impl ChildrenAspect for Branch {
     }
 
     const CHILDREN_TYPE: ChildrenType = ChildrenType::Unordered;
-}
 
-impl StaticComponentsAspect for Branch {
-    type B = ();
-
-    fn get_bundle() -> Self::B {}
+    fn set_components<'r>(
+        &self,
+        previous: Option<&Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ComponentCommands,
+        event: SetComponentsEvent,
+    ) {
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Component)]
@@ -129,11 +165,9 @@ enum Leaf {
     Red,
 }
 
-impl HasNoContext for Leaf {}
+impl HierarchyNode for Leaf {
+    type Context = NoContext;
 
-impl HasNoChildren for Leaf {}
-
-impl ComponentsAspect for Leaf {
     fn set_components<'r>(
         &self,
         _previous: Option<&Self>,
@@ -142,5 +176,13 @@ impl ComponentsAspect for Leaf {
         _event: SetComponentsEvent,
     ) {
         commands.insert(self.clone())
+    }
+
+    fn set_children<'r>(
+        &self,
+        previous: Option<&Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ChildCommands,
+    ) {
     }
 }

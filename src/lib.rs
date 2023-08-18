@@ -19,7 +19,6 @@ pub mod unordered_child_commands;
 pub mod ordered_child_commands;
 
 pub mod either;
-pub mod static_components;
 
 pub mod prelude {
     pub use crate::commands::*;
@@ -35,7 +34,6 @@ pub mod prelude {
     #[cfg(feature = "more_bevy")]
     pub use crate::widgets::prelude::*;
     pub use crate::either::*;
-    pub use crate::static_components::*;
 
     pub(crate) use crate::concrete_component_commands::*;
     pub(crate) use crate::creation_commands::*;
@@ -49,3 +47,4 @@ pub mod prelude {
 
     pub use crate::impl_hierarchy_root;
 }
+

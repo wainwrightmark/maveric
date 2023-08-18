@@ -2,35 +2,24 @@ pub use crate::prelude::*;
 use bevy::ecs::system::EntityCommands;
 pub use bevy::prelude::*;
 
-pub(crate) fn create_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
+pub(crate) fn create_recursive<'c, R: HierarchyRootChildren, N: HierarchyNode>(
     mut cec: &mut EntityCommands,
     node: N,
-    context: &<<N as HasContext>::Context as NodeContext>::Wrapper<'c>,
+    context: &<N::Context as NodeContext>::Wrapper<'c>,
     key: ChildKey,
 ) {
     //info!("Creating Node {}", type_name::<N>());
 
-    let children_context = N::children_context(context);
-    let component_context = N::components_context(context);
-
     let mut child_commands = CreationCommands::<R>::new(&mut cec);
 
-    let children_args = N::as_children_aspect(&node);
-    let component_args = N::as_component_aspect(&node);
-
-    <N::ComponentsAspect as ComponentsAspect>::set_components(
-        component_args,
+    node.set_components(
         None,
-        &component_context,
+        &context,
         &mut child_commands,
         SetComponentsEvent::Created,
     );
-    <N::ChildrenAspect as ChildrenAspect>::set_children(
-        children_args,
-        None,
-        &children_context,
-        &mut child_commands,
-    );
+
+    node.set_children(None, &context, &mut child_commands);
 
     let hnc = HierarchyNodeComponent::new(node);
     let hcc = HierarchyChildComponent::<R>::new::<N>(key.into());
@@ -40,7 +29,7 @@ pub(crate) fn create_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
 
 /// Recursively delete an entity. Returns the entity id if it is to linger.
 #[must_use]
-pub(crate) fn delete_recursive<'c, R: HierarchyRoot>(
+pub(crate) fn delete_recursive<'c, R: HierarchyRootChildren>(
     commands: &mut Commands,
     entity_ref: EntityRef,
     //parent_context: &<<P as HasContext>::Context as NodeContext>::Wrapper<'c>,
@@ -72,11 +61,11 @@ pub(crate) fn delete_recursive<'c, R: HierarchyRoot>(
     }
 }
 
-pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
+pub(crate) fn update_recursive<'c, R: HierarchyRootChildren, N: HierarchyNode>(
     commands: &mut Commands,
     entity_ref: EntityRef,
     node: N,
-    context: &<<N as HasContext>::Context as NodeContext>::Wrapper<'c>,
+    context: &<N::Context as NodeContext>::Wrapper<'c>,
     world: &World,
 ) {
     let mut ec = commands.entity(entity_ref.id());
@@ -87,86 +76,48 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
         false
     };
 
-    let old_args = entity_ref
+    let old_node = entity_ref
         .get::<HierarchyNodeComponent<N>>()
         .map(|x| &x.node);
 
-    let args_changed = !old_args.is_some_and(|oa| node.eq(oa));
+    let node_changed = !old_node.is_some_and(|oa| node.eq(oa));
 
     let children = entity_ref.get::<Children>();
 
-    let component_context = N::components_context(context);
-    let component_args = N::as_component_aspect(&node);
-    let children_args = N::as_children_aspect(&node);
-    let children_context = N::children_context(context);
-
-    // info!(
-    //     "Update recursive {n} args_changed {args_changed}",
-    //     n = std::any::type_name::<N>()
-    // );
-
-    let old_component_args = old_args.map(|x| N::as_component_aspect(&x));
-
-    let components_hot = undeleted
-        || <<N::ComponentsAspect as HasContext>::Context as NodeContext>::has_changed(
-            component_context,
-        )
-        || (args_changed && !old_component_args.is_some_and(|oa| oa == component_args));
-
-    if components_hot {
-        //info!("Components hot {}", std::any::type_name::<N>());
-        let mut component_commands = ConcreteComponentCommands::new(entity_ref, &mut ec);
-
-        <N::ComponentsAspect as ComponentsAspect>::set_components(
-            component_args,
-            old_component_args,
-            &component_context,
-            &mut component_commands,
-            if undeleted {
-                SetComponentsEvent::Undeleted
-            } else {
-                SetComponentsEvent::Updated
-            },
-        );
+    let hot = undeleted || <N ::Context as NodeContext>::has_changed(context) || node_changed;
+    if !hot {
+        return;
     }
 
-    let old_children_args = old_args.map(|x| N::as_children_aspect(&x));
+    let mut component_commands = ConcreteComponentCommands::new(entity_ref, &mut ec);
 
-    let children_hot =
-        <<N::ChildrenAspect as HasContext>::Context as NodeContext>::has_changed(children_context)
-            || (args_changed && !old_children_args.is_some_and(|oa| oa == children_args));
+    (&node).set_components(
+        old_node,
+        &context,
+        &mut component_commands,
+        if undeleted {
+            SetComponentsEvent::Undeleted
+        } else {
+            SetComponentsEvent::Updated
+        },
+    );
 
-    if children_hot {
-        match <N::ChildrenAspect>::CHILDREN_TYPE {
-            ChildrenType::Ordered => {
-                let mut children_commands =
-                    OrderedChildCommands::<R>::new(&mut ec, children, world);
+    match N::CHILDREN_TYPE {
+        ChildrenType::Ordered => {
+            let mut children_commands = OrderedChildCommands::<R>::new(&mut ec, children, world);
 
-                <N::ChildrenAspect as ChildrenAspect>::set_children(
-                    children_args,
-                    old_children_args,
-                    &children_context,
-                    &mut children_commands,
-                );
-                children_commands.finish();
-            }
-            ChildrenType::Unordered => {
-                let mut children_commands =
-                    UnorderedChildCommands::<R>::new(&mut ec, children, world);
-
-                <N::ChildrenAspect as ChildrenAspect>::set_children(
-                    children_args,
-                    old_children_args,
-                    &children_context,
-                    &mut children_commands,
-                );
-                children_commands.finish();
-            }
+            (&node).set_children(old_node, &context, &mut children_commands);
+            children_commands.finish();
         }
-        //info!("Children hot {}", std::any::type_name::<N>());
+        ChildrenType::Unordered => {
+            let mut children_commands = UnorderedChildCommands::<R>::new(&mut ec, children, world);
+
+            (&node).set_children(old_node, &context, &mut children_commands);
+            children_commands.finish();
+        }
     }
 
-    if args_changed {
+    if node_changed {
         ec.insert(HierarchyNodeComponent::<N> { node });
     }
 }

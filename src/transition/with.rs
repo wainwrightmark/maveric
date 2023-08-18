@@ -98,40 +98,14 @@ where
     pub deletion: P,
 }
 
-impl<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> HasChildrenAspect
-    for WithTransition<N, L, P>
-where
-    L::Value: Tweenable,
-    L::Object: Clone + Component,
-{
-    type ChildrenAspect = N::ChildrenAspect;
-
-    fn children_context<'a, 'r>(
-        context: &'a <<Self as HasContext>::Context as NodeContext>::Wrapper<'r>,
-    ) -> &'a <<Self::ChildrenAspect as HasContext>::Context as NodeContext>::Wrapper<'r> {
-        N::children_context(context)
-    }
-
-    fn as_children_aspect<'a>(&'a self) -> &'a Self::ChildrenAspect {
-        &self.node.as_children_aspect()
-    }
-}
-
-impl<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> HasContext
+impl<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> HierarchyNode
     for WithTransition<N, L, P>
 where
     L::Value: Tweenable,
     L::Object: Clone + Component,
 {
     type Context = N::Context;
-}
 
-impl<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> ComponentsAspect
-    for WithTransition<N, L, P>
-where
-    L::Value: Tweenable,
-    L::Object: Clone + Component,
-{
     fn set_components<'r>(
         &self,
         previous: Option<&Self>,
@@ -139,15 +113,10 @@ where
         commands: &mut impl ComponentCommands,
         event: SetComponentsEvent,
     ) {
+        let previous = previous.map(|x| &x.node);
 
-        let previous = previous.map(|x| N::as_component_aspect(&x.node));
-
-        self.node.as_component_aspect().set_components(
-            previous,
-            N::components_context(context),
-            commands,
-            event,
-        );
+        self.node
+            .set_components(previous, context, commands, event);
 
         match event {
             SetComponentsEvent::Created => {
@@ -199,7 +168,7 @@ where
     }
 
     fn on_deleted<'r>(&self, commands: &mut impl ComponentCommands) -> DeletionPolicy {
-        let base = self.node.as_component_aspect().on_deleted(commands);
+        let base = self.node.on_deleted(commands);
 
         let Some(component) = commands
                 .get::<L::Object>() else {return base;};
@@ -224,6 +193,16 @@ where
         });
 
         DeletionPolicy::Linger(duration)
+    }
+
+    fn set_children<'r>(
+        &self,
+        previous: Option<&Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ChildCommands,
+    ) {
+        self.node
+            .set_children(previous.map(|x| &x.node), context, commands)
     }
 }
 

@@ -25,14 +25,10 @@ pub struct Marker;
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Root;
 
-impl HasContext for Root {
+impl HierarchyRootChildren for Root {
     type Context = NC2<CounterState, AssetServer>;
-}
 
-impl ChildrenAspect for Root {
     fn set_children(
-        &self,
-        _previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
@@ -40,7 +36,7 @@ impl ChildrenAspect for Root {
         commands.add_child(
             0,
             ButtonNode {
-                text: Some((text,TEXT_BUTTON_TEXT_STYLE.clone() )),
+                text: Some((text, TEXT_BUTTON_TEXT_STYLE.clone())),
                 image: None,
                 button_node_style: TEXT_BUTTON_STYLE.clone(),
                 marker: Marker,

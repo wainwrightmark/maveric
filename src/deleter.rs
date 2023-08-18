@@ -30,8 +30,7 @@ impl<N: HierarchyNode> Deleter for NodeDeleter<N> {
         commands: &mut ConcreteComponentCommands,
     ) -> DeletionPolicy {
         if let Some(n) = entity_ref.get::<HierarchyNodeComponent<N>>() {
-            let node = <N as HasComponentsAspect>::as_component_aspect(&n.node);
-            <N::ComponentsAspect>::on_deleted(&node, commands)
+            N::on_deleted(&n.node, commands)
         } else {
             DeletionPolicy::DeleteImmediately
         }

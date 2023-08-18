@@ -76,14 +76,10 @@ pub struct MenuRoot;
 
 impl_hierarchy_root!(MenuRoot);
 
-impl HasContext for MenuRoot {
+impl HierarchyRootChildren for MenuRoot {
     type Context = NC2<MenuState, AssetServer>;
-}
 
-impl ChildrenAspect for MenuRoot {
     fn set_children(
-        &self,
-        _previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
@@ -114,7 +110,10 @@ impl ChildrenAspect for MenuRoot {
 
 fn menu_button_node() -> ButtonNode<ButtonAction> {
     ButtonNode {
-        text: Some((ButtonAction::OpenMenu.icon(), ICON_BUTTON_TEXT_STYLE.clone())),
+        text: Some((
+            ButtonAction::OpenMenu.icon(),
+            ICON_BUTTON_TEXT_STYLE.clone(),
+        )),
         image: None,
         button_node_style: OPEN_MENU_BUTTON_STYLE.clone(),
         marker: ButtonAction::OpenMenu,
@@ -132,7 +131,6 @@ fn icon_button_node(button_action: ButtonAction) -> ButtonNode<ButtonAction> {
 
 fn text_button_node(button_action: ButtonAction) -> ButtonNode<ButtonAction> {
     ButtonNode {
-
         text: Some((button_action.text(), TEXT_BUTTON_TEXT_STYLE.clone())),
         image: None,
         button_node_style: TEXT_BUTTON_STYLE.clone(),
@@ -140,9 +138,11 @@ fn text_button_node(button_action: ButtonAction) -> ButtonNode<ButtonAction> {
     }
 }
 
-fn text_and_image_button_node(button_action: ButtonAction, image_path: &'static str) -> ButtonNode<ButtonAction> {
+fn text_and_image_button_node(
+    button_action: ButtonAction,
+    image_path: &'static str,
+) -> ButtonNode<ButtonAction> {
     ButtonNode {
-
         text: Some((button_action.text(), TEXT_BUTTON_TEXT_STYLE.clone())),
         image: Some((image_path, SMALL_IMAGE_NODE_STYLE.clone())),
         button_node_style: TEXT_BUTTON_STYLE.clone(),
@@ -153,32 +153,9 @@ fn text_and_image_button_node(button_action: ButtonAction, image_path: &'static 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct MainMenu;
 
-impl HasContext for MainMenu {
+impl HierarchyNode for MainMenu {
     type Context = NC2<MenuState, AssetServer>;
-}
 
-impl StaticComponentsAspect for MainMenu {
-    type B = NodeBundle;
-
-    fn get_bundle() -> Self::B {
-        NodeBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                left: Val::Percent(50.0),  // Val::Px(MENU_OFFSET),
-                right: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
-                top: Val::Px(MENU_OFFSET),
-                display: Display::Flex,
-                flex_direction: FlexDirection::Column,
-
-                ..Default::default()
-            },
-            z_index: ZIndex::Global(10),
-            ..Default::default()
-        }
-    }
-}
-
-impl ChildrenAspect for MainMenu {
     fn set_children(
         &self,
         _previous: Option<&Self>,
@@ -206,24 +183,19 @@ impl ChildrenAspect for MainMenu {
             &context.1,
         )
     }
-}
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
-pub struct LevelMenu(u32);
-
-impl HasContext for LevelMenu {
-    type Context = NC2<MenuState, AssetServer>;
-}
-
-impl StaticComponentsAspect for LevelMenu {
-    type B = NodeBundle;
-
-    fn get_bundle() -> Self::B {
-        NodeBundle {
+    fn set_components<'r>(
+        &self,
+        previous: Option<&Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ComponentCommands,
+        event: SetComponentsEvent,
+    ) {
+        commands.insert(NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
-                left: Val::Percent(50.0),
-                right: Val::Percent(50.0),
+                left: Val::Percent(50.0),  // Val::Px(MENU_OFFSET),
+                right: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
                 top: Val::Px(MENU_OFFSET),
                 display: Display::Flex,
                 flex_direction: FlexDirection::Column,
@@ -232,11 +204,16 @@ impl StaticComponentsAspect for LevelMenu {
             },
             z_index: ZIndex::Global(10),
             ..Default::default()
-        }
+        })
     }
 }
 
-impl ChildrenAspect for LevelMenu {
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub struct LevelMenu(u32);
+
+impl HierarchyNode for LevelMenu {
+    type Context = NC2<MenuState, AssetServer>;
+
     fn set_children(
         &self,
         _previous: Option<&Self>,
@@ -249,57 +226,47 @@ impl ChildrenAspect for LevelMenu {
         for (key, level) in (start..end).enumerate() {
             commands.add_child(
                 key as u32,
-                text_and_image_button_node(ButtonAction::GotoLevel { level }, r#"images/MedalsBlack.png"#),
+                text_and_image_button_node(
+                    ButtonAction::GotoLevel { level },
+                    r#"images/MedalsBlack.png"#,
+                ),
                 &context.1,
             )
         }
 
         commands.add_child("buttons", LevelMenuArrows(self.0), &context.1);
     }
+
+    fn set_components<'r>(
+        &self,
+        previous: Option<&Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ComponentCommands,
+        event: SetComponentsEvent,
+    ) {
+        commands.insert(NodeBundle {
+            style: Style {
+                position_type: PositionType::Absolute,
+                left: Val::Percent(50.0),
+                right: Val::Percent(50.0),
+                top: Val::Px(MENU_OFFSET),
+                display: Display::Flex,
+                flex_direction: FlexDirection::Column,
+
+                ..Default::default()
+            },
+            z_index: ZIndex::Global(10),
+            ..Default::default()
+        })
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct LevelMenuArrows(u32);
 
-impl HasContext for LevelMenuArrows {
+impl HierarchyNode for LevelMenuArrows {
     type Context = AssetServer;
-}
 
-impl StaticComponentsAspect for LevelMenuArrows {
-    type B = NodeBundle;
-
-    fn get_bundle() -> Self::B {
-        NodeBundle {
-            style: Style {
-                position_type: PositionType::Relative,
-                left: Val::Percent(0.0),
-                display: Display::Flex,
-                flex_direction: FlexDirection::Row,
-
-                width: Val::Px(TEXT_BUTTON_WIDTH),
-                height: Val::Px(TEXT_BUTTON_HEIGHT),
-                margin: UiRect {
-                    left: Val::Auto,
-                    right: Val::Auto,
-                    top: Val::Px(5.0),
-                    bottom: Val::Px(5.0),
-                },
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                flex_grow: 0.0,
-                flex_shrink: 0.0,
-                border: UiRect::all(UI_BORDER_WIDTH),
-
-                ..Default::default()
-            },
-            background_color: BackgroundColor(TEXT_BUTTON_BACKGROUND),
-            border_color: BorderColor(BUTTON_BORDER),
-            ..Default::default()
-        }
-    }
-}
-
-impl ChildrenAspect for LevelMenuArrows {
     fn set_children(
         &self,
         _previous: Option<&Self>,
@@ -326,7 +293,44 @@ impl ChildrenAspect for LevelMenuArrows {
             commands.add_child("right", icon_button_node(ButtonAction::None), context)
         }
     }
+
+    fn set_components<'r>(
+        &self,
+        previous: Option<&Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ComponentCommands,
+        event: SetComponentsEvent,
+    ) {
+        commands.insert(NodeBundle {
+            style: Style {
+                position_type: PositionType::Relative,
+                left: Val::Percent(0.0),
+                display: Display::Flex,
+                flex_direction: FlexDirection::Row,
+
+                width: Val::Px(TEXT_BUTTON_WIDTH),
+                height: Val::Px(TEXT_BUTTON_HEIGHT),
+                margin: UiRect {
+                    left: Val::Auto,
+                    right: Val::Auto,
+                    top: Val::Px(5.0),
+                    bottom: Val::Px(5.0),
+                },
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                flex_grow: 0.0,
+                flex_shrink: 0.0,
+                border: UiRect::all(UI_BORDER_WIDTH),
+
+                ..Default::default()
+            },
+            background_color: BackgroundColor(TEXT_BUTTON_BACKGROUND),
+            border_color: BorderColor(BUTTON_BORDER),
+            ..Default::default()
+        })
+    }
 }
+
 
 pub const ICON_BUTTON_WIDTH: f32 = 65.;
 pub const ICON_BUTTON_HEIGHT: f32 = 65.;
@@ -389,7 +393,6 @@ lazy_static! {
             ..default()
         }
     });
-
     static ref SMALL_IMAGE_NODE_STYLE: Arc<ImageNodeStyle> = Arc::new(ImageNodeStyle {
         background_color: Color::WHITE,
         style: Style {

@@ -3,12 +3,12 @@ use std::marker::PhantomData;
 use crate::prelude::*;
 use bevy::{ecs::system::EntityCommands, prelude::*};
 
-pub(crate) struct CreationCommands<'w, 's, 'a, 'b, R: HierarchyRoot> {
+pub(crate) struct CreationCommands<'w, 's, 'a, 'b, R: HierarchyRootChildren> {
     ec: &'b mut EntityCommands<'w, 's, 'a>,
     phantom: PhantomData<R>,
 }
 
-impl<'w, 's, 'a, 'b, R: HierarchyRoot> ChildCommands for CreationCommands<'w, 's, 'a, 'b, R> {
+impl<'w, 's, 'a, 'b, R: HierarchyRootChildren> ChildCommands for CreationCommands<'w, 's, 'a, 'b, R> {
     fn add_child<NChild: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
@@ -23,7 +23,7 @@ impl<'w, 's, 'a, 'b, R: HierarchyRoot> ChildCommands for CreationCommands<'w, 's
     }
 }
 
-impl<'w, 's, 'a, 'b, R: HierarchyRoot> CreationCommands<'w, 's, 'a, 'b, R> {
+impl<'w, 's, 'a, 'b, R: HierarchyRootChildren> CreationCommands<'w, 's, 'a, 'b, R> {
     pub(crate) fn new(ec: &'b mut EntityCommands<'w, 's, 'a>) -> Self {
         Self {
             ec,
@@ -32,7 +32,7 @@ impl<'w, 's, 'a, 'b, R: HierarchyRoot> CreationCommands<'w, 's, 'a, 'b, R> {
     }
 }
 
-impl<'w, 's, 'a, 'b, R: HierarchyRoot> ComponentCommands for CreationCommands<'w, 's, 'a, 'b, R> {
+impl<'w, 's, 'a, 'b, R: HierarchyRootChildren> ComponentCommands for CreationCommands<'w, 's, 'a, 'b, R> {
     fn insert<T: Bundle>(&mut self, bundle: T) {
         self.ec.insert(bundle);
     }

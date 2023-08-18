@@ -9,11 +9,7 @@ pub struct Carousel<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> 
 }
 
 impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Carousel<Child, F> {
-    pub fn new(
-        current_page: u32,
-        get_child: F,
-        transition_duration: Duration,
-    ) -> Self {
+    pub fn new(current_page: u32, get_child: F, transition_duration: Duration) -> Self {
         Self {
             current_page,
             get_child,
@@ -33,15 +29,11 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
     }
 }
 
-impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> HasContext
+impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> HierarchyNode
     for Carousel<Child, F>
 {
-    type Context = <Child as HasContext>::Context;
-}
+    type Context = <Child as HierarchyNode>::Context;
 
-impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> ComponentsAspect
-    for Carousel<Child, F>
-{
     fn set_components<'r>(
         &self,
         _previous: Option<&Self>,
@@ -60,12 +52,7 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
             });
         }
     }
-}
 
-
-impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> ChildrenAspect
-    for Carousel<Child, F>
-{
     fn set_children<'r>(
         &self,
         previous: Option<&Self>,
@@ -82,7 +69,8 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
 
         'previous: {
             if let Some(Self {
-                current_page: previous_page_number,..
+                current_page: previous_page_number,
+                ..
             }) = previous
             {
                 let (current_position, previous_position) =
@@ -104,8 +92,6 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
                     self.transition_duration,
                 );
 
-
-
                 commands.add_child(*previous_page_number, previous_page, context);
             }
         }
@@ -115,7 +101,6 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
             Val::Percent(CENTER),
             self.transition_duration,
         );
-
 
         commands.add_child(self.current_page, center_page, context);
     }

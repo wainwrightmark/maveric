@@ -3,7 +3,7 @@ use std::{any::type_name, marker::PhantomData};
 use crate::prelude::*;
 use bevy::{ecs::system::EntityCommands, prelude::*, utils::hashbrown::HashMap};
 
-pub(crate) struct UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRoot> {
+pub(crate) struct UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRootChildren> {
     ec: &'b mut EntityCommands<'w, 's, 'a>,
 
     remaining_old_entities: HashMap<ChildKey, EntityRef<'w1>>,
@@ -11,7 +11,7 @@ pub(crate) struct UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRo
     phantom: PhantomData<R>,
 }
 
-impl<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRoot> ChildCommands
+impl<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRootChildren> ChildCommands
     for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R>
 {
     fn add_child<NChild: HierarchyNode>(
@@ -53,7 +53,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRoot> ChildCommands
     }
 }
 
-impl<'w, 's, 'a, 'b, 'w1, 'q: 'w1, R: HierarchyRoot>
+impl<'w, 's, 'a, 'b, 'w1, 'q: 'w1, R: HierarchyRootChildren>
     UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R>
 {
     pub(crate) fn new(

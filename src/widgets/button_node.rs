@@ -12,7 +12,7 @@ pub struct ButtonNodeStyle {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct ButtonNode<Marker: Component + PartialEq + Clone> {
+pub struct ButtonNode<Marker: Component + PartialEq + Clone> { //TODO refactor
     pub text: Option<(String, Arc<TextNodeStyle>)>,
     pub image: Option<(&'static str, Arc<ImageNodeStyle>)>,
     pub button_node_style: Arc<ButtonNodeStyle>,
@@ -20,11 +20,9 @@ pub struct ButtonNode<Marker: Component + PartialEq + Clone> {
     pub marker: Marker,
 }
 
-impl<Marker: Component + PartialEq + Clone> HasContext for ButtonNode<Marker> {
+impl<Marker: Component + PartialEq + Clone> HierarchyNode for ButtonNode<Marker> {
     type Context = AssetServer;
-}
 
-impl<Marker: Component + PartialEq + Clone> ChildrenAspect for ButtonNode<Marker> {
     fn set_children<'r>(
         &self,
         _previous: Option<&Self>,
@@ -55,9 +53,6 @@ impl<Marker: Component + PartialEq + Clone> ChildrenAspect for ButtonNode<Marker
             );
         };
     }
-}
-
-impl<Marker: Component + PartialEq + Clone> ComponentsAspect for ButtonNode<Marker> {
     fn set_components<'r>(
         &self,
         _previous: Option<&Self>,

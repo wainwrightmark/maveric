@@ -3,14 +3,14 @@ use std::{any::type_name, marker::PhantomData};
 use crate::prelude::*;
 use bevy::{prelude::*, utils::hashbrown::HashMap};
 
-pub(crate) struct RootCommands<'w, 's, 'b, 'w1, 'q, R: HierarchyRoot> {
+pub(crate) struct RootCommands<'w, 's, 'b, 'w1, 'q, R: HierarchyRootChildren> {
     commands: &'b mut Commands<'w, 's>,
     remaining_old_entities: HashMap<ChildKey, EntityRef<'w1>>,
     world: &'q World,
     phantom: PhantomData<R>
 }
 
-impl<'w, 's, 'b, 'w1,'q : 'w1, R: HierarchyRoot> RootCommands<'w, 's, 'b, 'w1,'q, R> {
+impl<'w, 's, 'b, 'w1,'q : 'w1, R: HierarchyRootChildren> RootCommands<'w, 's, 'b, 'w1,'q, R> {
     pub(crate) fn new<'w2, 's2>(
         commands: &'b mut Commands<'w, 's>,
         world: &'q World,
@@ -37,7 +37,7 @@ impl<'w, 's, 'b, 'w1,'q : 'w1, R: HierarchyRoot> RootCommands<'w, 's, 'b, 'w1,'q
     }
 }
 
-impl<'w, 's, 'b, 'w1,'q, R: HierarchyRoot> ChildCommands for RootCommands<'w, 's, 'b, 'w1,'q, R> {
+impl<'w, 's, 'b, 'w1,'q, R: HierarchyRootChildren> ChildCommands for RootCommands<'w, 's, 'b, 'w1,'q, R> {
     fn add_child<NChild: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,

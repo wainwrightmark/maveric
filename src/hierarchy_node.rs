@@ -8,28 +8,16 @@ pub enum SetComponentsEvent {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum ChildrenType{
+pub enum ChildrenType {
     #[default]
     Ordered,
     Unordered,
 }
 
-pub trait HasContext: PartialEq + Sized + Send + Sync + 'static {
+pub trait HierarchyNode : Send + Sync + Sized + PartialEq + 'static {
     type Context: NodeContext;
-}
+    const DELETER: &'static dyn Deleter = &NodeDeleter::<Self>::new();
 
-pub trait ChildrenAspect: HasContext {
-    fn set_children<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands,
-    );
-
-    const CHILDREN_TYPE: ChildrenType = ChildrenType::Ordered;
-}
-
-pub trait ComponentsAspect: HasContext {
     fn set_components<'r>(
         &self,
         previous: Option<&Self>,
@@ -41,83 +29,13 @@ pub trait ComponentsAspect: HasContext {
     fn on_deleted<'r>(&self, _commands: &mut impl ComponentCommands) -> DeletionPolicy {
         DeletionPolicy::DeleteImmediately
     }
-}
 
-pub trait HasComponentsAspect: HasContext {
-    type ComponentsAspect: ComponentsAspect;
-
-    fn components_context<'a, 'r>(
-        context: &'a <<Self as HasContext>::Context as NodeContext>::Wrapper<'r>,
-    ) -> &'a <<Self::ComponentsAspect as HasContext>::Context as NodeContext>::Wrapper<'r>;
-
-    fn as_component_aspect<'a>(&'a self) -> &'a Self::ComponentsAspect;
-}
-
-pub trait HasChildrenAspect: HasContext {
-    type ChildrenAspect: ChildrenAspect;
-
-    fn children_context<'a, 'r>(
-        context: &'a <<Self as HasContext>::Context as NodeContext>::Wrapper<'r>,
-    ) -> &'a <<Self::ChildrenAspect as HasContext>::Context as NodeContext>::Wrapper<'r>;
-
-    fn as_children_aspect<'a>(&'a self) -> &'a Self::ChildrenAspect;
-}
-
-pub trait HierarchyNode: HasChildrenAspect + HasComponentsAspect {
-    const DELETER: &'static dyn Deleter = &NodeDeleter::<Self>::new();
-}
-
-impl<N: ChildrenAspect> HasChildrenAspect for N {
-    type ChildrenAspect = Self;
-    fn children_context<'a, 'r>(
-        context: &'a <<Self as HasContext>::Context as NodeContext>::Wrapper<'r>,
-    ) -> &'a <<Self::ChildrenAspect as HasContext>::Context as NodeContext>::Wrapper<'r> {
-        context
-    }
-
-    fn as_children_aspect<'a>(&'a self) -> &'a Self::ChildrenAspect {
-        self
-    }
-}
-
-impl<N: ComponentsAspect> HasComponentsAspect for N {
-    type ComponentsAspect = Self;
-
-    fn components_context<'a, 'r>(
-        context: &'a <<Self as HasContext>::Context as NodeContext>::Wrapper<'r>,
-    ) -> &'a <<Self::ComponentsAspect as HasContext>::Context as NodeContext>::Wrapper<'r> {
-        context
-    }
-
-    fn as_component_aspect<'a>(&'a self) -> &'a Self::ComponentsAspect {
-        self
-    }
-}
-
-impl<N: HasChildrenAspect + HasComponentsAspect> HierarchyNode for N {}
-
-pub trait HasNoContext : PartialEq + Sized + Send + Sync + 'static {}
-
-impl<T: HasNoContext> HasContext for T{
-    type Context = NoContext;
-}
-
-impl HasNoContext for (){}
-
-impl<T: HasNoChildren> ChildrenAspect for T {
     fn set_children<'r>(
         &self,
-        _previous: Option<&Self>,
-        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        _commands: &mut impl ChildCommands,
-    ) {
-    }
+        previous: Option<&Self>,
+        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        commands: &mut impl ChildCommands,
+    );
 
-    const CHILDREN_TYPE: ChildrenType = ChildrenType::Unordered;
+    const CHILDREN_TYPE: ChildrenType = ChildrenType::Ordered;
 }
-
-pub trait HasNoChildren : HasContext {}
-
-impl HasNoChildren for () {}
-
-
