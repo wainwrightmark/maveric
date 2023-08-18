@@ -403,10 +403,6 @@ lazy_static! {
             },
             align_self: AlignSelf::Center,
             justify_self: JustifySelf::End,
-
-            flex_grow: 0.0,
-            flex_shrink: 0.0,
-            border: UiRect::all(UI_BORDER_WIDTH),
             ..default()
         }
     });

@@ -7,6 +7,7 @@ pub mod hierarchy_node;
 pub mod hierarchy_root;
 pub mod node_context;
 pub mod transition;
+#[cfg(feature = "more_bevy")]
 pub mod widgets;
 
 pub mod concrete_component_commands;
@@ -15,6 +16,7 @@ pub mod helpers;
 pub mod plugin;
 pub mod root_commands;
 pub mod unordered_child_commands;
+pub mod ordered_child_commands;
 
 pub mod either;
 pub mod static_components;
@@ -30,6 +32,7 @@ pub mod prelude {
     pub use crate::hierarchy_root::*;
     pub use crate::node_context::*;
     pub use crate::transition::prelude::*;
+    #[cfg(feature = "more_bevy")]
     pub use crate::widgets::prelude::*;
     pub use crate::either::*;
     pub use crate::static_components::*;
@@ -38,6 +41,7 @@ pub mod prelude {
     pub(crate) use crate::creation_commands::*;
     pub(crate) use crate::root_commands::*;
     pub(crate) use crate::unordered_child_commands::*;
+    pub(crate) use crate::ordered_child_commands::*;
 
     pub use crate::plugin::*;
 

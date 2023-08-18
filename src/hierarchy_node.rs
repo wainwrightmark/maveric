@@ -7,6 +7,13 @@ pub enum SetComponentsEvent {
     Undeleted,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ChildrenType{
+    #[default]
+    Ordered,
+    Unordered,
+}
+
 pub trait HasContext: PartialEq + Sized + Send + Sync + 'static {
     type Context: NodeContext;
 }
@@ -18,6 +25,8 @@ pub trait ChildrenAspect: HasContext {
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ChildCommands,
     );
+
+    const CHILDREN_TYPE: ChildrenType = ChildrenType::Ordered;
 }
 
 pub trait ComponentsAspect: HasContext {
@@ -103,6 +112,8 @@ impl<T: HasNoChildren> ChildrenAspect for T {
         _commands: &mut impl ChildCommands,
     ) {
     }
+
+    const CHILDREN_TYPE: ChildrenType = ChildrenType::Unordered;
 }
 
 pub trait HasNoChildren : HasContext {}

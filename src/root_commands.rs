@@ -32,7 +32,7 @@ impl<'w, 's, 'b, 'w1,'q : 'w1, R: HierarchyRoot> RootCommands<'w, 's, 'b, 'w1,'q
 
     pub(crate) fn finish(self) {
         for (_key, er) in self.remaining_old_entities {
-            delete_recursive::<R>(self.commands, er);
+            let _= delete_recursive::<R>(self.commands, er);
         }
     }
 }

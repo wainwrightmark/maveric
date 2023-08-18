@@ -1,11 +1,7 @@
 use std::{any::type_name, marker::PhantomData};
 
 use crate::prelude::*;
-use bevy::{
-    ecs::system::EntityCommands,
-    prelude::*,
-    utils::hashbrown::HashMap,
-};
+use bevy::{ecs::system::EntityCommands, prelude::*, utils::hashbrown::HashMap};
 
 pub(crate) struct UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRoot> {
     ec: &'b mut EntityCommands<'w, 's, 'a>,
@@ -24,56 +20,47 @@ impl<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRoot> ChildCommands
         child: NChild,
         context: &<NChild::Context as NodeContext>::Wrapper<'_>,
     ) {
-        //let child_context = <NParent as HasChild<NChild>>::convert_context(self.context);
-        //let context_changed = <NChild::Context as NodeContext>::has_changed(context);
         let key = key.into();
 
-        match self.remaining_old_entities.remove(&key) {
-            Some(entity_ref) => {
-                //check if this node has changed
+        if let Some(entity_ref) = self.remaining_old_entities.remove(&key) {
+            //check if this node has changed
 
-                if entity_ref.contains::<HierarchyNodeComponent<NChild>>() {
-                    update_recursive::<R, NChild>(
-                        self.ec.commands(),
-                        entity_ref,
-                        child,
-                        context,
-                        self.world,
-                    );
-                } else {
-                    warn!(
-                        "Child with key '{key}' has had node type changed to {}",
-                        type_name::<NChild>()
-                    );
-                    // The node type has changed - delete this entity and readd
-                    self.ec
-                        .commands()
-                        .entity(entity_ref.id())
-                        .despawn_recursive();
-
-                    self.ec.with_children(|cb| {
-                        let mut cec = cb.spawn_empty();
-                        create_recursive::<R, NChild>(&mut cec, child, context, key);
-                    });
-                }
+            if entity_ref.contains::<HierarchyNodeComponent<NChild>>() {
+                update_recursive::<R, NChild>(
+                    self.ec.commands(),
+                    entity_ref,
+                    child,
+                    context,
+                    self.world,
+                );
+                return; // do not spawn a new child;
             }
-            None => {
-                self.ec.with_children(|cb| {
-                    let mut cec = cb.spawn_empty();
-                    create_recursive::<R, NChild>(&mut cec, child, context, key);
-                });
-            }
+            warn!(
+                "Child with key '{key}' has had node type changed to {}",
+                type_name::<NChild>()
+            );
+            // The node type has changed - delete this entity and readd
+            self.ec
+                .commands()
+                .entity(entity_ref.id())
+                .despawn_recursive();
         }
+
+        self.ec.with_children(|cb| {
+            let mut cec = cb.spawn_empty();
+            create_recursive::<R, NChild>(&mut cec, child, context, key);
+        });
     }
 }
 
-impl<'w, 's, 'a, 'b, 'w1, 'q : 'w1, R: HierarchyRoot> UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R> {
+impl<'w, 's, 'a, 'b, 'w1, 'q: 'w1, R: HierarchyRoot>
+    UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R>
+{
     pub(crate) fn new(
         ec: &'b mut EntityCommands<'w, 's, 'a>,
         children: Option<&Children>,
         world: &'q World,
     ) -> Self {
-        //let tree = tree.clone();
         match children {
             Some(children) => {
                 let remaining_old_entities: HashMap<ChildKey, EntityRef<'w1>> = children
@@ -106,7 +93,7 @@ impl<'w, 's, 'a, 'b, 'w1, 'q : 'w1, R: HierarchyRoot> UnorderedChildCommands<'w,
 
         //remove all remaining old entities
         for (_key, entity_ref) in self.remaining_old_entities {
-            delete_recursive::<R>(ec.commands(), entity_ref);
+            let _ = delete_recursive::<R>(ec.commands(), entity_ref);
         }
     }
 }
