@@ -5,7 +5,7 @@ pub trait Deleter: Send + Sync + 'static {
     fn on_deleted<'r>(
         &self,
         entity: Entity,
-        commands: &mut ConcreteComponentCommands,
+        commands: &mut ComponentCommands,
         world: &World
     ) -> DeletionPolicy;
 }
@@ -27,7 +27,7 @@ impl<N: HierarchyNode> Deleter for NodeDeleter<N> {
     fn on_deleted<'r>(
         &self,
         entity: Entity,
-        commands: &mut ConcreteComponentCommands,
+        commands: &mut ComponentCommands,
         world: &World
     ) -> DeletionPolicy {
         if let Some(n) = world.get::<HierarchyNodeComponent<N>>(entity) {

@@ -3,24 +3,23 @@ use bevy::ecs::system::EntityCommands;
 pub use bevy::prelude::*;
 
 pub(crate) fn create_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
-    mut ec: EntityCommands,
+    ec: EntityCommands,
     node: N,
     context: &<N::Context as NodeContext>::Wrapper<'c>,
     key: ChildKey,
     world: &World,
 )-> Entity {
-    let component_commands =
-        SetComponentCommands::new(&node, None, context, SetEvent::Created, ec, world);
-    let token = N::set_components(component_commands);
-    let set_children_commands =
-        SetChildrenCommands::new(&node, None, context, SetEvent::Created, token.commands, world);
-    N::set_children::<R>(set_children_commands);
+
+    let args = NodeData::<N, N::Context, R, true>::new(&node, None, context, SetEvent::Created);
+    let mut commands = NodeCommands::new(ec, world);
+
+    N::set(args, &mut commands);
 
     let hnc = HierarchyNodeComponent::new(node);
     let hcc = HierarchyChildComponent::<R>::new::<N>(key.into());
 
-    ec.insert((hnc, hcc));
-    ec.id()
+    commands.ec.insert((hnc, hcc));
+    commands.ec.id()
 }
 
 /// Recursively delete an entity. Returns the entity id if it is to linger.
@@ -30,12 +29,13 @@ pub(crate) fn delete_recursive<'c, R: HierarchyRootChildren>(
     entity: Entity,
     world: &World,
 ) -> Option<Entity> {
-    if let Some(x) = world.get::<ScheduledForDeletion>(entity) {
+    if let Some(_) = world.get::<ScheduledForDeletion>(entity) {
         return Some(entity);
     }
 
-    let mut ec = commands.entity(entity);
-    let mut cc = ConcreteComponentCommands::new(&mut ec, world);
+    let ec = commands.entity(entity);
+    let mut nc = NodeCommands::new(ec, world);
+    let mut cc = ComponentCommands::new(&mut nc, SetEvent::Updated);
 
     let dp: DeletionPolicy = world
         .get::<HierarchyChildComponent<R>>(entity)
@@ -44,15 +44,15 @@ pub(crate) fn delete_recursive<'c, R: HierarchyRootChildren>(
 
     match dp {
         DeletionPolicy::DeleteImmediately => {
-            ec.despawn_recursive();
+            nc.ec.despawn_recursive();
             return None;
         }
         DeletionPolicy::Linger(duration) => {
-            ec.insert(ScheduledForDeletion {
+            cc.insert(ScheduledForDeletion {
                 timer: Timer::new(duration, TimerMode::Once),
             });
 
-            return Some(ec.id());
+            return Some(nc.ec.id());
         }
     }
 }
@@ -82,18 +82,15 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     //let concrete_commands = ConcreteComponentCommands::new(world, &mut ec);
     //let args = NodeArgs::new(&node, previous, context, event, concrete_commands);
 
-    let set_component_commands =
-        SetComponentCommands::new(&node, previous, context, event, ec, world);
+    let args =
+        NodeData::<N, N::Context, R, true> ::new(&node, previous, context, event);
+    let mut commands = NodeCommands::new(ec, world);
 
-    let token = N::set_components(set_component_commands);
-    let set_children_commands =
-        SetChildrenCommands::new(&node, previous, context, event, token.commands, token.world);
-
-    N::set_children::<R>(set_children_commands);
+    N::set(args, &mut commands);
 
     let node_changed = previous.map(|p| !p.eq(&node)).unwrap_or(true);
 
     if node_changed {
-        ec.insert(HierarchyNodeComponent::<N> { node });
+        commands.ec.insert(HierarchyNodeComponent::<N> { node });
     }
 }

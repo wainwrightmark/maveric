@@ -23,8 +23,11 @@ pub struct TextNodeStyle {
 impl HierarchyNode for TextNode {
     type Context = AssetServer;
 
-    fn set_components<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world,>(commands: SetComponentCommands<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world,Self, Self::Context>)-> SetComponentsFinishToken<'w,'s,'a,'world> {
-        commands.insert_with_args_and_context(|args,  context| {
+    fn set<R: HierarchyRoot>(
+        mut data: NodeData<Self, Self::Context, R, true>,
+        commands: &mut NodeCommands,
+    ) {
+        data.insert_with_args_and_context(commands, |args, context| {
             let font = get_or_load_asset(args.style.font, &context);
 
             let mut bundle = TextBundle::from_section(
@@ -40,15 +43,6 @@ impl HierarchyNode for TextNode {
             bundle.text.linebreak_behavior = args.style.linebreak_behavior;
 
             bundle
-        }).finish()
+        })
     }
-
-    fn set_children< R: HierarchyRoot>(
-        commands: SetChildrenCommands<Self, Self::Context, R>
-    ) {
-    }
-
-
-
-
 }

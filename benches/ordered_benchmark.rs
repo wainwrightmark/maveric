@@ -67,26 +67,16 @@ struct Branch;
 impl HierarchyNode for Branch {
     type Context = NC2<TreeState, LingerState>;
 
-    fn set_children<'r>(
-        &self,
-        _previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands,
-    ) {
-        for &number in context.0 .0.iter() {
-            let linger = context.1 .0;
-            commands.add_child(number, Leaf { number, linger }, &());
-        }
+
+    fn set<R: HierarchyRoot>(data: NodeData<Self, Self::Context, R, true>, commands: &mut NodeCommands) {
+        data.ignore_args().ordered_children_with_context(commands, |context, commands|{
+            for &number in context.0 .0.iter() {
+                let linger = context.1 .0;
+                commands.add_child(number, Leaf { number, linger }, &());
+            }
+        });
     }
 
-    fn set<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
-        event: SetComponentsEvent,
-    ) {
-    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -98,23 +88,14 @@ struct Leaf {
 impl HierarchyNode for Leaf {
     type Context = NoContext;
 
-    fn set_children<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands,
-    ) {
-    }
-    fn set<'r>(
-        &self,
-        _previous: Option<&Self>,
-        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        _commands: &mut impl ComponentCommands,
-        _event: SetComponentsEvent,
-    ) {
+
+    fn set<R: HierarchyRoot>(_data: NodeData<Self, Self::Context, R, true>, _commands: &mut NodeCommands) {
+
     }
 
-    fn on_deleted<'r>(&self, _commands: &mut impl ComponentCommands) -> DeletionPolicy {
+
+
+    fn on_deleted<'r>(&self, _commands: &mut ComponentCommands) -> DeletionPolicy {
         if self.linger {
             DeletionPolicy::linger(1.0)
         } else {

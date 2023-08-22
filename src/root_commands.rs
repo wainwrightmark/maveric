@@ -64,12 +64,12 @@ impl<'w, 's, 'b, 'w1,'q, R: HierarchyRoot> ChildCommands for RootCommands<'w, 's
                     // The node type has changed - delete this entity and readd
                     self.commands.entity(entity).despawn_recursive();
 
-                    let mut cec = self.commands.spawn_empty();
+                    let cec = self.commands.spawn_empty();
                     create_recursive::<R, NChild>(cec, child, context, key, self.world);
                 }
             }
             None => {
-                let mut cec = self.commands.spawn_empty();
+                let cec = self.commands.spawn_empty();
                 create_recursive::<R, NChild>(cec, child, context, key, self.world);
             }
         }

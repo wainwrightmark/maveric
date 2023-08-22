@@ -132,30 +132,23 @@ struct Branch;
 impl HierarchyNode for Branch {
     type Context = TreeState;
 
-    fn set_children<'r>(
-        &self,
-        _previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands,
+
+    fn set<R: HierarchyRoot>(
+        data: NodeData<Self, Self::Context, R, true>,
+        commands: &mut NodeCommands,
     ) {
-        for x in 0..(context.blue_leaf_count) {
-            commands.add_child(x, Leaf::Blue, &());
-        }
+        data.ignore_args()
+            .unordered_children_with_context(commands, |context, commands| {
+                for x in 0..(context.blue_leaf_count) {
+                    commands.add_child(x, Leaf::Blue, &());
+                }
 
-        for x in (context.blue_leaf_count)..(context.blue_leaf_count + context.red_leaf_count) {
-            commands.add_child(x, Leaf::Red, &());
-        }
-    }
-
-    const CHILDREN_TYPE: ChildrenType = ChildrenType::Unordered;
-
-    fn set<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
-        event: SetComponentsEvent,
-    ) {
+                for x in
+                    (context.blue_leaf_count)..(context.blue_leaf_count + context.red_leaf_count)
+                {
+                    commands.add_child(x, Leaf::Red, &());
+                }
+            })
     }
 }
 
@@ -168,21 +161,11 @@ enum Leaf {
 impl HierarchyNode for Leaf {
     type Context = NoContext;
 
-    fn set<'r>(
-        &self,
-        _previous: Option<&Self>,
-        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
-        _event: SetComponentsEvent,
+    fn set<R: HierarchyRoot>(
+        data: NodeData<Self, Self::Context, R, true>,
+        commands: &mut NodeCommands,
     ) {
-        commands.insert(self.clone())
-    }
-
-    fn set_children<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands,
-    ) {
+        data.ignore_context()
+            .insert_with_args(commands, |leaf| leaf.clone())
     }
 }

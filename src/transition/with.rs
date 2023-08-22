@@ -73,8 +73,8 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
     {
         WithTransition {
             node: self,
-            initial_value,
-            update_transition,
+            transition: (initial_value,
+            update_transition),
             deletion,
         }
     }
@@ -84,6 +84,7 @@ impl<N: HierarchyNode> CanHaveTransition for N {}
 
 /// This requires the animation plugin
 
+#[derive(Debug)]
 pub struct WithTransition<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>>
 where
     L::Value: Tweenable,
@@ -91,11 +92,19 @@ where
 {
     pub node: N,
 
-    /// The initial value
-    pub initial_value: L::Value,
-    /// The transition that will be run when the node is updated or undeleted
-    pub update_transition: Arc<TransitionStep<L>>,
+    pub transition: (L::Value, Arc<TransitionStep<L>>),
+
     pub deletion: P,
+}
+
+impl<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> PartialEq for WithTransition<N, L, P>
+where
+    L::Value: Tweenable,
+    L::Object: Clone + Component,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.node == other.node && self.transition == other.transition && self.deletion == other.deletion
+    }
 }
 
 impl<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> HierarchyNode
@@ -106,14 +115,16 @@ where
 {
     type Context = N::Context;
 
-    fn set_components<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world>(
-        commands: SetComponentCommands<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world, Self, Self::Context>,
-    ) -> SetComponentsFinishToken<'w, 's, 'a, 'world> {
-        let commands = commands.scope(|comm| N::set_components(comm.map_args(|x| &x.node)));
+    fn set<R: HierarchyRoot>(
+        data: NodeData<Self, Self::Context, R, true>,
+        commands: &mut NodeCommands,
+    ) {
+        let data2 = data.clone();
+        N::set(data.map_args(|x| &x.node), commands);
 
-        commands
-            .map_args(|x| &(x.initial_value, x.update_transition))
-            .components_advanced(|args, _, context, event, commands| {
+        data2
+            .map_args(|x| &x.transition).ignore_context()
+            .components_advanced(commands, |args, _, _, event, commands| {
                 let (initial_value, update_transition) = args;
 
                 let transition = match event {
@@ -167,17 +178,10 @@ where
                 if let Some(transition) = transition {
                     commands.insert(transition);
                 }
-            })
-            .finish()
+            });
     }
 
-    fn set_children<'r, R: HierarchyRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
-        let commands = commands.map_args(|x| &x.node);
-
-        N::set_children(commands);
-    }
-
-    fn on_deleted<'r>(&self, commands: &mut impl ComponentCommands) -> DeletionPolicy {
+    fn on_deleted<'r>(&self, commands: &mut ComponentCommands) -> DeletionPolicy {
         let base = self.node.on_deleted(commands);
 
         let Some(component) = commands
@@ -206,16 +210,4 @@ where
     }
 }
 
-impl<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> PartialEq
-    for WithTransition<N, L, P>
-where
-    L::Value: Tweenable,
-    L::Object: Clone + Component,
-{
-    fn eq(&self, other: &Self) -> bool {
-        self.node == other.node
-            && self.initial_value.approx_eq(&other.initial_value)
-            && self.update_transition == self.update_transition
-            && self.deletion == other.deletion
-    }
-}
+

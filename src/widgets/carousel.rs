@@ -34,20 +34,24 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
 {
     type Context = <Child as HierarchyNode>::Context;
 
-    fn set_components<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world,>(commands: SetComponentCommands<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world,Self, Self::Context>)-> SetComponentsFinishToken<'w,'s,'a,'world> {
-        commands.ignore_args().ignore_context().insert(NodeBundle {
-            style: Style {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
+    fn set<R: HierarchyRoot>(
+        data: NodeData<Self, Self::Context, R, true>,
+        commands: &mut NodeCommands,
+    ) {
+        data.clone().ignore_args().ignore_context().insert(
+            commands,
+            NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
+                    ..Default::default()
+                },
                 ..Default::default()
             },
-            ..Default::default()
-        }).finish()
-    }
+        );
 
-    fn set_children<'r, R: HierarchyRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
-        commands.ordered_children_with_args_and_context_advanced(|node,previous,context, _,commands|{
-            const CENTER: f32 = 50.0;
+        data.ordered_children_with_args_and_context_advanced(commands,|node,previous,context, _,commands|{
+        const CENTER: f32 = 50.0;
         const PAGE_WIDTH: f32 = 200.0;
         const LEFT: f32 = CENTER - PAGE_WIDTH;
         const RIGHT: f32 = CENTER + PAGE_WIDTH;
@@ -93,6 +97,4 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
         commands.add_child(node.current_page, center_page, context);
         });
     }
-
-
 }

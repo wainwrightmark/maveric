@@ -21,8 +21,8 @@ impl HierarchyNode for ImageNode {
     type Context = AssetServer;
 
 
-    fn set_components<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world,>(commands: SetComponentCommands<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world,Self, Self::Context>)-> SetComponentsFinishToken<'w,'s,'a,'world> {
-        commands.insert_with_args_and_context(|args, context| {
+    fn set<R: HierarchyRoot>(mut data: NodeData<Self, Self::Context, R, true>, commands: &mut NodeCommands) {
+        data.insert_with_args_and_context(commands,|args, context| {
             let texture: Handle<Image> = get_or_load_asset(args.path, context);
 
             let bundle = ImageBundle {
@@ -36,11 +36,6 @@ impl HierarchyNode for ImageNode {
                 ..default()
             };
             bundle
-        }).finish()
-    }
-
-    fn set_children< R: HierarchyRoot>(
-        commands: SetChildrenCommands<Self, Self::Context, R>
-    ) {
+        })
     }
 }
