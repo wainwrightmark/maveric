@@ -106,65 +106,75 @@ where
 {
     type Context = N::Context;
 
-    fn set_components<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
-        event: SetComponentsEvent,
-    ) {
-        let previous = previous.map(|x| &x.node);
+    fn set_components<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world>(
+        commands: SetComponentCommands<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world, Self, Self::Context>,
+    ) -> SetComponentsFinishToken<'w, 's, 'a, 'world> {
+        let commands = commands.scope(|comm| N::set_components(comm.map_args(|x| &x.node)));
 
-        self.node
-            .set_components(previous, context, commands, event);
+        commands
+            .map_args(|x| &(x.initial_value, x.update_transition))
+            .components_advanced(|args, _, context, event, commands| {
+                let (initial_value, update_transition) = args;
 
-        match event {
-            SetComponentsEvent::Created => {
-                let in_transition = TransitionStep::new_arc(
-                    self.initial_value.clone(),
-                    None,
-                    Some(self.update_transition.clone()),
-                );
-
-                commands.insert(Transition {
-                    step: in_transition,
-                });
-            }
-            SetComponentsEvent::Updated => {
-                if let Some(previous_path) = commands.get::<Transition<L>>() {
-                    if self.update_transition.contains(&previous_path.step) {
-                        //info!("Same path found - no change");
-                    } else {
-                        //info!("New path found");
-                        commands.insert(Transition {
-                            step: self.update_transition.clone(),
-                        });
-                    }
-                } else {
-                    //info!("No path found");
-                    commands.insert(Transition {
-                        step: self.update_transition.clone(),
-                    });
-                }
-            }
-            SetComponentsEvent::Undeleted => {
-                let step = if let Some(existing_value) = commands.get::<L::Object>() {
-                    if let Some(destination) = L::try_get_value(existing_value) {
-                        TransitionStep::<L>::new_arc(
-                            destination,
+                let transition = match event {
+                    SetEvent::Created => {
+                        let in_transition = TransitionStep::new_arc(
+                            initial_value.clone(),
                             None,
-                            Some(self.update_transition.clone()),
-                        )
-                    } else {
-                        self.update_transition.clone()
-                    }
-                } else {
-                    self.update_transition.clone()
-                };
+                            Some(update_transition.clone()),
+                        );
 
-                commands.insert(Transition { step });
-            }
-        }
+                        Some(Transition {
+                            step: in_transition,
+                        })
+                    }
+                    SetEvent::Updated => {
+                        if let Some(previous_path) = commands.get::<Transition<L>>() {
+                            if update_transition.contains(&previous_path.step) {
+                                //info!("Same path found - no change");
+                                None
+                            } else {
+                                //info!("New path found");
+                                Some(Transition {
+                                    step: update_transition.clone(),
+                                })
+                            }
+                        } else {
+                            //info!("No path found");
+                            Some(Transition {
+                                step: update_transition.clone(),
+                            })
+                        }
+                    }
+                    SetEvent::Undeleted => {
+                        let step = if let Some(existing_value) = commands.get::<L::Object>() {
+                            if let Some(destination) = L::try_get_value(existing_value) {
+                                TransitionStep::<L>::new_arc(
+                                    destination,
+                                    None,
+                                    Some(update_transition.clone()),
+                                )
+                            } else {
+                                update_transition.clone()
+                            }
+                        } else {
+                            update_transition.clone()
+                        };
+
+                        Some(Transition { step })
+                    }
+                };
+                if let Some(transition) = transition {
+                    commands.insert(transition);
+                }
+            })
+            .finish()
+    }
+
+    fn set_children<'r, R: HierarchyRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
+        let commands = commands.map_args(|x| &x.node);
+
+        N::set_children(commands);
     }
 
     fn on_deleted<'r>(&self, commands: &mut impl ComponentCommands) -> DeletionPolicy {
@@ -193,16 +203,6 @@ where
         });
 
         DeletionPolicy::Linger(duration)
-    }
-
-    fn set_children<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands,
-    ) {
-        self.node
-            .set_children(previous.map(|x| &x.node), context, commands)
     }
 }
 
