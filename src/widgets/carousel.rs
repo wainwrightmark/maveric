@@ -34,37 +34,25 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
 {
     type Context = <Child as HierarchyNode>::Context;
 
-    fn set_components<'r>(
-        &self,
-        _previous: Option<&Self>,
-        _context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
-        event: SetComponentsEvent,
-    ) {
-        if event == SetComponentsEvent::Created {
-            commands.insert(NodeBundle {
-                style: Style {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
-                    ..Default::default()
-                },
+    fn set_components<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world,>(commands: SetComponentCommands<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world,Self, Self::Context>)-> SetComponentsFinishToken<'w,'s,'a,'world> {
+        commands.ignore_args().ignore_context().insert(NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
                 ..Default::default()
-            });
-        }
+            },
+            ..Default::default()
+        }).finish()
     }
 
-    fn set_children<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands,
-    ) {
-        const CENTER: f32 = 50.0;
+    fn set_children<'r, R: HierarchyRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
+        commands.ordered_children_with_args_and_context_advanced(|node,previous,context, _,commands|{
+            const CENTER: f32 = 50.0;
         const PAGE_WIDTH: f32 = 200.0;
         const LEFT: f32 = CENTER - PAGE_WIDTH;
         const RIGHT: f32 = CENTER + PAGE_WIDTH;
 
-        let Some(center_page) = (self.get_child)(self.current_page) else {return;};
+        let Some(center_page) = (node.get_child)(node.current_page) else {return;};
         let mut center_page_initial = CENTER;
 
         'previous: {
@@ -74,7 +62,7 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
             }) = previous
             {
                 let (current_position, previous_position) =
-                    match previous_page_number.cmp(&self.current_page) {
+                    match previous_page_number.cmp(&node.current_page) {
                         std::cmp::Ordering::Less => (RIGHT, LEFT),
                         std::cmp::Ordering::Equal => {
                             break 'previous;
@@ -84,12 +72,12 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
 
                 center_page_initial = current_position;
 
-                let Some(previous_page) = (self.get_child)(*previous_page_number) else {break 'previous;};
+                let Some(previous_page) = (node.get_child)(*previous_page_number) else {break 'previous;};
 
                 let previous_page = previous_page.with_transition_in::<StyleLeftLens>(
                     Val::Percent(CENTER),
                     Val::Percent(previous_position),
-                    self.transition_duration,
+                    node.transition_duration,
                 );
 
                 commands.add_child(*previous_page_number, previous_page, context);
@@ -99,9 +87,12 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
         let center_page = center_page.with_transition_in::<StyleLeftLens>(
             Val::Percent(center_page_initial),
             Val::Percent(CENTER),
-            self.transition_duration,
+            node.transition_duration,
         );
 
-        commands.add_child(self.current_page, center_page, context);
+        commands.add_child(node.current_page, center_page, context);
+        });
     }
+
+
 }

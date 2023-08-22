@@ -139,7 +139,7 @@ impl HierarchyNode for CommandGrid {
         }
     }
 
-    fn set_components<'r>(
+    fn set<'r>(
             &self,
             previous: Option<&Self>,
             context: &<Self::Context as NodeContext>::Wrapper<'r>,
@@ -194,7 +194,7 @@ impl HierarchyNode for DynamicGrid {
         }
     }
 
-    fn set_components<'r>(
+    fn set<'r>(
         &self,
         previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,

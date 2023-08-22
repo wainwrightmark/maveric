@@ -1,12 +1,12 @@
 use std::marker::PhantomData;
-
 use crate::prelude::*;
 
 pub trait Deleter: Send + Sync + 'static {
     fn on_deleted<'r>(
         &self,
-        entity_ref: EntityRef,
+        entity: Entity,
         commands: &mut ConcreteComponentCommands,
+        world: &World
     ) -> DeletionPolicy;
 }
 
@@ -26,10 +26,11 @@ impl<N: HierarchyNode> NodeDeleter<N> {
 impl<N: HierarchyNode> Deleter for NodeDeleter<N> {
     fn on_deleted<'r>(
         &self,
-        entity_ref: EntityRef,
+        entity: Entity,
         commands: &mut ConcreteComponentCommands,
+        world: &World
     ) -> DeletionPolicy {
-        if let Some(n) = entity_ref.get::<HierarchyNodeComponent<N>>() {
+        if let Some(n) = world.get::<HierarchyNodeComponent<N>>(entity) {
             N::on_deleted(&n.node, commands)
         } else {
             DeletionPolicy::DeleteImmediately

@@ -20,32 +20,27 @@ pub struct ImageNodeStyle {
 impl HierarchyNode for ImageNode {
     type Context = AssetServer;
 
-    fn set_components<'r>(
-        &self,
-        _previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
-        _event: SetComponentsEvent,
-    ) {
-        let texture: Handle<Image> = get_or_load_asset(self.path, context);
 
-        let bundle = ImageBundle {
+    fn set_components<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world,>(commands: SetComponentCommands<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world,Self, Self::Context>)-> SetComponentsFinishToken<'w,'s,'a,'world> {
+        commands.insert_with_args_and_context(|args, context| {
+            let texture: Handle<Image> = get_or_load_asset(args.path, context);
 
-            style: self.image_node_style.style.clone(),
-            background_color: BackgroundColor(self.image_node_style.background_color),
-            image: UiImage { texture, flip_x: false, flip_y: false },
-            ..default()
-        };
-        commands.insert(bundle);
+            let bundle = ImageBundle {
+                style: args.image_node_style.style.clone(),
+                background_color: BackgroundColor(args.image_node_style.background_color),
+                image: UiImage {
+                    texture,
+                    flip_x: false,
+                    flip_y: false,
+                },
+                ..default()
+            };
+            bundle
+        }).finish()
     }
 
-    fn set_children<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands,
+    fn set_children< R: HierarchyRoot>(
+        commands: SetChildrenCommands<Self, Self::Context, R>
     ) {
     }
-
-    const CHILDREN_TYPE: ChildrenType = ChildrenType::Unordered;
 }

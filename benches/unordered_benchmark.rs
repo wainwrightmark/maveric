@@ -149,7 +149,7 @@ impl HierarchyNode for Branch {
 
     const CHILDREN_TYPE: ChildrenType = ChildrenType::Unordered;
 
-    fn set_components<'r>(
+    fn set<'r>(
         &self,
         previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
@@ -168,7 +168,7 @@ enum Leaf {
 impl HierarchyNode for Leaf {
     type Context = NoContext;
 
-    fn set_components<'r>(
+    fn set<'r>(
         &self,
         _previous: Option<&Self>,
         _context: &<Self::Context as NodeContext>::Wrapper<'r>,

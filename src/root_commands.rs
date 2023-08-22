@@ -3,23 +3,23 @@ use std::{any::type_name, marker::PhantomData};
 use crate::prelude::*;
 use bevy::{prelude::*, utils::hashbrown::HashMap};
 
-pub(crate) struct RootCommands<'w, 's, 'b, 'w1, 'q, R: HierarchyRootChildren> {
+pub(crate) struct RootCommands<'w, 's, 'b, 'q, R: HierarchyRoot> {
     commands: &'b mut Commands<'w, 's>,
-    remaining_old_entities: HashMap<ChildKey, EntityRef<'w1>>,
+    remaining_old_entities: HashMap<ChildKey, Entity>,
     world: &'q World,
     phantom: PhantomData<R>
 }
 
-impl<'w, 's, 'b, 'w1,'q : 'w1, R: HierarchyRootChildren> RootCommands<'w, 's, 'b, 'w1,'q, R> {
+impl<'w, 's, 'b, 'w1,'q : 'w1, R: HierarchyRoot> RootCommands<'w, 's, 'b, 'q, R> {
     pub(crate) fn new<'w2, 's2>(
         commands: &'b mut Commands<'w, 's>,
         world: &'q World,
         query: Query< (Entity, &HierarchyChildComponent<R>), Without<Parent>>,
     ) -> Self {
-        let remaining_old_entities: HashMap<ChildKey, EntityRef<'w1>> = query
+        let remaining_old_entities: HashMap<ChildKey, Entity> = query
             .into_iter()
             .map(|x| (x.1.key, x.0))
-            .flat_map(|(key, entity)| world.get_entity(entity).map(|er| (key, er)) )
+            .map(|(key, entity)| (key, entity) )
             .collect();
 
         Self {
@@ -32,12 +32,12 @@ impl<'w, 's, 'b, 'w1,'q : 'w1, R: HierarchyRootChildren> RootCommands<'w, 's, 'b
 
     pub(crate) fn finish(self) {
         for (_key, er) in self.remaining_old_entities {
-            let _= delete_recursive::<R>(self.commands, er);
+            let _= delete_recursive::<R>(self.commands, er, self.world);
         }
     }
 }
 
-impl<'w, 's, 'b, 'w1,'q, R: HierarchyRootChildren> ChildCommands for RootCommands<'w, 's, 'b, 'w1,'q, R> {
+impl<'w, 's, 'b, 'w1,'q, R: HierarchyRoot> ChildCommands for RootCommands<'w, 's, 'b, 'q, R> {
     fn add_child<NChild: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
@@ -47,11 +47,11 @@ impl<'w, 's, 'b, 'w1,'q, R: HierarchyRootChildren> ChildCommands for RootCommand
         let key = key.into();
 
         match self.remaining_old_entities.remove(&key) {
-            Some(entity_ref) => {
-                if entity_ref.contains::<HierarchyNodeComponent<NChild>>() {
+            Some(entity) => {
+                if self.world.get::<HierarchyNodeComponent<NChild>>(entity).is_some() {
                     update_recursive::<R, NChild>(
                         self.commands,
-                        entity_ref,
+                        entity,
                         child,
                         context,
                         self.world,
@@ -62,15 +62,15 @@ impl<'w, 's, 'b, 'w1,'q, R: HierarchyRootChildren> ChildCommands for RootCommand
                         type_name::<NChild>()
                     );
                     // The node type has changed - delete this entity and readd
-                    self.commands.entity(entity_ref.id()).despawn_recursive();
+                    self.commands.entity(entity).despawn_recursive();
 
                     let mut cec = self.commands.spawn_empty();
-                    create_recursive::<R, NChild>(&mut cec, child, context, key);
+                    create_recursive::<R, NChild>(cec, child, context, key, self.world);
                 }
             }
             None => {
                 let mut cec = self.commands.spawn_empty();
-                create_recursive::<R, NChild>(&mut cec, child, context, key);
+                create_recursive::<R, NChild>(cec, child, context, key, self.world);
             }
         }
     }

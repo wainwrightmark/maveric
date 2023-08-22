@@ -2,48 +2,44 @@ pub use crate::prelude::*;
 use bevy::ecs::system::EntityCommands;
 pub use bevy::prelude::*;
 
-pub(crate) fn create_recursive<'c, R: HierarchyRootChildren, N: HierarchyNode>(
-    mut cec: &mut EntityCommands,
+pub(crate) fn create_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
+    mut ec: EntityCommands,
     node: N,
     context: &<N::Context as NodeContext>::Wrapper<'c>,
     key: ChildKey,
-) {
-    //info!("Creating Node {}", type_name::<N>());
-
-    let mut child_commands = CreationCommands::<R>::new(&mut cec);
-
-    node.set_components(
-        None,
-        &context,
-        &mut child_commands,
-        SetComponentsEvent::Created,
-    );
-
-    node.set_children(None, &context, &mut child_commands);
+    world: &World,
+)-> Entity {
+    let component_commands =
+        SetComponentCommands::new(&node, None, context, SetEvent::Created, ec, world);
+    let token = N::set_components(component_commands);
+    let set_children_commands =
+        SetChildrenCommands::new(&node, None, context, SetEvent::Created, token.commands, world);
+    N::set_children::<R>(set_children_commands);
 
     let hnc = HierarchyNodeComponent::new(node);
     let hcc = HierarchyChildComponent::<R>::new::<N>(key.into());
 
-    cec.insert((hnc, hcc));
+    ec.insert((hnc, hcc));
+    ec.id()
 }
 
 /// Recursively delete an entity. Returns the entity id if it is to linger.
 #[must_use]
 pub(crate) fn delete_recursive<'c, R: HierarchyRootChildren>(
     commands: &mut Commands,
-    entity_ref: EntityRef,
-    //parent_context: &<<P as HasContext>::Context as NodeContext>::Wrapper<'c>,
+    entity: Entity,
+    world: &World,
 ) -> Option<Entity> {
-    if entity_ref.contains::<ScheduledForDeletion>() {
-        return Some(entity_ref.id());
+    if let Some(x) = world.get::<ScheduledForDeletion>(entity) {
+        return Some(entity);
     }
 
-    let mut ec = commands.entity(entity_ref.id());
-    let mut cc = ConcreteComponentCommands::new(entity_ref, &mut ec);
+    let mut ec = commands.entity(entity);
+    let mut cc = ConcreteComponentCommands::new(&mut ec, world);
 
-    let dp: DeletionPolicy = entity_ref
-        .get::<HierarchyChildComponent<R>>()
-        .map(|ac| ac.deleter.on_deleted(entity_ref, &mut cc))
+    let dp: DeletionPolicy = world
+        .get::<HierarchyChildComponent<R>>(entity)
+        .map(|ac| ac.deleter.on_deleted(entity, &mut cc, world))
         .unwrap_or(DeletionPolicy::DeleteImmediately);
 
     match dp {
@@ -61,61 +57,41 @@ pub(crate) fn delete_recursive<'c, R: HierarchyRootChildren>(
     }
 }
 
-pub(crate) fn update_recursive<'c, R: HierarchyRootChildren, N: HierarchyNode>(
+pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     commands: &mut Commands,
-    entity_ref: EntityRef,
+    entity: Entity,
     node: N,
     context: &<N::Context as NodeContext>::Wrapper<'c>,
     world: &World,
 ) {
-    let mut ec = commands.entity(entity_ref.id());
-    let undeleted = if entity_ref.contains::<ScheduledForDeletion>() {
+    let mut ec = commands.entity(entity);
+    let undeleted = if world.get::<ScheduledForDeletion>(entity).is_some() {
         ec.remove::<ScheduledForDeletion>();
         true
     } else {
         false
     };
-
-    let old_node = entity_ref
-        .get::<HierarchyNodeComponent<N>>()
+    let previous = world
+        .get::<HierarchyNodeComponent<N>>(entity)
         .map(|x| &x.node);
 
-    let node_changed = !old_node.is_some_and(|oa| node.eq(oa));
+    let event = undeleted
+        .then_some(SetEvent::Undeleted)
+        .unwrap_or(SetEvent::Updated);
 
-    let children = entity_ref.get::<Children>();
+    //let concrete_commands = ConcreteComponentCommands::new(world, &mut ec);
+    //let args = NodeArgs::new(&node, previous, context, event, concrete_commands);
 
-    let hot = undeleted || <N ::Context as NodeContext>::has_changed(context) || node_changed;
-    if !hot {
-        return;
-    }
+    let set_component_commands =
+        SetComponentCommands::new(&node, previous, context, event, ec, world);
 
-    let mut component_commands = ConcreteComponentCommands::new(entity_ref, &mut ec);
+    let token = N::set_components(set_component_commands);
+    let set_children_commands =
+        SetChildrenCommands::new(&node, previous, context, event, token.commands, token.world);
 
-    (&node).set_components(
-        old_node,
-        &context,
-        &mut component_commands,
-        if undeleted {
-            SetComponentsEvent::Undeleted
-        } else {
-            SetComponentsEvent::Updated
-        },
-    );
+    N::set_children::<R>(set_children_commands);
 
-    match N::CHILDREN_TYPE {
-        ChildrenType::Ordered => {
-            let mut children_commands = OrderedChildCommands::<R>::new(&mut ec, children, world);
-
-            (&node).set_children(old_node, &context, &mut children_commands);
-            children_commands.finish();
-        }
-        ChildrenType::Unordered => {
-            let mut children_commands = UnorderedChildCommands::<R>::new(&mut ec, children, world);
-
-            (&node).set_children(old_node, &context, &mut children_commands);
-            children_commands.finish();
-        }
-    }
+    let node_changed = previous.map(|p| !p.eq(&node)).unwrap_or(true);
 
     if node_changed {
         ec.insert(HierarchyNodeComponent::<N> { node });

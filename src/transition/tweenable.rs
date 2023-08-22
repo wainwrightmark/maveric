@@ -7,7 +7,7 @@ use bevy::prelude::*;
 
 use super::speed::{AngularSpeed, LinearSpeed, ScalarSpeed, Speed};
 
-pub trait Tweenable: Debug + Clone + Send + Sync + 'static {
+pub trait Tweenable: Debug + Clone + Send + Sync + PartialEq + 'static {
     type Speed: Speed;
     fn duration_to(
         &self,

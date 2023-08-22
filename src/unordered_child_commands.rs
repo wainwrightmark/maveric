@@ -3,17 +3,14 @@ use std::{any::type_name, marker::PhantomData};
 use crate::prelude::*;
 use bevy::{ecs::system::EntityCommands, prelude::*, utils::hashbrown::HashMap};
 
-pub(crate) struct UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRootChildren> {
-    ec: &'b mut EntityCommands<'w, 's, 'a>,
-
-    remaining_old_entities: HashMap<ChildKey, EntityRef<'w1>>,
+pub(crate) struct UnorderedChildCommands<'w, 's, 'a, 'q, R: HierarchyRoot> {
+    ec: EntityCommands<'w, 's, 'a>,
+    remaining_old_entities: HashMap<ChildKey, Entity>,
     world: &'q World,
     phantom: PhantomData<R>,
 }
 
-impl<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRootChildren> ChildCommands
-    for UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R>
-{
+impl<'w, 's, 'a, 'q, R: HierarchyRoot> ChildCommands for UnorderedChildCommands<'w, 's, 'a, 'q, R> {
     fn add_child<NChild: HierarchyNode>(
         &mut self,
         key: impl Into<ChildKey>,
@@ -22,13 +19,17 @@ impl<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRootChildren> ChildCommands
     ) {
         let key = key.into();
 
-        if let Some(entity_ref) = self.remaining_old_entities.remove(&key) {
+        if let Some(entity) = self.remaining_old_entities.remove(&key) {
             //check if this node has changed
 
-            if entity_ref.contains::<HierarchyNodeComponent<NChild>>() {
+            if self
+                .world
+                .get::<HierarchyNodeComponent<NChild>>(entity)
+                .is_some()
+            {
                 update_recursive::<R, NChild>(
                     self.ec.commands(),
-                    entity_ref,
+                    entity,
                     child,
                     context,
                     self.world,
@@ -40,35 +41,31 @@ impl<'w, 's, 'a, 'b, 'w1, 'q, R: HierarchyRootChildren> ChildCommands
                 type_name::<NChild>()
             );
             // The node type has changed - delete this entity and readd
-            self.ec
-                .commands()
-                .entity(entity_ref.id())
-                .despawn_recursive();
+            self.ec.commands().entity(entity).despawn_recursive();
         }
 
         self.ec.with_children(|cb| {
-            let mut cec = cb.spawn_empty();
-            create_recursive::<R, NChild>(&mut cec, child, context, key);
+            let cec = cb.spawn_empty();
+            create_recursive::<R, NChild>(cec, child, context, key, self.world);
         });
     }
 }
 
-impl<'w, 's, 'a, 'b, 'w1, 'q: 'w1, R: HierarchyRootChildren>
-    UnorderedChildCommands<'w, 's, 'a, 'b, 'w1, 'q, R>
-{
+impl<'w, 's, 'a, 'q, R: HierarchyRoot> UnorderedChildCommands<'w, 's, 'a, 'q, R> {
     pub(crate) fn new(
-        ec: &'b mut EntityCommands<'w, 's, 'a>,
-        children: Option<&Children>,
+        ec: EntityCommands<'w, 's, 'a>,
         world: &'q World,
     ) -> Self {
+        let children = world.get::<Children>(ec.id());
+
         match children {
             Some(children) => {
-                let remaining_old_entities: HashMap<ChildKey, EntityRef<'w1>> = children
+                let remaining_old_entities: HashMap<ChildKey, Entity> = children
                     .iter()
-                    .flat_map(|x| world.get_entity(*x))
-                    .flat_map(|er| {
-                        er.get::<HierarchyChildComponent<R>>()
-                            .map(|hcc| (hcc.key, er))
+                    .flat_map(|entity| {
+                        world
+                            .get::<HierarchyChildComponent<R>>(*entity)
+                            .map(|hcc| (hcc.key, *entity))
                     })
                     .collect();
 
@@ -89,11 +86,11 @@ impl<'w, 's, 'a, 'b, 'w1, 'q: 'w1, R: HierarchyRootChildren>
     }
 
     pub fn finish(self) {
-        let ec = self.ec;
+        let mut ec = self.ec;
 
         //remove all remaining old entities
-        for (_key, entity_ref) in self.remaining_old_entities {
-            let _ = delete_recursive::<R>(ec.commands(), entity_ref);
+        for (_key, entity) in self.remaining_old_entities {
+            let _ = delete_recursive::<R>(ec.commands(), entity, self.world);
         }
     }
 }

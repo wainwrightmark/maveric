@@ -15,7 +15,7 @@ pub trait CanRegisterStateHierarchy {
 }
 
 impl CanRegisterStateHierarchy for App {
-    fn register_state_hierarchy<R: HierarchyRoot >(&mut self) -> &mut Self {
+    fn register_state_hierarchy<R: HierarchyRoot>(&mut self) -> &mut Self {
         if !self.is_plugin_added::<ScheduleForRemovalPlugin>() {
             self.add_plugins(ScheduleForRemovalPlugin::default());
         }
@@ -54,10 +54,7 @@ fn sync_state<'a, R: HierarchyRoot>(
 
     let mut root_commands = RootCommands::new(&mut commands, world, root_query);
 
-    R::set_children(
-        &context,
-        &mut root_commands,
-    );
+    R::set_children(&context, &mut root_commands);
     root_commands.finish();
 }
 
@@ -124,8 +121,7 @@ mod tests {
             .world
             .query::<&HierarchyNodeComponent<Leaf>>()
             .iter(&app.world)
-            .map(|x|x.node.clone())
-
+            .map(|x| x.node.clone())
             .collect();
         let reds = leaves.iter().filter(|x| *x == &Leaf::Red).count();
         let blues = leaves.iter().filter(|x| *x == &Leaf::Blue).count();
@@ -165,28 +161,26 @@ mod tests {
     impl HierarchyNode for Branch {
         type Context = TreeState;
 
-        fn set_components<'r>(
-            &self,
-            previous: Option<&Self>,
-            context: &<Self::Context as NodeContext>::Wrapper<'r>,
-            commands: &mut impl ComponentCommands,
-            event: SetComponentsEvent,
-        ) {
+        fn set_components<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world>(
+            commands: SetComponentCommands<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world,Self, Self::Context>,
+        ) -> SetComponentsFinishToken<'w, 's, 'a, 'world> {
+            commands.finish()
         }
 
-        fn set_children<'r>(
-            &self,
-            previous: Option<&Self>,
-            context: &<Self::Context as NodeContext>::Wrapper<'r>,
-            commands: &mut impl ChildCommands,
-        ) {
-            for x in 0..(context.blue_leaf_count) {
-                commands.add_child(x, Leaf::Blue, &());
-            }
+        fn set_children<R: HierarchyRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
+            commands
+                .ignore_args()
+                .ordered_children_with_context(|context, commands| {
+                    for x in 0..(context.blue_leaf_count) {
+                        commands.add_child(x, Leaf::Blue, &());
+                    }
 
-            for x in (context.blue_leaf_count)..(context.blue_leaf_count + context.red_leaf_count) {
-                commands.add_child(x, Leaf::Red, &());
-            }
+                    for x in (context.blue_leaf_count)
+                        ..(context.blue_leaf_count + context.red_leaf_count)
+                    {
+                        commands.add_child(x, Leaf::Red, &());
+                    }
+                });
         }
     }
 
@@ -196,24 +190,17 @@ mod tests {
         Red,
     }
 
-    impl HierarchyNode for Leaf{
+    impl HierarchyNode for Leaf {
         type Context = NoContext;
 
-        fn set_components<'r>(
-            &self,
-            previous: Option<&Self>,
-            context: &<Self::Context as NodeContext>::Wrapper<'r>,
-            commands: &mut impl ComponentCommands,
-            event: SetComponentsEvent,
-        ) {
+        fn set_components<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world>(
+            commands: SetComponentCommands<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world,Self, Self::Context>,
+        ) -> SetComponentsFinishToken<'w, 's, 'a, 'world> {
+            commands.finish()
         }
 
-        fn set_children<'r>(
-            &self,
-            previous: Option<&Self>,
-            context: &<Self::Context as NodeContext>::Wrapper<'r>,
-            commands: &mut impl ChildCommands,
-        ) {
+        fn set_children<R: HierarchyRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
+            todo!()
         }
     }
 }

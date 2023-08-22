@@ -1,41 +1,23 @@
 use crate::prelude::*;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SetComponentsEvent {
-    Created,
-    Updated,
-    Undeleted,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum ChildrenType {
-    #[default]
-    Ordered,
-    Unordered,
-}
-
-pub trait HierarchyNode : Send + Sync + Sized + PartialEq + 'static {
+pub trait HierarchyNode: Send + Sync + Sized + PartialEq + 'static {
     type Context: NodeContext;
     const DELETER: &'static dyn Deleter = &NodeDeleter::<Self>::new();
 
-    fn set_components<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
-        event: SetComponentsEvent,
+    fn set_components<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world,>(commands: SetComponentCommands<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world, Self, Self::Context>)-> SetComponentsFinishToken<'w,'s,'a,'world>;
+
+    fn set_children< R: HierarchyRoot>(
+        commands: SetChildrenCommands<Self, Self::Context, R>
     );
 
     fn on_deleted<'r>(&self, _commands: &mut impl ComponentCommands) -> DeletionPolicy {
         DeletionPolicy::DeleteImmediately
     }
+}
 
-    fn set_children<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands,
-    );
-
-    const CHILDREN_TYPE: ChildrenType = ChildrenType::Ordered;
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SetEvent {
+    Created,
+    Undeleted,
+    Updated,
 }

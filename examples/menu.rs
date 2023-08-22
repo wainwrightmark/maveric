@@ -184,7 +184,7 @@ impl HierarchyNode for MainMenu {
         )
     }
 
-    fn set_components<'r>(
+    fn set<'r>(
         &self,
         previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
@@ -237,7 +237,7 @@ impl HierarchyNode for LevelMenu {
         commands.add_child("buttons", LevelMenuArrows(self.0), &context.1);
     }
 
-    fn set_components<'r>(
+    fn set<'r>(
         &self,
         previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
@@ -294,7 +294,7 @@ impl HierarchyNode for LevelMenuArrows {
         }
     }
 
-    fn set_components<'r>(
+    fn set<'r>(
         &self,
         previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,

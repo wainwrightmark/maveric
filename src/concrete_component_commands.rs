@@ -2,13 +2,18 @@ use crate::prelude::*;
 use bevy::{ecs::system::EntityCommands, prelude::*};
 
 pub struct ConcreteComponentCommands<'w_e, 'w, 's, 'a, 'b> {
-    pub entity_ref: EntityRef<'w_e>,
     ec: &'b mut EntityCommands<'w, 's, 'a>,
+    world: &'w_e World,
+
+}
+
+impl<'w_e, 'w, 's, 'a, 'b> ConcreteComponentCommands<'w_e, 'w, 's, 'a, 'b> {
+    pub fn new(ec: &'b mut EntityCommands<'w, 's, 'a>, world: &'w_e World, ) -> Self { Self { world, ec } }
 }
 
 impl<'w_e, 'w, 's, 'a, 'b> ComponentCommands for ConcreteComponentCommands<'w_e, 'w, 's, 'a, 'b> {
     fn get<T: Component>(&self) -> Option<&T> {
-        self.entity_ref.get()
+        self.world.get::<T>(self.ec.id())
     }
 
     fn insert<T: Bundle>(&mut self, bundle: T) {
@@ -17,11 +22,5 @@ impl<'w_e, 'w, 's, 'a, 'b> ComponentCommands for ConcreteComponentCommands<'w_e,
 
     fn remove<T: Bundle>(&mut self) {
         self.ec.remove::<T>();
-    }
-}
-
-impl<'w_e, 'w, 's, 'a, 'b> ConcreteComponentCommands<'w_e, 'w, 's, 'a, 'b> {
-    pub(crate) fn new(entity_ref: EntityRef<'w_e>, ec: &'b mut EntityCommands<'w, 's, 'a>) -> Self {
-        Self { entity_ref, ec }
     }
 }

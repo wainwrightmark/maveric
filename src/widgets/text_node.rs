@@ -23,38 +23,32 @@ pub struct TextNodeStyle {
 impl HierarchyNode for TextNode {
     type Context = AssetServer;
 
-    fn set_components<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
-        event: SetComponentsEvent,
-    ) {
-        let font = get_or_load_asset(self.style.font, &context);
+    fn set_components<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world,>(commands: SetComponentCommands<'n, 'p, 'c1, 'c2, 'w, 's, 'a, 'world,Self, Self::Context>)-> SetComponentsFinishToken<'w,'s,'a,'world> {
+        commands.insert_with_args_and_context(|args,  context| {
+            let font = get_or_load_asset(args.style.font, &context);
 
-        let mut bundle = TextBundle::from_section(
-            self.text.clone(),
-            TextStyle {
-                font,
-                font_size: self.style.font_size,
-                color: self.style.color,
-            },
-        )
-        .with_text_alignment(self.style.alignment);
+            let mut bundle = TextBundle::from_section(
+                args.text.clone(),
+                TextStyle {
+                    font,
+                    font_size: args.style.font_size,
+                    color: args.style.color,
+                },
+            )
+            .with_text_alignment(args.style.alignment);
 
-        bundle.text.linebreak_behavior = self.style.linebreak_behavior;
+            bundle.text.linebreak_behavior = args.style.linebreak_behavior;
 
-        //TODO only update text and node components
-        commands.insert(bundle);
+            bundle
+        }).finish()
     }
 
-    fn set_children<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ChildCommands,
+    fn set_children< R: HierarchyRoot>(
+        commands: SetChildrenCommands<Self, Self::Context, R>
     ) {
     }
 
-    const CHILDREN_TYPE: ChildrenType = ChildrenType::Unordered;
+
+
+
 }

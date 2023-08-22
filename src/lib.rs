@@ -17,6 +17,8 @@ pub mod plugin;
 pub mod root_commands;
 pub mod unordered_child_commands;
 pub mod ordered_child_commands;
+pub mod set_children_commands;
+pub mod set_component_commands;
 
 pub mod either;
 
@@ -40,6 +42,9 @@ pub mod prelude {
     pub(crate) use crate::root_commands::*;
     pub(crate) use crate::unordered_child_commands::*;
     pub(crate) use crate::ordered_child_commands::*;
+
+    pub use crate::set_children_commands::*;
+    pub use crate::set_component_commands::*;
 
     pub use crate::plugin::*;
 

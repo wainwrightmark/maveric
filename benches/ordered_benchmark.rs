@@ -79,7 +79,7 @@ impl HierarchyNode for Branch {
         }
     }
 
-    fn set_components<'r>(
+    fn set<'r>(
         &self,
         previous: Option<&Self>,
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
@@ -105,7 +105,7 @@ impl HierarchyNode for Leaf {
         commands: &mut impl ChildCommands,
     ) {
     }
-    fn set_components<'r>(
+    fn set<'r>(
         &self,
         _previous: Option<&Self>,
         _context: &<Self::Context as NodeContext>::Wrapper<'r>,
