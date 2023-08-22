@@ -3,5 +3,6 @@
 - [x] Do not create a hashmap for every update
 - [x] Ordered Children
 - [x] Feature flags
-- [ ] Simplify
+- [x] Simplify
 - [ ] Reuse child commands to reduce allocations
+- [ ] Check for duplicate keys in debug mode
