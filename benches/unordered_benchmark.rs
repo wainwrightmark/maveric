@@ -158,14 +158,3 @@ enum Leaf {
     Red,
 }
 
-impl HierarchyNode for Leaf {
-    type Context = NoContext;
-
-    fn set<R: HierarchyRoot>(
-        data: NodeData<Self, Self::Context, R, true>,
-        commands: &mut NodeCommands,
-    ) {
-        data.ignore_context()
-            .insert_with_args(commands, |leaf| leaf.clone())
-    }
-}

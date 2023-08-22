@@ -1,41 +1,36 @@
-use std::sync::Arc;
-
 pub use crate::prelude::*;
 pub use bevy::prelude::*;
 
 use super::get_or_load_asset;
 
-#[derive(PartialEq, Debug)]
-pub struct ImageNode {
-    pub path: &'static str,
-    pub image_node_style: Arc<ImageNodeStyle>,
-}
-
 #[derive(PartialEq, Debug, Clone)]
-pub struct ImageNodeStyle {
+pub struct ImageNode<S: IntoComponents<Context = NoContext, B = Style>> {
+    pub path: &'static str,
     pub background_color: Color,
-    pub style: Style,
+    pub style: S,
 }
 
-impl HierarchyNode for ImageNode {
+impl<S: IntoComponents<Context = NoContext, B = Style>> IntoComponents for ImageNode<S> {
+    type B = ImageBundle;
     type Context = AssetServer;
 
+    fn set<R: HierarchyRoot>(
+        data: NodeData<Self, Self::Context, R, false>,
+        commands: &mut NodeCommands,
+    ) {
 
-    fn set<R: HierarchyRoot>(mut data: NodeData<Self, Self::Context, R, true>, commands: &mut NodeCommands) {
-        data.insert_with_args_and_context(commands,|args, context| {
-            let texture: Handle<Image> = get_or_load_asset(args.path, context);
+        data.clone().ignore_args().ignore_context().insert(commands, ImageBundle::default());
 
-            let bundle = ImageBundle {
-                style: args.image_node_style.style.clone(),
-                background_color: BackgroundColor(args.image_node_style.background_color),
-                image: UiImage {
-                    texture,
-                    flip_x: false,
-                    flip_y: false,
-                },
-                ..default()
-            };
-            bundle
-        })
+        data.clone().map_args(|x|&x.path).insert_with_args_and_context(commands, |path,server| {
+            let texture = get_or_load_asset::<Image>(*path, server);
+            UiImage{
+                texture,
+                flip_x: false,
+                flip_y: false
+            }
+        });
+
+        data.clone().ignore_context().map_args(|x|&x.style).insert_components(commands);
+        data.clone().ignore_context().map_args(|x|&x.background_color).insert_with_args(commands, |color| BackgroundColor(*color));
     }
 }

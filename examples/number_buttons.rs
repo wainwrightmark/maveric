@@ -1,45 +1,15 @@
 use bevy::prelude::*;
-use lazy_static::lazy_static;
 use state_hierarchy::transition::prelude::*;
 use state_hierarchy::{impl_hierarchy_root, prelude::*};
 use std::f32::consts;
 use std::time::Duration;
-use std::{string::ToString, sync::Arc};
+use std::string::ToString;
 use strum::Display;
 use strum::IntoStaticStr;
 
 const DYNAMIC_BOX_WIDTH: f32 = 150.0;
 const DYNAMIC_BOX_HEIGHT: f32 = 65.0;
 const BOXES_PER_ROW: usize = 5;
-
-lazy_static! {
- static ref  BUTTON_NODE_STYLE: Arc<ButtonNodeStyle> = Arc::new(ButtonNodeStyle {
-    style: Style {
-        width: Val::Px(DYNAMIC_BOX_WIDTH),
-        height: Val::Px(DYNAMIC_BOX_HEIGHT),
-        border: UiRect::all(Val::Px(5.0)),
-        position_type: PositionType::Relative,
-        // horizontally center child text
-        justify_content: JustifyContent::Center,
-        // vertically center child text
-        align_items: AlignItems::Center,
-        ..Default::default()
-    },
-    visibility: Visibility::Visible,
-    border_color: Color::BLUE,
-    background_color: Color::WHITE,
-});
-}
-
-lazy_static! {
-    static ref TEXT_NODE_STYLE: Arc<TextNodeStyle> = Arc::new(TextNodeStyle {
-        font_size: 32.0,
-        color: Color::WHITE,
-        font: "fonts/FiraSans-Bold.ttf",
-        alignment: TextAlignment::Center,
-        linebreak_behavior: bevy::text::BreakLineOn::NoWrap
-    });
-}
 
 fn main() {
     let mut app = App::new();
@@ -119,48 +89,50 @@ pub struct CommandGrid;
 impl HierarchyNode for CommandGrid {
     type Context = AssetServer;
 
-    fn set_children(
-        &self,
-        _previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'_>,
-        commands: &mut impl ChildCommands,
-    ) {
-        for command in [Command::AddNew, Command::Reset] {
-            let key: &'static str = command.into();
 
-            let node = ButtonNode {
-                text: Some((command.to_string(), TEXT_NODE_STYLE.clone())),
-                image: None,
-                button_node_style: BUTTON_NODE_STYLE.clone(),
-                marker: command,
-            };
 
-            commands.add_child(key, node, context);
-        }
-    }
 
-    fn set<'r>(
-            &self,
-            previous: Option<&Self>,
-            context: &<Self::Context as NodeContext>::Wrapper<'r>,
-            commands: &mut impl ComponentCommands,
-            event: SetComponentsEvent,
-        ) {
-        commands.insert( NodeBundle {
-            style: Style {
-                width: Val::Percent(100.0),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                display: Display::Flex,
-                flex_direction: FlexDirection::Row,
+
+    fn set<R: HierarchyRoot>(data: NodeData<Self, Self::Context, R, true>, commands: &mut NodeCommands) {
+        data.clone().ignore_args().ignore_context().insert(
+            commands,
+            NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.0),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Row,
+                    ..default()
+                },
                 ..default()
             },
-            ..default()
+        );
+
+        data.ignore_args().unordered_children_with_context(commands, |context, commands| {
+            for command in [Command::AddNew, Command::Reset] {
+                let key: &'static str = command.into();
+                let node = ButtonNode {
+                    style: ButtonStyle,
+                    visibility: Visibility::Visible,
+                    border_color: BUTTON_BORDER,
+                    background_color: TEXT_BUTTON_BACKGROUND,
+                    marker: command,
+                }
+                .with_children((TextNode {
+                    text: command.to_string(),
+                    font: FONT_PATH,
+                    font_size: BUTTON_FONT_SIZE,
+                    color: BUTTON_TEXT_COLOR,
+                    alignment: TextAlignment::Center,
+                    linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
+                },));
+
+                commands.add_child(key, node, &context);
+            }
         })
     }
 }
-
-
 
 #[derive(Eq, PartialEq, Debug, Default)]
 pub struct DynamicGrid;
@@ -168,49 +140,54 @@ pub struct DynamicGrid;
 impl HierarchyNode for DynamicGrid {
     type Context = NC2<UIState, AssetServer>;
 
-    fn set_children(
-        &self,
-        _previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'_>,
-        commands: &mut impl ChildCommands,
+    fn set<R: HierarchyRoot>(
+        data: NodeData<Self, Self::Context, R, true>,
+        commands: &mut NodeCommands,
     ) {
-        for number in context.0.dynamic_buttons.iter().cloned() {
-            let node = ButtonNode {
-                text: Some((number.to_string(), TEXT_NODE_STYLE.clone())),
-                image: None,
-                button_node_style: BUTTON_NODE_STYLE.clone(),
-                marker: DynamicButtonComponent(number),
-            };
-
-            let node = node.with_transition_in_out::<(TransformRotationLens, TransformScaleLens)>(
-                (Quat::from_rotation_z(-consts::FRAC_PI_8), Vec3::ONE),
-                (Quat::default(), Vec3::ONE),
-                (Quat::from_rotation_z(consts::FRAC_PI_2), Vec3::ONE * 0.0),
-                Duration::from_secs_f32(0.5),
-                Duration::from_secs_f32(2.0),
-            );
-
-            commands.add_child(number, node, &context.1);
-        }
-    }
-
-    fn set<'r>(
-        &self,
-        previous: Option<&Self>,
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
-        commands: &mut impl ComponentCommands,
-        event: SetComponentsEvent,
-    ) {
-        commands.insert(NodeBundle {
-            style: Style {
-                width: Val::Percent(100.0),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                display: Display::Flex,
-                flex_direction: FlexDirection::Row,
+        data.clone().ignore_args().ignore_context().insert(
+            commands,
+            NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.0),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Row,
+                    ..default()
+                },
                 ..default()
             },
-            ..default()
+        );
+
+        data.ignore_args().ordered_children_with_context(commands, |context, commands| {
+            for number in context.0.dynamic_buttons.iter().cloned() {
+                let node = ButtonNode {
+                    style: ButtonStyle,
+                    visibility: Visibility::Visible,
+                    border_color: BUTTON_BORDER,
+                    background_color: TEXT_BUTTON_BACKGROUND,
+                    marker: DynamicButtonComponent(number),
+                }
+                .with_children((TextNode {
+                    text: number.to_string(),
+                    font: FONT_PATH,
+                    font_size: BUTTON_FONT_SIZE,
+                    color: BUTTON_TEXT_COLOR,
+                    alignment: TextAlignment::Center,
+                    linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
+                },));
+
+                let node = node
+                    .with_transition_in_out::<(TransformRotationLens, TransformScaleLens)>(
+                        (Quat::from_rotation_z(-consts::FRAC_PI_8), Vec3::ONE),
+                        (Quat::default(), Vec3::ONE),
+                        (Quat::from_rotation_z(consts::FRAC_PI_2), Vec3::ONE * 0.0),
+                        Duration::from_secs_f32(0.5),
+                        Duration::from_secs_f32(2.0),
+                    );
+
+                commands.add_child(number, node, &context.1);
+            }
         })
     }
 }
@@ -279,3 +256,45 @@ fn setup(mut commands: Commands) {
     // ui camera
     commands.spawn(Camera2dBundle::default());
 }
+
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct ButtonStyle;
+impl IntoComponents for ButtonStyle {
+    type B = Style;
+    type Context = NoContext;
+
+    fn set<R: HierarchyRoot>(
+        data: NodeData<Self, Self::Context, R, false>,
+        commands: &mut NodeCommands,
+    ) {
+        data.ignore_args().insert(
+            commands,
+            Style {
+                width: Val::Px(DYNAMIC_BOX_WIDTH),
+                height: Val::Px(DYNAMIC_BOX_HEIGHT),
+                border: UiRect::all(Val::Px(5.0)),
+                position_type: PositionType::Relative,
+                // horizontally center child text
+                justify_content: JustifyContent::Center,
+                // vertically center child text
+                align_items: AlignItems::Center,
+                ..Default::default()
+            },
+        )
+    }
+}
+
+
+
+pub const TEXT_BUTTON_WIDTH: f32 = 360.;
+pub const TEXT_BUTTON_HEIGHT: f32 = 60.;
+
+pub const UI_BORDER_WIDTH: Val = Val::Px(3.0);
+
+pub const FONT_PATH: &str = "fonts/FiraSans-Bold.ttf";
+
+pub const BUTTON_FONT_SIZE: f32 = 32.0;
+pub const BUTTON_BORDER: Color = Color::BLACK;
+pub const BUTTON_TEXT_COLOR: Color = Color::WHITE;
+
+pub const TEXT_BUTTON_BACKGROUND: Color = Color::WHITE;

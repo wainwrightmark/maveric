@@ -122,6 +122,14 @@ impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext, R: HierarchyRoot, const CHI
     }
 }
 
+impl<'n, 'p, 'c1, 'c2, N: PartialEq + IntoComponents<Context = C>, C: NodeContext, R: HierarchyRoot, const CHILDREN: bool>
+    NodeData<'n, 'p, 'c1, 'c2, N, C, R, CHILDREN>
+{
+    pub fn insert_components(&mut self,commands: &mut NodeCommands,){
+        N::set(self.clone(), commands)
+    }
+}
+
 impl<'n, 'p, 'c1, 'c2, R: HierarchyRoot, const CHILDREN: bool>
     NodeData<'n, 'p, 'c1, 'c2, (), NoContext, R, CHILDREN>
 {
@@ -157,6 +165,16 @@ impl<'n, 'p, 'c1, 'c2, C: NodeContext, R: HierarchyRoot, const CHILDREN: bool>
 impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext, R: HierarchyRoot>
     NodeData<'n, 'p, 'c1, 'c2, N, C, R, true>
 {
+    pub fn no_children(self)-> NodeData<'n, 'p, 'c1, 'c2, N, C, R, false> {
+        NodeData {
+            args: self.args.clone(),
+            previous: self.previous.clone(),
+            context: self.context.clone(),
+            event: self.event.clone(),
+            phantom: Default::default(),
+        }
+    }
+
     pub fn ordered_children_with_args_and_context(
         self,
         commands: &mut NodeCommands,
