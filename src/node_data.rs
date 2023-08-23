@@ -9,7 +9,7 @@ pub struct NodeData<
     'c2,
     N: PartialEq,
     C: NodeContext,
-    R: HierarchyRoot,
+    R: MavericRoot,
     const CHILDREN: bool,
 > {
     args: &'n N,
@@ -19,7 +19,7 @@ pub struct NodeData<
     phantom: PhantomData<R>,
 }
 
-impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext, R: HierarchyRoot, const CHILDREN: bool>
+impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext, R: MavericRoot, const CHILDREN: bool>
     NodeData<'n, 'p, 'c1, 'c2, N, C, R, CHILDREN>
 {
     pub(crate) fn new(
@@ -97,7 +97,7 @@ impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext, R: HierarchyRoot, const CHI
     }
 }
 
-impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext, R: HierarchyRoot, const CHILDREN: bool>
+impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext, R: MavericRoot, const CHILDREN: bool>
     NodeData<'n, 'p, 'c1, 'c2, N, C, R, CHILDREN>
 {
     pub fn insert_with_args_and_context<B: Bundle>(
@@ -122,7 +122,7 @@ impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext, R: HierarchyRoot, const CHI
     }
 }
 
-impl<'n, 'p, 'c1, 'c2, N: PartialEq + IntoComponents<Context = C>, C: NodeContext, R: HierarchyRoot, const CHILDREN: bool>
+impl<'n, 'p, 'c1, 'c2, N: PartialEq + IntoComponents<Context = C>, C: NodeContext, R: MavericRoot, const CHILDREN: bool>
     NodeData<'n, 'p, 'c1, 'c2, N, C, R, CHILDREN>
 {
     pub fn insert_components(&mut self,commands: &mut NodeCommands,){
@@ -130,7 +130,7 @@ impl<'n, 'p, 'c1, 'c2, N: PartialEq + IntoComponents<Context = C>, C: NodeContex
     }
 }
 
-impl<'n, 'p, 'c1, 'c2, R: HierarchyRoot, const CHILDREN: bool>
+impl<'n, 'p, 'c1, 'c2, R: MavericRoot, const CHILDREN: bool>
     NodeData<'n, 'p, 'c1, 'c2, (), NoContext, R, CHILDREN>
 {
     pub fn insert<B: Bundle>(&mut self, commands: &mut NodeCommands, b: B) {
@@ -138,7 +138,7 @@ impl<'n, 'p, 'c1, 'c2, R: HierarchyRoot, const CHILDREN: bool>
     }
 }
 
-impl<'n, 'p, 'c1, 'c2, N: PartialEq, R: HierarchyRoot, const CHILDREN: bool>
+impl<'n, 'p, 'c1, 'c2, N: PartialEq, R: MavericRoot, const CHILDREN: bool>
     NodeData<'n, 'p, 'c1, 'c2, N, NoContext, R, CHILDREN>
 {
     pub fn insert_with_args<B: Bundle>(
@@ -150,7 +150,7 @@ impl<'n, 'p, 'c1, 'c2, N: PartialEq, R: HierarchyRoot, const CHILDREN: bool>
     }
 }
 
-impl<'n, 'p, 'c1, 'c2, C: NodeContext, R: HierarchyRoot, const CHILDREN: bool>
+impl<'n, 'p, 'c1, 'c2, C: NodeContext, R: MavericRoot, const CHILDREN: bool>
     NodeData<'n, 'p, 'c1, 'c2, (), C, R, CHILDREN>
 {
     pub fn insert_with_context<B: Bundle>(
@@ -162,7 +162,7 @@ impl<'n, 'p, 'c1, 'c2, C: NodeContext, R: HierarchyRoot, const CHILDREN: bool>
     }
 }
 
-impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext, R: HierarchyRoot>
+impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext, R: MavericRoot>
     NodeData<'n, 'p, 'c1, 'c2, N, C, R, true>
 {
     pub fn no_children(self)-> NodeData<'n, 'p, 'c1, 'c2, N, C, R, false> {
@@ -234,7 +234,7 @@ impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext, R: HierarchyRoot>
     }
 }
 
-impl<'n, 'p, 'c1, 'c2, R: HierarchyRoot> NodeData<'n, 'p, 'c1, 'c2, (), NoContext, R, true> {
+impl<'n, 'p, 'c1, 'c2, R: MavericRoot> NodeData<'n, 'p, 'c1, 'c2, (), NoContext, R, true> {
     pub fn ordered_children(
         self,
         commands: &mut NodeCommands,
@@ -252,7 +252,7 @@ impl<'n, 'p, 'c1, 'c2, R: HierarchyRoot> NodeData<'n, 'p, 'c1, 'c2, (), NoContex
     }
 }
 
-impl<'n, 'p, 'c1, 'c2, N: PartialEq, R: HierarchyRoot>
+impl<'n, 'p, 'c1, 'c2, N: PartialEq, R: MavericRoot>
     NodeData<'n, 'p, 'c1, 'c2, N, NoContext, R, true>
 {
     pub fn ordered_children_with_args(
@@ -272,7 +272,7 @@ impl<'n, 'p, 'c1, 'c2, N: PartialEq, R: HierarchyRoot>
     }
 }
 
-impl<'n, 'p, 'c1, 'c2, C: NodeContext, R: HierarchyRoot>
+impl<'n, 'p, 'c1, 'c2, C: NodeContext, R: MavericRoot>
     NodeData<'n, 'p, 'c1, 'c2, (), C, R, true>
 {
     pub fn ordered_children_with_context(

@@ -4,7 +4,7 @@ use std::{any::type_name, marker::PhantomData};
 use bevy::{prelude::*, utils::hashbrown::HashMap};
 
 pub trait ChildCommands {
-    fn add_child<NChild: HierarchyNode>(
+    fn add_child<NChild: MavericNode>(
         &mut self,
         key: impl Into<ChildKey>,
         child: NChild,
@@ -12,16 +12,16 @@ pub trait ChildCommands {
     );
 }
 
-pub struct UnorderedChildCommands<'c, 'w, 's, 'a, 'world, R: HierarchyRoot> {
+pub struct UnorderedChildCommands<'c, 'w, 's, 'a, 'world, R: MavericRoot> {
     commands: &'c mut NodeCommands<'w, 's, 'a, 'world>,
     remaining_old_entities: HashMap<ChildKey, Entity>,
     phantom: PhantomData<R>,
 }
 
-impl<'c, 'w, 's, 'a, 'world, R: HierarchyRoot> ChildCommands
+impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> ChildCommands
     for UnorderedChildCommands<'c, 'w, 's, 'a, 'world, R>
 {
-    fn add_child<NChild: HierarchyNode>(
+    fn add_child<NChild: MavericNode>(
         &mut self,
         key: impl Into<ChildKey>,
         child: NChild,
@@ -35,7 +35,7 @@ impl<'c, 'w, 's, 'a, 'world, R: HierarchyRoot> ChildCommands
             if self
                 .commands
                 .world
-                .get::<HierarchyNodeComponent<NChild>>(entity)
+                .get::<MavericNodeComponent<NChild>>(entity)
                 .is_some()
             {
                 update_recursive::<R, NChild>(
@@ -66,7 +66,7 @@ impl<'c, 'w, 's, 'a, 'world, R: HierarchyRoot> ChildCommands
     }
 }
 
-impl<'c, 'w, 's, 'a, 'world, R: HierarchyRoot> UnorderedChildCommands<'c, 'w, 's, 'a, 'world, R> {
+impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> UnorderedChildCommands<'c, 'w, 's, 'a, 'world, R> {
     pub(crate) fn new(commands: &'c mut NodeCommands<'w, 's, 'a, 'world>) -> Self {
         let children = commands.world.get::<Children>(commands.ec.id());
 
@@ -77,7 +77,7 @@ impl<'c, 'w, 's, 'a, 'world, R: HierarchyRoot> UnorderedChildCommands<'c, 'w, 's
                     .flat_map(|entity| {
                         commands
                             .world
-                            .get::<HierarchyChildComponent<R>>(*entity)
+                            .get::<MavericChildComponent<R>>(*entity)
                             .map(|hcc| (hcc.key, *entity))
                     })
                     .collect();
@@ -104,7 +104,7 @@ impl<'c, 'w, 's, 'a, 'world, R: HierarchyRoot> UnorderedChildCommands<'c, 'w, 's
     }
 }
 
-pub struct OrderedChildCommands<'c, 'w, 's, 'a, 'world, R: HierarchyRoot> {
+pub struct OrderedChildCommands<'c, 'w, 's, 'a, 'world, R: MavericRoot> {
     commands: &'c mut NodeCommands<'w, 's, 'a, 'world>,
     phantom: PhantomData<R>,
 
@@ -114,10 +114,10 @@ pub struct OrderedChildCommands<'c, 'w, 's, 'a, 'world, R: HierarchyRoot> {
     new_indices: Vec<Option<usize>>,
 }
 
-impl<'c, 'w, 's, 'a, 'world, R: HierarchyRoot> ChildCommands
+impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> ChildCommands
     for OrderedChildCommands<'c, 'w, 's, 'a, 'world, R>
 {
-    fn add_child<NChild: HierarchyNode>(
+    fn add_child<NChild: MavericNode>(
         &mut self,
         key: impl Into<ChildKey>,
         child: NChild,
@@ -131,7 +131,7 @@ impl<'c, 'w, 's, 'a, 'world, R: HierarchyRoot> ChildCommands
             if self
                 .commands
                 .world
-                .get::<HierarchyNodeComponent<NChild>>(entity)
+                .get::<MavericNodeComponent<NChild>>(entity)
                 .is_some()
             {
                 update_recursive::<R, NChild>(
@@ -165,7 +165,7 @@ impl<'c, 'w, 's, 'a, 'world, R: HierarchyRoot> ChildCommands
     }
 }
 
-impl<'c, 'w, 's, 'a, 'world, R: HierarchyRoot> OrderedChildCommands<'c, 'w, 's, 'a, 'world, R> {
+impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> OrderedChildCommands<'c, 'w, 's, 'a, 'world, R> {
     pub(crate) fn new(commands: &'c mut NodeCommands<'w, 's, 'a, 'world>) -> Self {
         let children = commands.world.get::<Children>(commands.ec.id());
         //let tree = tree.clone();
@@ -177,7 +177,7 @@ impl<'c, 'w, 's, 'a, 'world, R: HierarchyRoot> OrderedChildCommands<'c, 'w, 's, 
                     .flat_map(|(index, entity)| {
                         commands
                             .world
-                            .get::<HierarchyChildComponent<R>>(*entity)
+                            .get::<MavericChildComponent<R>>(*entity)
                             .map(|hcc| (hcc.key, (index, *entity)))
                     })
                     .collect();
@@ -261,7 +261,7 @@ impl<'c, 'w, 's, 'a, 'world, R: HierarchyRoot> OrderedChildCommands<'c, 'w, 's, 
 #[cfg(test)]
 mod tests {
 
-    use crate::{impl_hierarchy_root, prelude::*};
+    use crate::{impl_maveric_root, prelude::*};
     use bevy::{time::TimePlugin, utils::HashSet};
     #[test]
     pub fn test_ordering() {
@@ -270,7 +270,7 @@ mod tests {
 
         app.init_resource::<TreeState>()
             .init_resource::<LingerState>()
-            .register_state_hierarchy::<Root>();
+            .register_maveric::<Root>();
 
         let test_states: Vec<TreeState> = vec![
             TreeState(vec![]),
@@ -332,7 +332,7 @@ mod tests {
 
         app.insert_resource::<TreeState>(initial_tree_state)
             .insert_resource::<LingerState>(linger_state)
-            .register_state_hierarchy::<Root>();
+            .register_maveric::<Root>();
 
         app.update();
 
@@ -358,7 +358,7 @@ mod tests {
     fn get_leaves(app: &mut App) -> Vec<(u32, bool)> {
         let children = app
             .world
-            .query_filtered::<&Children, With<HierarchyNodeComponent<Branch>>>()
+            .query_filtered::<&Children, With<MavericNodeComponent<Branch>>>()
             .get_single(&app.world);
 
         let children = match children {
@@ -373,7 +373,7 @@ mod tests {
             .map(|entity| {
                 let number = app
                     .world
-                    .get::<HierarchyNodeComponent<Leaf>>(*entity)
+                    .get::<MavericNodeComponent<Leaf>>(*entity)
                     .expect("Child should be a hnc Leaf")
                     .node
                     .number;
@@ -394,9 +394,9 @@ mod tests {
     #[derive(Debug, Clone, PartialEq, Default)]
     struct Root;
 
-    impl_hierarchy_root!(Root);
+    impl_maveric_root!(Root);
 
-    impl HierarchyRootChildren for Root {
+    impl RootChildren for Root {
         type Context = NC2<TreeState, LingerState>;
 
         fn set_children<'r>(
@@ -410,10 +410,10 @@ mod tests {
     #[derive(Debug, Clone, PartialEq, Default)]
     struct Branch;
 
-    impl HierarchyNode for Branch {
+    impl MavericNode for Branch {
         type Context = NC2<TreeState, LingerState>;
 
-        fn set<R: HierarchyRoot>(
+        fn set<R: MavericRoot>(
             data: NodeData<Self, Self::Context, R, true>,
             commands: &mut NodeCommands,
         ) {
@@ -433,7 +433,7 @@ mod tests {
         linger: bool,
     }
 
-    impl HierarchyNode for Leaf {
+    impl MavericNode for Leaf {
         type Context = NoContext;
 
         fn on_deleted<'r>(&self, _commands: &mut ComponentCommands) -> DeletionPolicy {
@@ -444,7 +444,7 @@ mod tests {
             }
         }
 
-        fn set<R: HierarchyRoot>(
+        fn set<R: MavericRoot>(
             _data: NodeData<Self, Self::Context, R, true>,
             _commands: &mut NodeCommands,
         ) {

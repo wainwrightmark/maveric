@@ -12,7 +12,7 @@ pub trait ChildTuple: PartialEq + Send + Sync + 'static {
 
 macro_rules! impl_child_tuple {
     ($T0:ident, $(($T:ident, $idx:tt)),*) => {
-        impl<$T0: Clone+ HierarchyNode, $($T :Clone+ HierarchyNode<Context = $T0::Context>,)*> ChildTuple for ($T0, $($T,)*){
+        impl<$T0: Clone + MavericNode, $($T :Clone + MavericNode<Context = $T0::Context>,)*> ChildTuple for ($T0, $($T,)*){
             type Context = $T0::Context;
 
             fn add_children<'r>(&self, context: &<Self::Context as NodeContext>::Wrapper<'r>, commands: &mut impl ChildCommands,) {
@@ -40,12 +40,12 @@ pub struct NodeWithChildren<B: IntoComponents, C: ChildTuple, ContextType> {
 }
 
 
-impl<B: IntoComponents, C: ChildTuple<Context = B::Context>> HierarchyNode
+impl<B: IntoComponents, C: ChildTuple<Context = B::Context>> MavericNode
     for NodeWithChildren<B, C, SameContext>
 {
     type Context = B::Context;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, true>,
         commands: &mut NodeCommands,
     ) {
@@ -58,10 +58,10 @@ impl<B: IntoComponents, C: ChildTuple<Context = B::Context>> HierarchyNode
     }
 }
 
-impl<B: IntoComponents, C: ChildTuple> HierarchyNode for NodeWithChildren<B, C, DifferentContexts> {
+impl<B: IntoComponents, C: ChildTuple> MavericNode for NodeWithChildren<B, C, DifferentContexts> {
     type Context = NC2<B::Context, C::Context>;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, true>,
         commands: &mut NodeCommands,
     ) {
@@ -78,12 +78,12 @@ impl<B: IntoComponents, C: ChildTuple> HierarchyNode for NodeWithChildren<B, C, 
     }
 }
 
-impl<B: IntoComponents<Context = NoContext>, C: ChildTuple> HierarchyNode
+impl<B: IntoComponents<Context = NoContext>, C: ChildTuple> MavericNode
     for NodeWithChildren<B, C, NoBundleContext>
 {
     type Context = C::Context;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, true>,
         commands: &mut NodeCommands,
     ) {
@@ -99,12 +99,12 @@ impl<B: IntoComponents<Context = NoContext>, C: ChildTuple> HierarchyNode
     }
 }
 
-impl<B: IntoComponents, C: ChildTuple<Context = NoContext>> HierarchyNode
+impl<B: IntoComponents, C: ChildTuple<Context = NoContext>> MavericNode
     for NodeWithChildren<B, C, NoChildrenContext>
 {
     type Context = B::Context;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, true>,
         commands: &mut NodeCommands,
     ) {

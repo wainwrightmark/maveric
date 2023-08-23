@@ -5,7 +5,7 @@ pub trait IntoComponents: PartialEq + Send + Sync + Sized + 'static {
     type B: Bundle;
     type Context: NodeContext;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, false>,
         commands: &mut NodeCommands,
     );
@@ -63,7 +63,7 @@ impl<T: Bundle + PartialEq + Clone> IntoComponents for T {
     type B = Self;
     type Context = NoContext;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, false>,
         commands: &mut NodeCommands,
     ) {
@@ -72,10 +72,10 @@ impl<T: Bundle + PartialEq + Clone> IntoComponents for T {
     }
 }
 
-impl<T: IntoComponents> HierarchyNode for T {
+impl<T: IntoComponents> MavericNode for T {
     type Context = T::Context;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, true>,
         commands: &mut NodeCommands,
     ) {

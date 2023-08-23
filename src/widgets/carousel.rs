@@ -1,14 +1,14 @@
 use crate::prelude::*;
 use std::{marker::PhantomData, time::Duration};
 
-pub struct Carousel<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> {
+pub struct Carousel<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> {
     current_page: u32,
     get_child: F,
     transition_duration: Duration,
     phantom: PhantomData<Child>,
 }
 
-impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Carousel<Child, F> {
+impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Carousel<Child, F> {
     pub fn new(current_page: u32, get_child: F, transition_duration: Duration) -> Self {
         Self {
             current_page,
@@ -19,7 +19,7 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
     }
 }
 
-impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> PartialEq
+impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> PartialEq
     for Carousel<Child, F>
 {
     fn eq(&self, other: &Self) -> bool {
@@ -29,12 +29,12 @@ impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> 
     }
 }
 
-impl<Child: HierarchyNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> HierarchyNode
+impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> MavericNode
     for Carousel<Child, F>
 {
-    type Context = <Child as HierarchyNode>::Context;
+    type Context = <Child as MavericNode>::Context;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, true>,
         commands: &mut NodeCommands,
     ) {

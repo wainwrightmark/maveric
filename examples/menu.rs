@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-use state_hierarchy::transition::prelude::*;
-use state_hierarchy::{impl_hierarchy_root, prelude::*};
+use maveric::transition::prelude::*;
+use maveric::{impl_maveric_root, prelude::*};
 
 use std::time::Duration;
 use std::string::ToString;
@@ -19,7 +19,7 @@ fn main() {
     app.add_plugins(TransitionPlugin::<TransformScaleLens>::default());
     app.add_plugins(TransitionPlugin::<BackgroundColorLens>::default());
 
-    app.register_state_hierarchy::<MenuRoot>();
+    app.register_maveric::<MenuRoot>();
     app.run();
 }
 fn setup(mut commands: Commands) {
@@ -73,9 +73,9 @@ pub enum MenuState {
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct MenuRoot;
 
-impl_hierarchy_root!(MenuRoot);
+impl_maveric_root!(MenuRoot);
 
-impl HierarchyRootChildren for MenuRoot {
+impl RootChildren for MenuRoot {
     type Context = NC2<MenuState, AssetServer>;
 
     fn set_children(
@@ -229,10 +229,10 @@ pub enum MainOrLevelMenu {
     Level(u32),
 }
 
-impl HierarchyNode for MainOrLevelMenu {
+impl MavericNode for MainOrLevelMenu {
     type Context = NC2<MenuState, AssetServer>;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, true>,
         commands: &mut NodeCommands,
     ) {
@@ -306,10 +306,10 @@ impl HierarchyNode for MainOrLevelMenu {
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct LevelMenuArrows(u32);
 
-impl HierarchyNode for LevelMenuArrows {
+impl MavericNode for LevelMenuArrows {
     type Context = AssetServer;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, true>,
         commands: &mut NodeCommands,
     ) {
@@ -400,7 +400,7 @@ impl IntoComponents for BigImageNodeStyle {
     type B = Style;
     type Context = NoContext;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, false>,
         commands: &mut NodeCommands,
     ) {
@@ -433,7 +433,7 @@ impl IntoComponents for SmallImageNodeStyle {
     type B = Style;
     type Context = NoContext;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, false>,
         commands: &mut NodeCommands,
     ) {
@@ -463,7 +463,7 @@ impl IntoComponents for IconNodeStyle {
     type B = Style;
     type Context = NoContext;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, false>,
         commands: &mut NodeCommands,
     ) {
@@ -491,7 +491,7 @@ impl IntoComponents for OpenMenuButtonStyle {
     type B = Style;
     type Context = NoContext;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, false>,
         commands: &mut NodeCommands,
     ) {
@@ -521,7 +521,7 @@ impl IntoComponents for TextButtonStyle {
     type B = Style;
     type Context = NoContext;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, false>,
         commands: &mut NodeCommands,
     ) {

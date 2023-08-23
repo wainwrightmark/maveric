@@ -5,25 +5,25 @@ use bevy::prelude::*;
 use crate::prelude::*;
 
 #[derive(Debug, Default, Component)]
-pub(crate) struct HierarchyNodeComponent<N: HierarchyNode> {
+pub(crate) struct MavericNodeComponent<N: MavericNode> {
     pub node: N,
 }
 
-impl<N: HierarchyNode> HierarchyNodeComponent<N> {
+impl<N: MavericNode> MavericNodeComponent<N> {
     pub(crate) fn new(node: N) -> Self {
         Self { node }
     }
 }
 
 #[derive(Component)]
-pub(crate) struct HierarchyChildComponent<R: HierarchyRootChildren> {
+pub(crate) struct MavericChildComponent<R: RootChildren> {
     pub key: ChildKey,
     pub deleter: &'static dyn Deleter,
     phantom: PhantomData<R>,
 }
 
-impl<R: HierarchyRootChildren> HierarchyChildComponent<R> {
-    pub(crate) fn new<N: HierarchyNode>(key: ChildKey) -> Self {
+impl<R: RootChildren> MavericChildComponent<R> {
+    pub(crate) fn new<N: MavericNode>(key: ChildKey) -> Self {
         let deleter = N::DELETER;
         Self {
             key,

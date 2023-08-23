@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-use state_hierarchy::transition::prelude::*;
-use state_hierarchy::{impl_hierarchy_root, prelude::*};
+use maveric::transition::prelude::*;
+use maveric::{impl_maveric_root, prelude::*};
 use std::f32::consts;
 use std::time::Duration;
 use std::string::ToString;
@@ -15,7 +15,7 @@ fn main() {
     let mut app = App::new();
 
     app.add_plugins(DefaultPlugins)
-        .register_state_hierarchy::<Root>()
+        .register_maveric::<Root>()
         .init_resource::<UIState>()
         .add_systems(Startup, setup)
         .add_systems(Update, button_system);
@@ -81,19 +81,19 @@ pub struct DynamicButtonComponent(u32);
 #[derive(Eq, PartialEq, Debug, Default)]
 pub struct Root;
 
-impl_hierarchy_root!(Root);
+impl_maveric_root!(Root);
 
 #[derive(Eq, PartialEq, Debug, Default)]
 pub struct CommandGrid;
 
-impl HierarchyNode for CommandGrid {
+impl MavericNode for CommandGrid {
     type Context = AssetServer;
 
 
 
 
 
-    fn set<R: HierarchyRoot>(data: NodeData<Self, Self::Context, R, true>, commands: &mut NodeCommands) {
+    fn set<R: MavericRoot>(data: NodeData<Self, Self::Context, R, true>, commands: &mut NodeCommands) {
         data.clone().ignore_args().ignore_context().insert(
             commands,
             NodeBundle {
@@ -137,10 +137,10 @@ impl HierarchyNode for CommandGrid {
 #[derive(Eq, PartialEq, Debug, Default)]
 pub struct DynamicGrid;
 
-impl HierarchyNode for DynamicGrid {
+impl MavericNode for DynamicGrid {
     type Context = NC2<UIState, AssetServer>;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, true>,
         commands: &mut NodeCommands,
     ) {
@@ -192,7 +192,7 @@ impl HierarchyNode for DynamicGrid {
     }
 }
 
-impl HierarchyRootChildren for Root {
+impl RootChildren for Root {
     type Context = NC2<UIState, AssetServer>;
 
     fn set_children(
@@ -263,7 +263,7 @@ impl IntoComponents for ButtonStyle {
     type B = Style;
     type Context = NoContext;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, false>,
         commands: &mut NodeCommands,
     ) {

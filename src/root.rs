@@ -2,14 +2,14 @@ use bevy::ecs::system::{StaticSystemParam, SystemParam};
 
 use crate::prelude::*;
 
-pub trait HierarchyRoot: HierarchyRootChildren {
+pub trait MavericRoot: RootChildren {
     type ContextParam<'c> : SystemParam;
     fn get_context<'a, 'c, 'w: 'c, 's>(
         param: StaticSystemParam<'w, 's, Self::ContextParam<'a>>,
     ) -> <Self::Context as NodeContext>::Wrapper<'c>;
 }
 
-pub trait HierarchyRootChildren: Send + Sync + 'static {
+pub trait RootChildren: Send + Sync + 'static {
     type Context: NodeContext;
 
     fn set_children<'r>(
@@ -20,16 +20,16 @@ pub trait HierarchyRootChildren: Send + Sync + 'static {
 
 
 
-/// Implement HasContextParam for a node. The node must implement `HierarchyRoot`
+/// Implement `Root` for a node. The node must implement `RootChildren`
 #[macro_export]
-macro_rules! impl_hierarchy_root {
+macro_rules! impl_maveric_root {
     ($node: ident) => {
-        impl HierarchyRoot for $node {
-            type ContextParam<'c> = <<Self as HierarchyRootChildren>::Context as NodeContext>::Wrapper<'c>;
+        impl MavericRoot for $node {
+            type ContextParam<'c> = <<Self as RootChildren>::Context as NodeContext>::Wrapper<'c>;
 
             fn get_context<'a, 'c, 'w: 'c, 's>(
                 param: bevy::ecs::system::StaticSystemParam<'w, 's, Self::ContextParam<'a>>,
-            ) -> <<Self as HierarchyRootChildren>::Context as NodeContext>::Wrapper<'c> {
+            ) -> <<Self as RootChildren>::Context as NodeContext>::Wrapper<'c> {
                 param.into_inner()
             }
         }

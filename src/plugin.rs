@@ -10,12 +10,12 @@ impl Plugin for ScheduleForRemovalPlugin {
     }
 }
 
-pub trait CanRegisterStateHierarchy {
-    fn register_state_hierarchy<R: HierarchyRoot>(&mut self) -> &mut Self;
+pub trait CanRegisterMaveric {
+    fn register_maveric<R: MavericRoot>(&mut self) -> &mut Self;
 }
 
-impl CanRegisterStateHierarchy for App {
-    fn register_state_hierarchy<R: HierarchyRoot>(&mut self) -> &mut Self {
+impl CanRegisterMaveric for App {
+    fn register_maveric<R: MavericRoot>(&mut self) -> &mut Self {
         if !self.is_plugin_added::<ScheduleForRemovalPlugin>() {
             self.add_plugins(ScheduleForRemovalPlugin::default());
         }
@@ -39,10 +39,10 @@ fn handle_scheduled_for_removal(
     }
 }
 
-fn sync_state<'a, R: HierarchyRoot>(
+fn sync_state<'a, R: MavericRoot>(
     mut commands: Commands,
     param: StaticSystemParam<R::ContextParam<'a>>,
-    root_query: Query<(Entity, &HierarchyChildComponent<R>), Without<Parent>>,
+    root_query: Query<(Entity, &MavericChildComponent<R>), Without<Parent>>,
     world: &World,
 ) {
     let context = R::get_context(param);
@@ -69,7 +69,7 @@ mod tests {
         app.add_plugins(TimePlugin::default());
 
         app.init_resource::<TreeState>()
-            .register_state_hierarchy::<Root>();
+            .register_maveric::<Root>();
         app.update();
 
         check_leaves(&mut app, 0, 0);
@@ -119,7 +119,7 @@ mod tests {
     fn check_leaves(app: &mut App, expected_blues: usize, expected_reds: usize) {
         let leaves: Vec<Leaf> = app
             .world
-            .query::<&HierarchyNodeComponent<Leaf>>()
+            .query::<&MavericNodeComponent<Leaf>>()
             .iter(&app.world)
             .map(|x| x.node.clone())
             .collect();
@@ -140,9 +140,9 @@ mod tests {
     #[derive(Debug, Clone, PartialEq, Default)]
     struct Root;
 
-    impl_hierarchy_root!(Root);
+    impl_maveric_root!(Root);
 
-    impl HierarchyRootChildren for Root {
+    impl RootChildren for Root {
         type Context = TreeState;
 
         fn set_children(
@@ -158,10 +158,10 @@ mod tests {
     #[derive(Debug, Clone, PartialEq, Default)]
     struct Branch;
 
-    impl HierarchyNode for Branch {
+    impl MavericNode for Branch {
         type Context = TreeState;
 
-        fn set<R: HierarchyRoot>(
+        fn set<R: MavericRoot>(
             args: NodeData<Self, Self::Context, R, true>,
             commands: &mut NodeCommands,
         ) {
@@ -186,10 +186,10 @@ mod tests {
         Red,
     }
 
-    impl HierarchyNode for Leaf {
+    impl MavericNode for Leaf {
         type Context = NoContext;
 
-        fn set<R: HierarchyRoot>(
+        fn set<R: MavericRoot>(
             _args: NodeData<Self, Self::Context, R, true>,
             _commands: &mut NodeCommands,
         ) {

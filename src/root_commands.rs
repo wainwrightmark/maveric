@@ -3,18 +3,18 @@ use std::{any::type_name, marker::PhantomData};
 use crate::prelude::*;
 use bevy::{prelude::*, utils::hashbrown::HashMap};
 
-pub(crate) struct RootCommands<'w, 's, 'b, 'q, R: HierarchyRoot> {
+pub(crate) struct RootCommands<'w, 's, 'b, 'q, R: MavericRoot> {
     commands: &'b mut Commands<'w, 's>,
     remaining_old_entities: HashMap<ChildKey, Entity>,
     world: &'q World,
     phantom: PhantomData<R>
 }
 
-impl<'w, 's, 'b, 'w1,'q : 'w1, R: HierarchyRoot> RootCommands<'w, 's, 'b, 'q, R> {
+impl<'w, 's, 'b, 'w1,'q : 'w1, R: MavericRoot> RootCommands<'w, 's, 'b, 'q, R> {
     pub(crate) fn new<'w2, 's2>(
         commands: &'b mut Commands<'w, 's>,
         world: &'q World,
-        query: Query< (Entity, &HierarchyChildComponent<R>), Without<Parent>>,
+        query: Query< (Entity, &MavericChildComponent<R>), Without<Parent>>,
     ) -> Self {
         let remaining_old_entities: HashMap<ChildKey, Entity> = query
             .into_iter()
@@ -37,8 +37,8 @@ impl<'w, 's, 'b, 'w1,'q : 'w1, R: HierarchyRoot> RootCommands<'w, 's, 'b, 'q, R>
     }
 }
 
-impl<'w, 's, 'b, 'w1,'q, R: HierarchyRoot> ChildCommands for RootCommands<'w, 's, 'b, 'q, R> {
-    fn add_child<NChild: HierarchyNode>(
+impl<'w, 's, 'b, 'w1,'q, R: MavericRoot> ChildCommands for RootCommands<'w, 's, 'b, 'q, R> {
+    fn add_child<NChild: MavericNode>(
         &mut self,
         key: impl Into<ChildKey>,
         child: NChild,
@@ -48,7 +48,7 @@ impl<'w, 's, 'b, 'w1,'q, R: HierarchyRoot> ChildCommands for RootCommands<'w, 's
 
         match self.remaining_old_entities.remove(&key) {
             Some(entity) => {
-                if self.world.get::<HierarchyNodeComponent<NChild>>(entity).is_some() {
+                if self.world.get::<MavericNodeComponent<NChild>>(entity).is_some() {
                     update_recursive::<R, NChild>(
                         self.commands,
                         entity,

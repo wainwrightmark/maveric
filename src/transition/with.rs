@@ -8,7 +8,7 @@ use crate::transition::prelude::*;
 
 use super::speed::calculate_speed;
 
-pub trait CanHaveTransition: HierarchyNode + Sized {
+pub trait CanHaveTransition: MavericNode + Sized {
     fn with_transition_in<L: Lens + GetValueLens>(
         self,
         initial_value: L::Value,
@@ -80,12 +80,12 @@ pub trait CanHaveTransition: HierarchyNode + Sized {
     }
 }
 
-impl<N: HierarchyNode> CanHaveTransition for N {}
+impl<N: MavericNode> CanHaveTransition for N {}
 
 /// This requires the animation plugin
 
 #[derive(Debug)]
-pub struct WithTransition<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>>
+pub struct WithTransition<N: MavericNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>>
 where
     L::Value: Tweenable,
     L::Object: Clone + Component,
@@ -97,7 +97,7 @@ where
     pub deletion: P,
 }
 
-impl<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> PartialEq for WithTransition<N, L, P>
+impl<N: MavericNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> PartialEq for WithTransition<N, L, P>
 where
     L::Value: Tweenable,
     L::Object: Clone + Component,
@@ -107,7 +107,7 @@ where
     }
 }
 
-impl<N: HierarchyNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> HierarchyNode
+impl<N: MavericNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> MavericNode
     for WithTransition<N, L, P>
 where
     L::Value: Tweenable,
@@ -115,7 +115,7 @@ where
 {
     type Context = N::Context;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, true>,
         commands: &mut NodeCommands,
     ) {

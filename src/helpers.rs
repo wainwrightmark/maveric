@@ -2,7 +2,7 @@ pub use crate::prelude::*;
 use bevy::ecs::system::EntityCommands;
 pub use bevy::prelude::*;
 
-pub(crate) fn create_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
+pub(crate) fn create_recursive<'c, R: MavericRoot, N: MavericNode>(
     ec: EntityCommands,
     node: N,
     context: &<N::Context as NodeContext>::Wrapper<'c>,
@@ -15,8 +15,8 @@ pub(crate) fn create_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
 
     N::set(args, &mut commands);
 
-    let hnc = HierarchyNodeComponent::new(node);
-    let hcc = HierarchyChildComponent::<R>::new::<N>(key.into());
+    let hnc = MavericNodeComponent::new(node);
+    let hcc = MavericChildComponent::<R>::new::<N>(key.into());
 
     commands.ec.insert((hnc, hcc));
     commands.ec.id()
@@ -24,7 +24,7 @@ pub(crate) fn create_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
 
 /// Recursively delete an entity. Returns the entity id if it is to linger.
 #[must_use]
-pub(crate) fn delete_recursive<'c, R: HierarchyRootChildren>(
+pub(crate) fn delete_recursive<'c, R: RootChildren>(
     commands: &mut Commands,
     entity: Entity,
     world: &World,
@@ -38,7 +38,7 @@ pub(crate) fn delete_recursive<'c, R: HierarchyRootChildren>(
     let mut cc = ComponentCommands::new(&mut nc, SetEvent::Updated);
 
     let dp: DeletionPolicy = world
-        .get::<HierarchyChildComponent<R>>(entity)
+        .get::<MavericChildComponent<R>>(entity)
         .map(|ac| ac.deleter.on_deleted(entity, &mut cc, world))
         .unwrap_or(DeletionPolicy::DeleteImmediately);
 
@@ -57,7 +57,7 @@ pub(crate) fn delete_recursive<'c, R: HierarchyRootChildren>(
     }
 }
 
-pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
+pub(crate) fn update_recursive<'c, R: MavericRoot, N: MavericNode>(
     commands: &mut Commands,
     entity: Entity,
     node: N,
@@ -72,7 +72,7 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
         false
     };
     let previous = world
-        .get::<HierarchyNodeComponent<N>>(entity)
+        .get::<MavericNodeComponent<N>>(entity)
         .map(|x| &x.node);
 
     let event = undeleted
@@ -91,6 +91,6 @@ pub(crate) fn update_recursive<'c, R: HierarchyRoot, N: HierarchyNode>(
     let node_changed = previous.map(|p| !p.eq(&node)).unwrap_or(true);
 
     if node_changed {
-        commands.ec.insert(HierarchyNodeComponent::<N> { node });
+        commands.ec.insert(MavericNodeComponent::<N> { node });
     }
 }

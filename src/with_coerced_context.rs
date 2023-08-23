@@ -3,17 +3,17 @@ use std::marker::PhantomData;
 use crate::prelude::*;
 
 #[derive(Debug)]
-pub struct WithIgnoredContext<N: HierarchyNode<Context = NoContext>, C: NodeContext + 'static> {
+pub struct WithIgnoredContext<N: MavericNode<Context = NoContext>, C: NodeContext + 'static> {
     node: N,
     phantom: PhantomData<fn() -> C>,
 }
 
-impl<N: HierarchyNode<Context = NoContext>, C: NodeContext + 'static> HierarchyNode
+impl<N: MavericNode<Context = NoContext>, C: NodeContext + 'static> MavericNode
     for WithIgnoredContext<N, C>
 {
     type Context = C;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, true>,
         commands: &mut NodeCommands,
     ) {
@@ -21,7 +21,7 @@ impl<N: HierarchyNode<Context = NoContext>, C: NodeContext + 'static> HierarchyN
     }
 }
 
-impl<N: HierarchyNode<Context = NoContext>, C: NodeContext + 'static> PartialEq
+impl<N: MavericNode<Context = NoContext>, C: NodeContext + 'static> PartialEq
     for WithIgnoredContext<N, C>
 {
     fn eq(&self, other: &Self) -> bool {
@@ -29,7 +29,7 @@ impl<N: HierarchyNode<Context = NoContext>, C: NodeContext + 'static> PartialEq
     }
 }
 
-pub trait CanIgnoreContext: HierarchyNode<Context = NoContext> {
+pub trait CanIgnoreContext: MavericNode<Context = NoContext> {
     fn with_ignored_context<C: NodeContext>(self) -> WithIgnoredContext<Self, C> {
         WithIgnoredContext {
             node: self,
@@ -38,23 +38,23 @@ pub trait CanIgnoreContext: HierarchyNode<Context = NoContext> {
     }
 }
 
-impl<T: HierarchyNode<Context = NoContext>> CanIgnoreContext for T {}
+impl<T: MavericNode<Context = NoContext>> CanIgnoreContext for T {}
 
-pub trait CanCoerceContext: HierarchyNode{
+pub trait CanCoerceContext: MavericNode{
     fn with_coerced_context<C: NodeContext, const INDEX: usize>(self) -> WithCoercedContext<Self, C, INDEX>{
         WithCoercedContext { node: self, phantom: PhantomData }
     }
 }
 
-impl<T: HierarchyNode> CanCoerceContext for T {}
+impl<T: MavericNode> CanCoerceContext for T {}
 
 #[derive(Debug)]
-pub struct WithCoercedContext<N: HierarchyNode, C: NodeContext + 'static, const INDEX: usize> {
+pub struct WithCoercedContext<N: MavericNode, C: NodeContext + 'static, const INDEX: usize> {
     node: N,
     phantom: PhantomData<fn() -> C>,
 }
 
-impl<N: HierarchyNode, C: NodeContext, const INDEX: usize> PartialEq for WithCoercedContext<N, C, INDEX> {
+impl<N: MavericNode, C: NodeContext, const INDEX: usize> PartialEq for WithCoercedContext<N, C, INDEX> {
     fn eq(&self, other: &Self) -> bool {
         self.node == other.node && self.phantom == other.phantom
     }
@@ -62,12 +62,12 @@ impl<N: HierarchyNode, C: NodeContext, const INDEX: usize> PartialEq for WithCoe
 
 macro_rules! impl_node_for_coerced {
     ($NC:ident;  $idx:tt;   $($PreC:ident),*; $T:ident; $($PostC:ident),*) => {
-        impl<$($PreC: NodeContext,)*  $T: HierarchyNode, $($PostC: NodeContext,)*> HierarchyNode
+        impl<$($PreC: NodeContext,)*  $T: MavericNode, $($PostC: NodeContext,)*> MavericNode
             for WithCoercedContext<$T, $NC<$($PreC,)* $T::Context, $($PostC,)*>, $idx>
         {
             type Context = $NC<$($PreC,)* $T::Context, $($PostC,)*>;
 
-            fn set<R: HierarchyRoot>(
+            fn set<R: MavericRoot>(
                 data: NodeData<Self, Self::Context, R, true>,
                 commands: &mut NodeCommands,
             ) {

@@ -6,8 +6,8 @@ pub mod component_commands;
 pub mod components;
 pub mod deleter;
 pub mod helpers;
-pub mod hierarchy_node;
-pub mod hierarchy_root;
+pub mod node;
+pub mod root;
 pub mod into_components;
 pub mod node_commands;
 pub mod node_context;
@@ -27,8 +27,8 @@ pub mod prelude {
     pub use crate::child_tuple::*;
     pub use crate::component_commands::*;
     pub use crate::deleter::*;
-    pub use crate::hierarchy_node::*;
-    pub use crate::hierarchy_root::*;
+    pub use crate::node::*;
+    pub use crate::root::*;
     pub use crate::into_components::*;
     pub use crate::node_commands::*;
     pub use crate::node_context::*;
@@ -44,5 +44,5 @@ pub mod prelude {
     pub(crate) use crate::helpers::*;
     pub(crate) use crate::root_commands::*;
 
-    pub use crate::impl_hierarchy_root;
+    pub use crate::impl_maveric_root;
 }

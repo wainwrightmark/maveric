@@ -1,6 +1,6 @@
 use bevy::{prelude::*, time::TimePlugin};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use state_hierarchy::prelude::*;
+use maveric::prelude::*;
 
 fn reverse_leaves_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("reverse_leaves");
@@ -29,7 +29,7 @@ pub fn run_state_transition(s1: TreeState, s2: TreeState, linger_state: LingerSt
 
     app.insert_resource(s1)
         .insert_resource(linger_state)
-        .register_state_hierarchy::<Root>();
+        .register_maveric::<Root>();
     app.update();
     update_state(&mut app, s2);
     app.update();
@@ -48,7 +48,7 @@ pub struct LingerState(bool);
 #[derive(Debug, Clone, PartialEq, Default)]
 struct Root;
 
-impl HierarchyRootChildren for Root {
+impl RootChildren for Root {
     type Context = NC2<TreeState, LingerState>;
 
     fn set_children(
@@ -59,16 +59,16 @@ impl HierarchyRootChildren for Root {
     }
 }
 
-impl_hierarchy_root!(Root);
+impl_maveric_root!(Root);
 
 #[derive(Debug, Clone, PartialEq, Default)]
 struct Branch;
 
-impl HierarchyNode for Branch {
+impl MavericNode for Branch {
     type Context = NC2<TreeState, LingerState>;
 
 
-    fn set<R: HierarchyRoot>(data: NodeData<Self, Self::Context, R, true>, commands: &mut NodeCommands) {
+    fn set<R: MavericRoot>(data: NodeData<Self, Self::Context, R, true>, commands: &mut NodeCommands) {
         data.ignore_args().ordered_children_with_context(commands, |context, commands|{
             for &number in context.0 .0.iter() {
                 let linger = context.1 .0;
@@ -85,11 +85,11 @@ struct Leaf {
     linger: bool,
 }
 
-impl HierarchyNode for Leaf {
+impl MavericNode for Leaf {
     type Context = NoContext;
 
 
-    fn set<R: HierarchyRoot>(_data: NodeData<Self, Self::Context, R, true>, _commands: &mut NodeCommands) {
+    fn set<R: MavericRoot>(_data: NodeData<Self, Self::Context, R, true>, _commands: &mut NodeCommands) {
 
     }
 

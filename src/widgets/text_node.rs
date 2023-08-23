@@ -17,7 +17,7 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> IntoComponents
     type B = TextBundle;
     type Context = AssetServer;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         mut data: NodeData<Self, Self::Context, R, false>,
         commands: &mut NodeCommands,
     ) {

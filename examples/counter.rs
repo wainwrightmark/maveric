@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use state_hierarchy::{impl_hierarchy_root, prelude::*};
+use maveric::{impl_maveric_root, prelude::*};
 
 use std::string::ToString;
 
@@ -10,7 +10,7 @@ fn main() {
         .init_resource::<CounterState>()
         .add_systems(Startup, setup)
         .add_systems(Update, button_system)
-        .register_state_hierarchy::<Root>();
+        .register_maveric::<Root>();
     app.run();
 }
 fn setup(mut commands: Commands) {
@@ -24,7 +24,7 @@ pub struct Marker;
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Root;
 
-impl HierarchyRootChildren for Root {
+impl RootChildren for Root {
     type Context = NC2<CounterState, AssetServer>;
 
     fn set_children<'r>(
@@ -54,7 +54,7 @@ impl HierarchyRootChildren for Root {
     }
 }
 
-impl_hierarchy_root!(Root);
+impl_maveric_root!(Root);
 
 #[derive(Debug, Clone, PartialEq, Resource, Default)]
 pub struct CounterState {
@@ -82,7 +82,7 @@ impl IntoComponents for ButtonStyle {
     type B = Style;
     type Context = NoContext;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, false>,
         commands: &mut NodeCommands,
     ) {

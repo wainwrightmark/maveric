@@ -14,7 +14,7 @@ impl<S: IntoComponents<Context = NoContext, B = Style>> IntoComponents for Image
     type B = ImageBundle;
     type Context = AssetServer;
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, false>,
         commands: &mut NodeCommands,
     ) {

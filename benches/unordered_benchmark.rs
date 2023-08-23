@@ -1,6 +1,6 @@
 use bevy::{prelude::*, time::TimePlugin};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
-use state_hierarchy::prelude::*;
+use maveric::prelude::*;
 
 criterion_group!(
     benches,
@@ -90,7 +90,7 @@ pub fn run_state_transition(s1: TreeState, s2: TreeState) {
 
     app.add_plugins(TimePlugin::default());
 
-    app.insert_resource(s1).register_state_hierarchy::<Root>();
+    app.insert_resource(s1).register_maveric::<Root>();
     app.update();
     update_state(&mut app, s2);
     app.update();
@@ -111,7 +111,7 @@ pub struct TreeState {
 #[derive(Debug, Clone, PartialEq, Default)]
 struct Root;
 
-impl HierarchyRootChildren for Root {
+impl RootChildren for Root {
     type Context = TreeState;
 
     fn set_children(
@@ -124,16 +124,16 @@ impl HierarchyRootChildren for Root {
     }
 }
 
-impl_hierarchy_root!(Root);
+impl_maveric_root!(Root);
 
 #[derive(Debug, Clone, PartialEq, Default)]
 struct Branch;
 
-impl HierarchyNode for Branch {
+impl MavericNode for Branch {
     type Context = TreeState;
 
 
-    fn set<R: HierarchyRoot>(
+    fn set<R: MavericRoot>(
         data: NodeData<Self, Self::Context, R, true>,
         commands: &mut NodeCommands,
     ) {
