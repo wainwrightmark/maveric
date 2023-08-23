@@ -122,10 +122,18 @@ impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext, R: MavericRoot, const CHILD
     }
 }
 
-impl<'n, 'p, 'c1, 'c2, N: PartialEq + IntoComponents<Context = C>, C: NodeContext, R: MavericRoot, const CHILDREN: bool>
-    NodeData<'n, 'p, 'c1, 'c2, N, C, R, CHILDREN>
+impl<
+        'n,
+        'p,
+        'c1,
+        'c2,
+        N: PartialEq + IntoComponents<Context = C>,
+        C: NodeContext,
+        R: MavericRoot,
+        const CHILDREN: bool,
+    > NodeData<'n, 'p, 'c1, 'c2, N, C, R, CHILDREN>
 {
-    pub fn insert_components(&mut self,commands: &mut NodeCommands,){
+    pub fn insert_components(&mut self, commands: &mut NodeCommands) {
         N::set(self.clone(), commands)
     }
 }
@@ -165,7 +173,7 @@ impl<'n, 'p, 'c1, 'c2, C: NodeContext, R: MavericRoot, const CHILDREN: bool>
 impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext, R: MavericRoot>
     NodeData<'n, 'p, 'c1, 'c2, N, C, R, true>
 {
-    pub fn no_children(self)-> NodeData<'n, 'p, 'c1, 'c2, N, C, R, false> {
+    pub fn no_children(self) -> NodeData<'n, 'p, 'c1, 'c2, N, C, R, false> {
         NodeData {
             args: self.args.clone(),
             previous: self.previous.clone(),
@@ -272,9 +280,7 @@ impl<'n, 'p, 'c1, 'c2, N: PartialEq, R: MavericRoot>
     }
 }
 
-impl<'n, 'p, 'c1, 'c2, C: NodeContext, R: MavericRoot>
-    NodeData<'n, 'p, 'c1, 'c2, (), C, R, true>
-{
+impl<'n, 'p, 'c1, 'c2, C: NodeContext, R: MavericRoot> NodeData<'n, 'p, 'c1, 'c2, (), C, R, true> {
     pub fn ordered_children_with_context(
         self,
         commands: &mut NodeCommands,

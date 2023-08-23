@@ -78,6 +78,10 @@ define_lens!(Vec3XLens, Vec3, f32, x);
 define_lens!(Vec3YLens, Vec3, f32, y);
 define_lens!(Vec3ZLens, Vec3, f32, z);
 
+pub type TransformRotationXLens = Prism2<TransformRotationLens, QuatXLens>;
+pub type TransformRotationYLens = Prism2<TransformRotationLens, QuatYLens>;
+pub type TransformRotationZLens = Prism2<TransformRotationLens, QuatZLens>;
+
 
 
 pub fn transform_speed(

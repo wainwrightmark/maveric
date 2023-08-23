@@ -94,7 +94,7 @@ fn get_factors(num: u32) -> Vec<u32> {
     }
 
     vec.sort();
-    info!("{num}: {vec:?}");
+    //info!("{num}: {vec:?}");
     vec
 }
 
@@ -116,26 +116,23 @@ impl MavericNode for NumberNode {
             .ignore_args()
             .components_advanced(commands, |_args, _previous, _context, event, commands| {
                 if event == SetEvent::Created {
-                    commands.insert(
-                        NodeBundle {
-                            style: Style {
-                                position_type: PositionType::Absolute,
-                                width: Val::Px(NODE_SIZE),
-                                height: Val::Px(NODE_SIZE),
-                                border: UiRect::all(Val::Px(NODE_BORDER)),
-                                left: Val::Percent(50.),
-                                top: Val::Percent(50.),
-                                align_items: AlignItems::Center,
-                                justify_items: JustifyItems::Center,
-                                align_content: AlignContent::Center,
-                                ..Default::default()
-                            },
-                            background_color: BackgroundColor(Color::WHITE),
-                            border_color: BorderColor(Color::GRAY),
+                    commands.insert(NodeBundle {
+                        style: Style {
+                            position_type: PositionType::Absolute,
+                            width: Val::Px(NODE_SIZE),
+                            height: Val::Px(NODE_SIZE),
+                            border: UiRect::all(Val::Px(NODE_BORDER)),
+                            left: Val::Percent(50.),
+                            top: Val::Percent(50.),
+                            align_items: AlignItems::Center,
+                            justify_items: JustifyItems::Center,
+                            align_content: AlignContent::Center,
                             ..Default::default()
                         },
-                        
-                    )
+                        background_color: BackgroundColor(Color::WHITE),
+                        border_color: BorderColor(Color::GRAY),
+                        ..Default::default()
+                    })
                 }
             });
 
@@ -165,9 +162,7 @@ pub struct GraphState {
     number: u32,
 }
 
-
-fn organize_graph(time: Res<Time>, mut nodes: Query<(&mut Style,  &GraphNode)>) {
-    
+fn organize_graph(time: Res<Time>, mut nodes: Query<(&mut Style, &GraphNode)>) {
     const ATTRACTION: f32 = 0.01;
     const REPULSION: f32 = 10.0;
     const MAX_REPULSION: f32 = 100.0;
@@ -189,26 +184,10 @@ fn organize_graph(time: Res<Time>, mut nodes: Query<(&mut Style,  &GraphNode)>) 
 
         update_position(left.0.as_mut(), force);
         update_position(right.0.as_mut(), -force);
-
-
-        //info!("node {l_node} node {r_node} - attraction: {attraction} repulsion: {repulsion} force: {force} l_force: {l_force} r_force: {r_force}", l_node = left.2.0, r_node = right.2.0, l_force= left.1.0, r_force= right.1.0);
     }
-
-    // for (mut style, mut velocity, _node) in nodes.iter_mut() {
-    //     let position = get_position(style.as_ref());
-        
-        
-
-    //     let new_position = position + (velocity.0);
-
-    //     //info!("{node} - force: {force} velocity: {velocity} position: {position} new position: {new_position}", node = _node.0, velocity = velocity.0);
-    //     style.left = Val::Percent(new_position.x + 50.0);
-    //     style.top = Val::Percent(new_position.y + 50.0);
-    //     velocity.0 = Vec2::ZERO;
-    // }
 }
 
-fn update_position(style: &mut Style, force: Vec2){
+fn update_position(style: &mut Style, force: Vec2) {
     let p = get_position(style) + force;
     style.left = Val::Percent(p.x);
     style.top = Val::Percent(p.y);
@@ -216,12 +195,12 @@ fn update_position(style: &mut Style, force: Vec2){
 
 fn get_position(style: &Style) -> Vec2 {
     let x = match style.left {
-        Val::Percent(percent) => percent ,
+        Val::Percent(percent) => percent,
         _ => 50.0,
     };
 
     let y = match style.top {
-        Val::Percent(percent) => percent ,
+        Val::Percent(percent) => percent,
         _ => 50.0,
     };
     Vec2 { x, y }

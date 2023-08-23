@@ -21,7 +21,7 @@ fn main() {
         .add_systems(Update, button_system);
 
     app.add_plugins(TransitionPlugin::<(
-        TransformRotationLens,
+        TransformRotationZLens,
         TransformScaleLens,
     )>::default());
 
@@ -88,10 +88,6 @@ pub struct CommandGrid;
 
 impl MavericNode for CommandGrid {
     type Context = AssetServer;
-
-
-
-
 
     fn set<R: MavericRoot>(data: NodeData<Self, Self::Context, R, true>, commands: &mut NodeCommands) {
         data.clone().ignore_args().ignore_context().insert(
@@ -178,10 +174,10 @@ impl MavericNode for DynamicGrid {
                 },));
 
                 let node = node
-                    .with_transition_in_out::<(TransformRotationLens, TransformScaleLens)>(
-                        (Quat::from_rotation_z(-consts::FRAC_PI_8), Vec3::ONE),
-                        (Quat::default(), Vec3::ONE),
-                        (Quat::from_rotation_z(consts::FRAC_PI_2), Vec3::ONE * 0.0),
+                    .with_transition_in_out::<(TransformRotationZLens, TransformScaleLens)>(
+                        (-consts::FRAC_PI_8, Vec3::ONE),
+                        (0.0, Vec3::ONE),
+                        (consts::FRAC_PI_2, Vec3::ZERO),
                         Duration::from_secs_f32(0.5),
                         Duration::from_secs_f32(2.0),
                     );
