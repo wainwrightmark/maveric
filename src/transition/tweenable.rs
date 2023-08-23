@@ -316,6 +316,7 @@ impl Tweenable for Color {
         let difference = differences.into_iter().max_by(f32::total_cmp).unwrap();
 
         let seconds = difference / speed.amount_per_second;
+        //info!("Color transitions {self:?} {rhs:?} {seconds}");
         Duration::try_from_secs_f32(seconds)
     }
 

@@ -67,6 +67,7 @@ pub(crate) fn update_recursive<'c, R: MavericRoot, N: MavericNode>(
     let mut ec = commands.entity(entity);
     let undeleted = if world.get::<ScheduledForDeletion>(entity).is_some() {
         ec.remove::<ScheduledForDeletion>();
+        //info!("Node Undeleted");
         true
     } else {
         false

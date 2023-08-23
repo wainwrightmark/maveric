@@ -22,6 +22,12 @@ impl<'w, 's, 'b, 'w1,'q : 'w1, R: MavericRoot> RootCommands<'w, 's, 'b, 'q, R> {
             .map(|(key, entity)| (key, entity) )
             .collect();
 
+        // info!("Children {:?}", {
+        //     let mut keys: Vec<_> = remaining_old_entities.keys().collect();
+        //     keys.sort();
+        //     keys
+        // });
+
         Self {
             commands,
             remaining_old_entities,

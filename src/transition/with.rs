@@ -185,13 +185,18 @@ where
         let base = self.node.on_deleted(commands);
 
         let Some(component) = commands
-                .get::<L::Object>() else {return base;};
+                .get::<L::Object>() else {                    
+                    return base;};
 
         let previous = &<L as GetValueLens>::try_get_value(component);
 
-        let Some(previous) = previous else {return  base;};
+        let Some(previous) = previous else {
+            
+            return  base;};
 
-        let Some(deletion_path) = self.deletion.get_step(previous) else{return  base;};
+        let Some(deletion_path) = self.deletion.get_step(previous) else{
+            
+            return  base;};
 
         let duration = deletion_path
             .remaining_duration(previous)
@@ -205,6 +210,8 @@ where
         commands.insert(Transition {
             step: deletion_path,
         });
+
+        
 
         DeletionPolicy::Linger(duration)
     }

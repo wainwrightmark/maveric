@@ -40,6 +40,11 @@ name = "number_buttons"
 path = "examples/number_buttons.rs"
 required-features = ["more_bevy"]
 
+[[example]]
+name = "graph"
+path = "examples/graph.rs"
+required-features = ["more_bevy"]
+
 
 [[bench]]
 name = "unordered_benchmark"
