@@ -2,8 +2,8 @@ use bevy::prelude::*;
 use maveric::transition::prelude::*;
 use maveric::{impl_maveric_root, prelude::*};
 use std::f32::consts;
-use std::time::Duration;
 use std::string::ToString;
+use std::time::Duration;
 use strum::Display;
 use strum::IntoStaticStr;
 
@@ -20,10 +20,7 @@ fn main() {
         .add_systems(Startup, setup)
         .add_systems(Update, button_system);
 
-    app.add_plugins(TransitionPlugin::<(
-        TransformRotationZLens,
-        TransformScaleLens,
-    )>::default());
+    app.register_transition::<(TransformRotationZLens, TransformScaleLens)>();
 
     app.run();
 }
@@ -89,7 +86,10 @@ pub struct CommandGrid;
 impl MavericNode for CommandGrid {
     type Context = AssetServer;
 
-    fn set<R: MavericRoot>(data: NodeData<Self, Self::Context, R, true>, commands: &mut NodeCommands) {
+    fn set<R: MavericRoot>(
+        data: NodeData<Self, Self::Context, R, true>,
+        commands: &mut NodeCommands,
+    ) {
         data.clone().ignore_args().ignore_context().insert(
             commands,
             NodeBundle {
@@ -105,28 +105,29 @@ impl MavericNode for CommandGrid {
             },
         );
 
-        data.ignore_args().unordered_children_with_context(commands, |context, commands| {
-            for command in [Command::AddNew, Command::Reset] {
-                let key: &'static str = command.into();
-                let node = ButtonNode {
-                    style: ButtonStyle,
-                    visibility: Visibility::Visible,
-                    border_color: BUTTON_BORDER,
-                    background_color: TEXT_BUTTON_BACKGROUND,
-                    marker: command,
-                }
-                .with_children((TextNode {
-                    text: command.to_string(),
-                    font: FONT_PATH,
-                    font_size: BUTTON_FONT_SIZE,
-                    color: BUTTON_TEXT_COLOR,
-                    alignment: TextAlignment::Center,
-                    linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
-                },));
+        data.ignore_args()
+            .unordered_children_with_context(commands, |context, commands| {
+                for command in [Command::AddNew, Command::Reset] {
+                    let key: &'static str = command.into();
+                    let node = ButtonNode {
+                        style: ButtonStyle,
+                        visibility: Visibility::Visible,
+                        border_color: BUTTON_BORDER,
+                        background_color: TEXT_BUTTON_BACKGROUND,
+                        marker: command,
+                    }
+                    .with_children((TextNode {
+                        text: command.to_string(),
+                        font: FONT_PATH,
+                        font_size: BUTTON_FONT_SIZE,
+                        color: BUTTON_TEXT_COLOR,
+                        alignment: TextAlignment::Center,
+                        linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
+                    },));
 
-                commands.add_child(key, node, &context);
-            }
-        })
+                    commands.add_child(key, node, &context);
+                }
+            })
     }
 }
 
@@ -155,36 +156,37 @@ impl MavericNode for DynamicGrid {
             },
         );
 
-        data.ignore_args().ordered_children_with_context(commands, |context, commands| {
-            for number in context.0.dynamic_buttons.iter().cloned() {
-                let node = ButtonNode {
-                    style: ButtonStyle,
-                    visibility: Visibility::Visible,
-                    border_color: BUTTON_BORDER,
-                    background_color: TEXT_BUTTON_BACKGROUND,
-                    marker: DynamicButtonComponent(number),
+        data.ignore_args()
+            .ordered_children_with_context(commands, |context, commands| {
+                for number in context.0.dynamic_buttons.iter().cloned() {
+                    let node = ButtonNode {
+                        style: ButtonStyle,
+                        visibility: Visibility::Visible,
+                        border_color: BUTTON_BORDER,
+                        background_color: TEXT_BUTTON_BACKGROUND,
+                        marker: DynamicButtonComponent(number),
+                    }
+                    .with_children((TextNode {
+                        text: number.to_string(),
+                        font: FONT_PATH,
+                        font_size: BUTTON_FONT_SIZE,
+                        color: BUTTON_TEXT_COLOR,
+                        alignment: TextAlignment::Center,
+                        linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
+                    },));
+
+                    let node = node
+                        .with_transition_in_out::<(TransformRotationZLens, TransformScaleLens)>(
+                            (-consts::FRAC_PI_8, Vec3::ONE),
+                            (0.0, Vec3::ONE),
+                            (consts::FRAC_PI_2, Vec3::ZERO),
+                            Duration::from_secs_f32(0.5),
+                            Duration::from_secs_f32(2.0),
+                        );
+
+                    commands.add_child(number, node, &context.1);
                 }
-                .with_children((TextNode {
-                    text: number.to_string(),
-                    font: FONT_PATH,
-                    font_size: BUTTON_FONT_SIZE,
-                    color: BUTTON_TEXT_COLOR,
-                    alignment: TextAlignment::Center,
-                    linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
-                },));
-
-                let node = node
-                    .with_transition_in_out::<(TransformRotationZLens, TransformScaleLens)>(
-                        (-consts::FRAC_PI_8, Vec3::ONE),
-                        (0.0, Vec3::ONE),
-                        (consts::FRAC_PI_2, Vec3::ZERO),
-                        Duration::from_secs_f32(0.5),
-                        Duration::from_secs_f32(2.0),
-                    );
-
-                commands.add_child(number, node, &context.1);
-            }
-        })
+            })
     }
 }
 
@@ -279,8 +281,6 @@ impl IntoComponents for ButtonStyle {
         )
     }
 }
-
-
 
 pub const TEXT_BUTTON_WIDTH: f32 = 360.;
 pub const TEXT_BUTTON_HEIGHT: f32 = 60.;

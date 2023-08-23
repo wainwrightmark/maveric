@@ -1,35 +1,20 @@
-use std::marker::PhantomData;
-
 use crate::transition::prelude::*;
 use bevy::prelude::*;
 
-pub struct TransitionPlugin<L: Lens + GetValueLens>
-where
-    L::Object: Component,
-    L::Value: Tweenable,
-{
-    phantom: PhantomData<L>,
+pub trait CanRegisterTransition {
+    fn register_transition<L: Lens + GetValueLens + SetValueLens>(&mut self) -> &mut Self
+    where
+        L::Object: Component,
+        L::Value: Tweenable;
 }
 
-impl<L: Lens + GetValueLens> Default for TransitionPlugin<L>
-where
-    L::Object: Component,
-    L::Value: Tweenable,
-{
-    fn default() -> Self {
-        Self {
-            phantom: Default::default(),
-        }
-    }
-}
-
-impl<L: Lens + GetValueLens + SetValueLens> Plugin for TransitionPlugin<L>
-where
-    L::Object: Component,
-    L::Value: Tweenable,
-{
-    fn build(&self, app: &mut App) {
-        app.add_systems(PreUpdate, step_transition::<L>);
+impl CanRegisterTransition for App {
+    fn register_transition<L: Lens + GetValueLens + SetValueLens>(&mut self) -> &mut Self
+    where
+        L::Object: Component,
+        L::Value: Tweenable,
+    {
+        self.add_systems(PreUpdate, step_transition::<L>)
     }
 }
 

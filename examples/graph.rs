@@ -9,7 +9,7 @@ fn main() {
 
     app.add_plugins(DefaultPlugins)
         .init_resource::<GraphState>()
-        .add_plugins(TransitionPlugin::<BackgroundColorLens>::default())
+        .register_transition::<BackgroundColorLens>()
         .add_systems(Startup, setup)
         .add_systems(Update, button_system)
         .add_systems(Update, organize_graph)

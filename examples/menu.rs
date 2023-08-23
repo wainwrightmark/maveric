@@ -14,10 +14,9 @@ fn main() {
         .add_systems(Startup, setup)
         .add_systems(Update, button_system);
 
-    app.add_plugins(TransitionPlugin::<StyleLeftLens>::default());
-    //app.add_plugins(TransitionPlugin::<StyleTopLens>::default());
-    app.add_plugins(TransitionPlugin::<TransformScaleLens>::default());
-    app.add_plugins(TransitionPlugin::<BackgroundColorLens>::default());
+    app.register_transition::<StyleLeftLens>();
+    app.register_transition::<TransformScaleLens>();
+    app.register_transition::<BackgroundColorLens>();
 
     app.register_maveric::<MenuRoot>();
     app.run();
