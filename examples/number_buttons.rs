@@ -115,15 +115,15 @@ impl MavericNode for CommandGrid {
                         border_color: BUTTON_BORDER,
                         background_color: TEXT_BUTTON_BACKGROUND,
                         marker: command,
-                    }
-                    .with_children((TextNode {
-                        text: command.to_string(),
-                        font: FONT_PATH,
-                        font_size: BUTTON_FONT_SIZE,
-                        color: BUTTON_TEXT_COLOR,
-                        alignment: TextAlignment::Center,
-                        linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
-                    },));
+                        children: (TextNode {
+                            text: command.to_string(),
+                            font: FONT_PATH,
+                            font_size: BUTTON_FONT_SIZE,
+                            color: BUTTON_TEXT_COLOR,
+                            alignment: TextAlignment::Center,
+                            linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
+                        },)
+                    };
 
                     commands.add_child(key, node, &context);
                 }
@@ -165,15 +165,15 @@ impl MavericNode for DynamicGrid {
                         border_color: BUTTON_BORDER,
                         background_color: TEXT_BUTTON_BACKGROUND,
                         marker: DynamicButtonComponent(number),
-                    }
-                    .with_children((TextNode {
-                        text: number.to_string(),
-                        font: FONT_PATH,
-                        font_size: BUTTON_FONT_SIZE,
-                        color: BUTTON_TEXT_COLOR,
-                        alignment: TextAlignment::Center,
-                        linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
-                    },));
+                        children: (TextNode {
+                            text: number.to_string(),
+                            font: FONT_PATH,
+                            font_size: BUTTON_FONT_SIZE,
+                            color: BUTTON_TEXT_COLOR,
+                            alignment: TextAlignment::Center,
+                            linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
+                        },)
+                    };
 
                     let node = node
                         .with_transition_in_out::<(TransformRotationZLens, TransformScaleLens)>(
@@ -257,28 +257,21 @@ fn setup(mut commands: Commands) {
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ButtonStyle;
-impl IntoComponents for ButtonStyle {
+impl IntoBundle for ButtonStyle {
     type B = Style;
-    type Context = NoContext;
 
-    fn set<R: MavericRoot>(
-        data: NodeData<Self, Self::Context, R, false>,
-        commands: &mut NodeCommands,
-    ) {
-        data.ignore_args().insert(
-            commands,
-            Style {
-                width: Val::Px(DYNAMIC_BOX_WIDTH),
-                height: Val::Px(DYNAMIC_BOX_HEIGHT),
-                border: UiRect::all(Val::Px(5.0)),
-                position_type: PositionType::Relative,
-                // horizontally center child text
-                justify_content: JustifyContent::Center,
-                // vertically center child text
-                align_items: AlignItems::Center,
-                ..Default::default()
-            },
-        )
+    fn into_bundle(self)-> Self::B {
+        Style {
+            width: Val::Px(DYNAMIC_BOX_WIDTH),
+            height: Val::Px(DYNAMIC_BOX_HEIGHT),
+            border: UiRect::all(Val::Px(5.0)),
+            position_type: PositionType::Relative,
+            // horizontally center child text
+            justify_content: JustifyContent::Center,
+            // vertically center child text
+            align_items: AlignItems::Center,
+            ..Default::default()
+        }
     }
 }
 

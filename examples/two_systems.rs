@@ -41,15 +41,15 @@ impl RootChildren for Root {
                 border_color: BUTTON_BORDER,
                 visibility: Visibility::Visible,
                 marker: Marker,
-            }
-            .with_children((TextNode {
-                text,
-                font_size: BUTTON_FONT_SIZE,
-                color: BUTTON_TEXT_COLOR,
-                font: FONT_PATH,
-                alignment: TextAlignment::Center,
-                linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
-            },)),
+                children: (TextNode {
+                    text,
+                    font_size: BUTTON_FONT_SIZE,
+                    color: BUTTON_TEXT_COLOR,
+                    font: FONT_PATH,
+                    alignment: TextAlignment::Center,
+                    linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
+                },),
+            },
             &context.1,
         )
     }
@@ -77,116 +77,94 @@ fn button_system(
     }
 }
 
-
-
-
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Root2;
 
 impl RootChildren for Root2 {
-type Context = NC2<CounterState, AssetServer>;
+    type Context = NC2<CounterState, AssetServer>;
 
-fn set_children(
-    context: &<Self::Context as NodeContext>::Wrapper<'_>,
-    commands: &mut impl ChildCommands,
-) {
-    let path = match context.0.number % 4 {
-        0 => r#"images\MedalsBlack.png"#,
-        1 => r#"images\MedalsBronze.png"#,
-        2 => r#"images\MedalsSilver.png"#,
-        _ => r#"images\MedalsGold.png"#,
-    };
+    fn set_children(
+        context: &<Self::Context as NodeContext>::Wrapper<'_>,
+        commands: &mut impl ChildCommands,
+    ) {
+        let path = match context.0.number % 4 {
+            0 => r#"images\MedalsBlack.png"#,
+            1 => r#"images\MedalsBronze.png"#,
+            2 => r#"images\MedalsSilver.png"#,
+            _ => r#"images\MedalsGold.png"#,
+        };
 
-    commands.add_child(
-        0,
-        ButtonNode {
-            style: ImageStyle,
-            background_color: TEXT_BUTTON_BACKGROUND,
-            border_color: BUTTON_BORDER,
-            visibility: Visibility::Visible,
-            marker: Marker,
-        }
-        .with_children((ImageNode {
-            style: ImageStyle,
-            path,
-            background_color: Color::WHITE
-        },)),
-        &context.1,
-    );
-}
+        commands.add_child(
+            0,
+            ButtonNode {
+                style: ImageStyle,
+                background_color: TEXT_BUTTON_BACKGROUND,
+                border_color: BUTTON_BORDER,
+                visibility: Visibility::Visible,
+                marker: Marker,
+                children: (ImageNode {
+                    style: ImageStyle,
+                    path,
+                    background_color: Color::WHITE,
+                },),
+            },
+            &context.1,
+        );
+    }
 }
 
 impl_maveric_root!(Root2);
 
-
-
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ImageStyle;
-impl IntoComponents for ImageStyle {
+impl IntoBundle for ImageStyle {
     type B = Style;
-    type Context = NoContext;
 
-    fn set<R: MavericRoot>(
-        data: NodeData<Self, Self::Context, R, false>,
-        commands: &mut NodeCommands,
-    ) {
-        data.ignore_args().insert(
-            commands,
-            Style {
-                width: Val::Px(BUTTON_HEIGHT * 2.0),
-                height: Val::Px(BUTTON_HEIGHT),
-                margin: UiRect {
-                    left: Val::Auto,
-                    right: Val::Auto,
-                    top: Val::Auto,
-                    bottom: Val::Auto,
-                },
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                flex_grow: 0.0,
-                flex_shrink: 0.0,
-                border: UiRect::all(UI_BORDER_WIDTH),
-                ..default()
+    fn into_bundle(self) -> Self::B {
+        Style {
+            width: Val::Px(BUTTON_HEIGHT * 2.0),
+            height: Val::Px(BUTTON_HEIGHT),
+            margin: UiRect {
+                left: Val::Auto,
+                right: Val::Auto,
+                top: Val::Auto,
+                bottom: Val::Auto,
             },
-        )
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            flex_grow: 0.0,
+            flex_shrink: 0.0,
+            border: UiRect::all(UI_BORDER_WIDTH),
+            ..default()
+        }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TextButtonStyle;
-impl IntoComponents for TextButtonStyle {
+impl IntoBundle for TextButtonStyle {
     type B = Style;
-    type Context = NoContext;
 
-    fn set<R: MavericRoot>(
-        data: NodeData<Self, Self::Context, R, false>,
-        commands: &mut NodeCommands,
-    ) {
-        data.ignore_args().insert(
-            commands,
-            Style {
-                width: Val::Px(TEXT_BUTTON_WIDTH),
-                height: Val::Px(TEXT_BUTTON_HEIGHT),
-                margin: UiRect {
-                    left: Val::Auto,
-                    right: Val::Auto,
-                    top: Val::Px(5.0),
-                    bottom: Val::Px(5.0),
-                },
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                flex_grow: 0.0,
-                flex_shrink: 0.0,
-                border: UiRect::all(UI_BORDER_WIDTH),
-
-                ..Default::default()
+    fn into_bundle(self) -> Self::B {
+        Style {
+            width: Val::Px(TEXT_BUTTON_WIDTH),
+            height: Val::Px(TEXT_BUTTON_HEIGHT),
+            margin: UiRect {
+                left: Val::Auto,
+                right: Val::Auto,
+                top: Val::Px(5.0),
+                bottom: Val::Px(5.0),
             },
-        )
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            flex_grow: 0.0,
+            flex_shrink: 0.0,
+            border: UiRect::all(UI_BORDER_WIDTH),
+
+            ..Default::default()
+        }
     }
 }
-
-
-
 
 pub const TEXT_BUTTON_WIDTH: f32 = 360.;
 pub const TEXT_BUTTON_HEIGHT: f32 = 60.;

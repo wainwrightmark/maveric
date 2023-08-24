@@ -2,6 +2,8 @@ use std::marker::PhantomData;
 
 use crate::prelude::*;
 
+//TODO remove all this
+
 #[derive(Debug)]
 pub struct WithIgnoredContext<N: MavericNode<Context = NoContext>, C: NodeContext + 'static> {
     node: N,

@@ -122,19 +122,13 @@ impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext, R: MavericRoot, const CHILD
     }
 }
 
-impl<
-        'n,
-        'p,
-        'c1,
-        'c2,
-        N: PartialEq + IntoComponents<Context = C>,
-        C: NodeContext,
-        R: MavericRoot,
-        const CHILDREN: bool,
-    > NodeData<'n, 'p, 'c1, 'c2, N, C, R, CHILDREN>
+impl<'n, 'p, 'c1, 'c2, N: PartialEq + IntoBundle, R: MavericRoot, const CHILDREN: bool>
+    NodeData<'n, 'p, 'c1, 'c2, N, NoContext, R, CHILDREN>
 {
-    pub fn insert_components(&mut self, commands: &mut NodeCommands) {
-        N::set(self.clone(), commands)
+    pub fn insert_bundle(&mut self, commands: &mut NodeCommands) {
+        if self.is_hot() {
+            commands.ec.insert(self.args.clone().into_bundle());
+        }
     }
 }
 
@@ -167,6 +161,16 @@ impl<'n, 'p, 'c1, 'c2, C: NodeContext, R: MavericRoot, const CHILDREN: bool>
         f: impl FnOnce(&'c1 C::Wrapper<'c2>) -> B,
     ) {
         self.insert_with_args_and_context(commands, |_, c| f(c))
+    }
+}
+
+impl<'n, 'p, 'c1, 'c2, N: ChildTuple<Context = C>, C: NodeContext, R: MavericRoot>
+    NodeData<'n, 'p, 'c1, 'c2, N, C, R, true>
+{
+    pub fn add_children(self, commands: &mut NodeCommands) {
+        self.unordered_children_with_args_and_context(commands, |args, context, commands| {
+            args.add_children(context, commands)
+        })
     }
 }
 

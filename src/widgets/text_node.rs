@@ -13,12 +13,11 @@ pub struct TextNode<T: Into<String> + PartialEq + Clone + Send + Sync + 'static>
     pub linebreak_behavior: bevy::text::BreakLineOn,
 }
 
-impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> IntoComponents for TextNode<T> {
-    type B = TextBundle;
+impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode for TextNode<T> {
     type Context = AssetServer;
 
     fn set<R: MavericRoot>(
-        mut data: NodeData<Self, Self::Context, R, false>,
+        mut data: NodeData<Self, Self::Context, R, true>,
         commands: &mut NodeCommands,
     ) {
         data.clone()

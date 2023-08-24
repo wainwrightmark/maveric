@@ -40,15 +40,15 @@ impl RootChildren for Root {
                 border_color: BUTTON_BORDER,
                 visibility: Visibility::Visible,
                 marker: Marker,
-            }
-            .with_children((TextNode {
-                text,
-                font_size: BUTTON_FONT_SIZE,
-                color: BUTTON_TEXT_COLOR,
-                font: FONT_PATH,
-                alignment: TextAlignment::Center,
-                linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
-            },)),
+                children: (TextNode {
+                    text,
+                    font_size: BUTTON_FONT_SIZE,
+                    color: BUTTON_TEXT_COLOR,
+                    font: FONT_PATH,
+                    alignment: TextAlignment::Center,
+                    linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
+                },)
+            },
             &context.1,
         )
     }
@@ -78,35 +78,30 @@ fn button_system(
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ButtonStyle;
-impl IntoComponents for ButtonStyle {
+impl IntoBundle for ButtonStyle {
     type B = Style;
-    type Context = NoContext;
 
-    fn set<R: MavericRoot>(
-        data: NodeData<Self, Self::Context, R, false>,
-        commands: &mut NodeCommands,
-    ) {
-        data.ignore_args().insert(
-            commands,
-            Style {
-                width: Val::Px(TEXT_BUTTON_WIDTH),
-                height: Val::Px(TEXT_BUTTON_HEIGHT),
-                margin: UiRect {
-                    left: Val::Auto,
-                    right: Val::Auto,
-                    top: Val::Px(5.0),
-                    bottom: Val::Px(5.0),
-                },
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                flex_grow: 0.0,
-                flex_shrink: 0.0,
-                border: UiRect::all(UI_BORDER_WIDTH),
-
-                ..Default::default()
+    fn into_bundle(self)-> Self::B {
+        Style {
+            width: Val::Px(TEXT_BUTTON_WIDTH),
+            height: Val::Px(TEXT_BUTTON_HEIGHT),
+            margin: UiRect {
+                left: Val::Auto,
+                right: Val::Auto,
+                top: Val::Px(5.0),
+                bottom: Val::Px(5.0),
             },
-        )
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            flex_grow: 0.0,
+            flex_shrink: 0.0,
+            border: UiRect::all(UI_BORDER_WIDTH),
+
+            ..Default::default()
+        }
     }
+
+
 }
 
 pub const TEXT_BUTTON_WIDTH: f32 = 360.;

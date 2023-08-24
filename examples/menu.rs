@@ -2,8 +2,8 @@ use bevy::prelude::*;
 use maveric::transition::prelude::*;
 use maveric::{impl_maveric_root, prelude::*};
 
-use std::time::Duration;
 use std::string::ToString;
+use std::time::Duration;
 use strum::{Display, EnumIs};
 
 fn main() {
@@ -106,120 +106,86 @@ impl RootChildren for MenuRoot {
     }
 }
 
-fn menu_button_node() -> NodeWithChildren<
-    ButtonNode<ButtonAction, OpenMenuButtonStyle>,
-    (TextNode<String>,),
-    NoBundleContext,
-> {
-    let button: NodeWithChildren<
-        ButtonNode<ButtonAction, OpenMenuButtonStyle>,
-        (TextNode<String>,),
-        NoBundleContext,
-    > = ButtonNode {
+fn menu_button_node() -> impl MavericNode<Context = AssetServer> {
+    ButtonNode {
         style: OpenMenuButtonStyle,
         visibility: Visibility::Visible,
         border_color: BUTTON_BORDER,
         background_color: ICON_BUTTON_BACKGROUND,
         marker: ButtonAction::OpenMenu,
+        children: (TextNode {
+            text: ButtonAction::OpenMenu.icon(),
+            font: FONT_PATH,
+            font_size: ICON_FONT_SIZE,
+            color: BUTTON_TEXT_COLOR,
+            alignment: TextAlignment::Center,
+            linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
+        },),
     }
-    .with_children((TextNode {
-        text: ButtonAction::OpenMenu.icon(),
-        font: FONT_PATH,
-        font_size: ICON_FONT_SIZE,
-        color: BUTTON_TEXT_COLOR,
-        alignment: TextAlignment::Center,
-        linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
-    },));
-    button
 }
 
-fn icon_button_node(
-    button_action: ButtonAction,
-) -> NodeWithChildren<ButtonNode<ButtonAction, IconNodeStyle>, (TextNode<String>,), NoBundleContext>
-{
-    let button: NodeWithChildren<
-        ButtonNode<ButtonAction, IconNodeStyle>,
-        (TextNode<String>,),
-        NoBundleContext,
-    > = ButtonNode {
+fn icon_button_node(button_action: ButtonAction) -> impl MavericNode<Context = AssetServer> {
+    ButtonNode {
         style: IconNodeStyle,
         visibility: Visibility::Visible,
         border_color: BUTTON_BORDER,
         background_color: ICON_BUTTON_BACKGROUND,
         marker: button_action,
+        children: (TextNode {
+            text: button_action.icon(),
+            font: FONT_PATH,
+            font_size: ICON_FONT_SIZE,
+            color: BUTTON_TEXT_COLOR,
+            alignment: TextAlignment::Center,
+            linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
+        },),
     }
-    .with_children((TextNode {
-        text: button_action.icon(),
-        font: FONT_PATH,
-        font_size: ICON_FONT_SIZE,
-        color: BUTTON_TEXT_COLOR,
-        alignment: TextAlignment::Center,
-        linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
-    },));
-    button
 }
 
-fn text_button_node(
-    button_action: ButtonAction,
-) -> NodeWithChildren<ButtonNode<ButtonAction, TextButtonStyle>, (TextNode<String>,), NoBundleContext>
-{
-    let button: NodeWithChildren<
-        ButtonNode<ButtonAction, TextButtonStyle>,
-        (TextNode<String>,),
-        NoBundleContext,
-    > = ButtonNode {
+fn text_button_node(button_action: ButtonAction) -> impl MavericNode<Context = AssetServer> {
+    ButtonNode {
         style: TextButtonStyle,
         visibility: Visibility::Visible,
         border_color: BUTTON_BORDER,
         background_color: TEXT_BUTTON_BACKGROUND,
         marker: button_action,
-    }
-    .with_children((TextNode {
-        text: button_action.text(),
-        font: FONT_PATH,
-        font_size: BUTTON_FONT_SIZE,
-        color: BUTTON_TEXT_COLOR,
-        alignment: TextAlignment::Center,
-        linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
-    },));
-    button
-}
-
-fn text_and_image_button_node(
-    button_action: ButtonAction,
-    image_path: &'static str,
-) -> NodeWithChildren<
-    ButtonNode<ButtonAction, TextButtonStyle>,
-    (TextNode<String>, ImageNode<SmallImageNodeStyle>),
-    NoBundleContext,
-> {
-    let button: NodeWithChildren<
-        ButtonNode<ButtonAction, TextButtonStyle>,
-        (TextNode<String>, ImageNode<SmallImageNodeStyle>),
-        NoBundleContext,
-    > = ButtonNode {
-        style: TextButtonStyle,
-        visibility: Visibility::Visible,
-        border_color: BUTTON_BORDER,
-        background_color: TEXT_BUTTON_BACKGROUND,
-        marker: button_action,
-    }
-    .with_children((
-        TextNode {
+        children: (TextNode {
             text: button_action.text(),
             font: FONT_PATH,
             font_size: BUTTON_FONT_SIZE,
             color: BUTTON_TEXT_COLOR,
             alignment: TextAlignment::Center,
             linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
-        },
-        ImageNode {
-            path: image_path,
-            background_color: Color::WHITE,
-            style: SmallImageNodeStyle,
-        },
-    ));
-    button
+        },),
+    }
+}
+
+fn text_and_image_button_node(
+    button_action: ButtonAction,
+    image_path: &'static str,
+) -> impl MavericNode<Context = AssetServer> {
+    ButtonNode {
+        style: TextButtonStyle,
+        visibility: Visibility::Visible,
+        border_color: BUTTON_BORDER,
+        background_color: TEXT_BUTTON_BACKGROUND,
+        marker: button_action,
+        children: (
+            TextNode {
+                text: button_action.text(),
+                font: FONT_PATH,
+                font_size: BUTTON_FONT_SIZE,
+                color: BUTTON_TEXT_COLOR,
+                alignment: TextAlignment::Center,
+                linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
+            },
+            ImageNode {
+                path: image_path,
+                background_color: Color::WHITE,
+                style: SmallImageNodeStyle,
+            },
+        ),
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -235,7 +201,7 @@ impl MavericNode for MainOrLevelMenu {
         data: NodeData<Self, Self::Context, R, true>,
         commands: &mut NodeCommands,
     ) {
-        data.clone() .ignore_args().ignore_context().insert(
+        data.clone().ignore_args().ignore_context().insert(
             commands,
             NodeBundle {
                 style: Style {
@@ -297,8 +263,6 @@ impl MavericNode for MainOrLevelMenu {
                 }
             },
         );
-
-
     }
 }
 
@@ -364,8 +328,6 @@ impl MavericNode for LevelMenuArrows {
                 commands.add_child("right", icon_button_node(ButtonAction::None), context)
             }
         });
-
-
     }
 }
 
@@ -395,155 +357,120 @@ pub const TEXT_BUTTON_BACKGROUND: Color = Color::WHITE;
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct BigImageNodeStyle;
 
-impl IntoComponents for BigImageNodeStyle {
+impl IntoBundle for BigImageNodeStyle {
     type B = Style;
-    type Context = NoContext;
 
-    fn set<R: MavericRoot>(
-        data: NodeData<Self, Self::Context, R, false>,
-        commands: &mut NodeCommands,
-    ) {
-        data.ignore_args().insert(
-            commands,
-            Style {
-                width: Val::Px(TEXT_BUTTON_HEIGHT * 2.0),
-                height: Val::Px(TEXT_BUTTON_HEIGHT),
-                margin: UiRect {
-                    left: Val::Auto,
-                    right: Val::Auto,
-                    top: Val::Px(5.0),
-                    bottom: Val::Px(5.0),
-                },
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                flex_grow: 0.0,
-                flex_shrink: 0.0,
-                border: UiRect::all(UI_BORDER_WIDTH),
-                ..default()
+    fn into_bundle(self) -> Self::B {
+        Style {
+            width: Val::Px(TEXT_BUTTON_HEIGHT * 2.0),
+            height: Val::Px(TEXT_BUTTON_HEIGHT),
+            margin: UiRect {
+                left: Val::Auto,
+                right: Val::Auto,
+                top: Val::Px(5.0),
+                bottom: Val::Px(5.0),
             },
-        )
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            flex_grow: 0.0,
+            flex_shrink: 0.0,
+            border: UiRect::all(UI_BORDER_WIDTH),
+            ..default()
+        }
     }
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct SmallImageNodeStyle;
 
-impl IntoComponents for SmallImageNodeStyle {
+impl IntoBundle for SmallImageNodeStyle {
     type B = Style;
-    type Context = NoContext;
 
-    fn set<R: MavericRoot>(
-        data: NodeData<Self, Self::Context, R, false>,
-        commands: &mut NodeCommands,
-    ) {
-        data.ignore_args().insert(
-            commands,
-            Style {
-                width: Val::Px((TEXT_BUTTON_HEIGHT - 10.0) * 2.0),
-                height: Val::Px(TEXT_BUTTON_HEIGHT - 10.0),
-                margin: UiRect {
-                    left: Val::Auto,
-                    right: Val::Px(0.0),
-                    top: Val::Px(5.0),
-                    bottom: Val::Px(5.0),
-                },
-                align_self: AlignSelf::Center,
-                justify_self: JustifySelf::End,
-                ..default()
+    fn into_bundle(self) -> Self::B {
+        Style {
+            width: Val::Px((TEXT_BUTTON_HEIGHT - 10.0) * 2.0),
+            height: Val::Px(TEXT_BUTTON_HEIGHT - 10.0),
+            margin: UiRect {
+                left: Val::Auto,
+                right: Val::Px(0.0),
+                top: Val::Px(5.0),
+                bottom: Val::Px(5.0),
             },
-        )
+            align_self: AlignSelf::Center,
+            justify_self: JustifySelf::End,
+            ..default()
+        }
     }
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct IconNodeStyle;
 
-impl IntoComponents for IconNodeStyle {
+impl IntoBundle for IconNodeStyle {
     type B = Style;
-    type Context = NoContext;
 
-    fn set<R: MavericRoot>(
-        data: NodeData<Self, Self::Context, R, false>,
-        commands: &mut NodeCommands,
-    ) {
-        data.ignore_args().insert(
-            commands,
-            Style {
-                width: Val::Px(ICON_BUTTON_WIDTH),
-                height: Val::Px(ICON_BUTTON_HEIGHT),
-                margin: UiRect::all(Val::Auto),
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                flex_grow: 0.0,
-                flex_shrink: 0.0,
+    fn into_bundle(self) -> Self::B {
+        Style {
+            width: Val::Px(ICON_BUTTON_WIDTH),
+            height: Val::Px(ICON_BUTTON_HEIGHT),
+            margin: UiRect::all(Val::Auto),
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            flex_grow: 0.0,
+            flex_shrink: 0.0,
 
-                ..Default::default()
-            },
-        )
+            ..Default::default()
+        }
     }
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct OpenMenuButtonStyle;
 
-impl IntoComponents for OpenMenuButtonStyle {
+impl IntoBundle for OpenMenuButtonStyle {
     type B = Style;
-    type Context = NoContext;
 
-    fn set<R: MavericRoot>(
-        data: NodeData<Self, Self::Context, R, false>,
-        commands: &mut NodeCommands,
-    ) {
-        data.ignore_args().insert(
-            commands,
-            Style {
-                width: Val::Px(ICON_BUTTON_WIDTH),
-                height: Val::Px(ICON_BUTTON_HEIGHT),
-                margin: UiRect::DEFAULT,
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                flex_grow: 0.0,
-                flex_shrink: 0.0,
-                left: Val::Px(40.0),
-                top: Val::Px(40.0),
+    fn into_bundle(self) -> Self::B {
+        Style {
+            width: Val::Px(ICON_BUTTON_WIDTH),
+            height: Val::Px(ICON_BUTTON_HEIGHT),
+            margin: UiRect::DEFAULT,
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            flex_grow: 0.0,
+            flex_shrink: 0.0,
+            left: Val::Px(40.0),
+            top: Val::Px(40.0),
 
-                ..Default::default()
-            },
-        )
+            ..Default::default()
+        }
     }
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct TextButtonStyle;
 
-impl IntoComponents for TextButtonStyle {
+impl IntoBundle for TextButtonStyle {
     type B = Style;
-    type Context = NoContext;
 
-    fn set<R: MavericRoot>(
-        data: NodeData<Self, Self::Context, R, false>,
-        commands: &mut NodeCommands,
-    ) {
-        data.ignore_args().insert(
-            commands,
-            Style {
-                width: Val::Px(TEXT_BUTTON_WIDTH),
-                height: Val::Px(TEXT_BUTTON_HEIGHT),
-                margin: UiRect {
-                    left: Val::Auto,
-                    right: Val::Auto,
-                    top: Val::Px(5.0),
-                    bottom: Val::Px(5.0),
-                },
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                flex_grow: 0.0,
-                flex_shrink: 0.0,
-                border: UiRect::all(UI_BORDER_WIDTH),
-
-                ..Default::default()
+    fn into_bundle(self) -> Self::B {
+        Style {
+            width: Val::Px(TEXT_BUTTON_WIDTH),
+            height: Val::Px(TEXT_BUTTON_HEIGHT),
+            margin: UiRect {
+                left: Val::Auto,
+                right: Val::Auto,
+                top: Val::Px(5.0),
+                bottom: Val::Px(5.0),
             },
-        )
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            flex_grow: 0.0,
+            flex_shrink: 0.0,
+            border: UiRect::all(UI_BORDER_WIDTH),
+
+            ..Default::default()
+        }
     }
 }
 
