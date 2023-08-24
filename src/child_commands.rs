@@ -259,7 +259,7 @@ mod tests {
     #[test]
     pub fn test_ordering() {
         let mut app = App::new();
-        app.add_plugins(TimePlugin::default());
+        app.add_plugins(TimePlugin);
 
         app.init_resource::<TreeState>()
             .init_resource::<LingerState>()
@@ -321,7 +321,7 @@ mod tests {
         expected: Vec<(u32, bool)>,
     ) {
         let mut app = App::new();
-        app.add_plugins(TimePlugin::default());
+        app.add_plugins(TimePlugin);
 
         app.insert_resource::<TreeState>(initial_tree_state)
             .insert_resource::<LingerState>(linger_state)
@@ -375,7 +375,7 @@ mod tests {
             })
             .collect();
 
-        return leaves;
+        leaves
     }
 
     #[derive(Debug, Clone, PartialEq, Resource, Default)]
@@ -392,8 +392,8 @@ mod tests {
     impl RootChildren for Root {
         type Context = NC2<TreeState, LingerState>;
 
-        fn set_children<'r>(
-            context: &<Self::Context as NodeContext>::Wrapper<'r>,
+        fn set_children(
+            context: &<Self::Context as NodeContext>::Wrapper<'_>,
             commands: &mut impl ChildCommands,
         ) {
             commands.add_child("branch", Branch, context);

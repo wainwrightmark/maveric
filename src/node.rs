@@ -7,7 +7,7 @@ pub trait MavericNode: Send + Sync + Sized + PartialEq + 'static {
     fn set_components<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, false>);
     fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>);
 
-    fn on_deleted<'r>(&self, _commands: &mut ComponentCommands) -> DeletionPolicy {
+    fn on_deleted(&self, _commands: &mut ComponentCommands) -> DeletionPolicy {
         DeletionPolicy::DeleteImmediately
     }
 }

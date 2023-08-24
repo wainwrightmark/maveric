@@ -50,7 +50,7 @@ fn step_transition<L: Lens + GetValueLens + SetValueLens>(
         //     lens = std::any::type_name::<L>()
         // );
 
-        let from = L::try_get_value(&component);
+        let from = L::try_get_value(component);
 
         let Some(from) = from else {return;};
 

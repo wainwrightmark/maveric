@@ -88,7 +88,7 @@ fn morph_leaves_benchmark(c: &mut Criterion) {
 pub fn run_state_transition(s1: TreeState, s2: TreeState) {
     let mut app = App::new();
 
-    app.add_plugins(TimePlugin::default());
+    app.add_plugins(TimePlugin);
 
     app.insert_resource(s1).register_maveric::<Root>();
     app.update();

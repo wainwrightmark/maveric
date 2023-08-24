@@ -25,7 +25,7 @@ criterion_main!(benches);
 pub fn run_state_transition(s1: TreeState, s2: TreeState, linger_state: LingerState) {
     let mut app = App::new();
 
-    app.add_plugins(TimePlugin::default());
+    app.add_plugins(TimePlugin);
 
     app.insert_resource(s1)
         .insert_resource(linger_state)

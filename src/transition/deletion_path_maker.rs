@@ -41,7 +41,11 @@ where
     fn get_step(&self, previous: &<L as Lens>::Value) -> Option<Arc<TransitionStep<L>>> {
         let out_speed = calculate_speed(previous, &self.destination, self.duration);
 
-        Some(TransitionStep::new_arc(self.destination.clone(), Some(out_speed), None).into())
+        Some(TransitionStep::new_arc(
+            self.destination.clone(),
+            Some(out_speed),
+            None,
+        ))
     }
 }
 

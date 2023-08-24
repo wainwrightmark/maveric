@@ -11,7 +11,7 @@ pub(crate) struct RootCommands<'w, 's, 'b, 'q, R: MavericRoot> {
 }
 
 impl<'w, 's, 'b, 'w1, 'q: 'w1, R: MavericRoot> RootCommands<'w, 's, 'b, 'q, R> {
-    pub(crate) fn new<'w2, 's2>(
+    pub(crate) fn new(
         commands: &'b mut Commands<'w, 's>,
         world: &'q World,
         query: Query<(Entity, &MavericChildComponent<R>), Without<Parent>>,
@@ -32,7 +32,7 @@ impl<'w, 's, 'b, 'w1, 'q: 'w1, R: MavericRoot> RootCommands<'w, 's, 'b, 'q, R> {
             commands,
             remaining_old_entities,
             world,
-            phantom: PhantomData::default(),
+            phantom: PhantomData,
         }
     }
 
@@ -43,7 +43,7 @@ impl<'w, 's, 'b, 'w1, 'q: 'w1, R: MavericRoot> RootCommands<'w, 's, 'b, 'q, R> {
     }
 }
 
-impl<'w, 's, 'b, 'w1, 'q, R: MavericRoot> ChildCommands for RootCommands<'w, 's, 'b, 'q, R> {
+impl<'w, 's, 'b, 'q, R: MavericRoot> ChildCommands for RootCommands<'w, 's, 'b, 'q, R> {
     fn add_child<NChild: MavericNode>(
         &mut self,
         key: impl Into<ChildKey>,

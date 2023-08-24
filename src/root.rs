@@ -12,8 +12,8 @@ pub trait MavericRoot: RootChildren {
 pub trait RootChildren: Send + Sync + 'static {
     type Context: NodeContext;
 
-    fn set_children<'r>(
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+    fn set_children(
+        context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     );
 }

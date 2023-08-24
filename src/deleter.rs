@@ -2,7 +2,7 @@ use crate::prelude::*;
 use std::marker::PhantomData;
 
 pub trait Deleter: Send + Sync + 'static {
-    fn on_deleted<'r>(
+    fn on_deleted(
         &self,
         entity: Entity,
         commands: &mut ComponentCommands,
@@ -24,7 +24,7 @@ impl<N: MavericNode> NodeDeleter<N> {
 }
 
 impl<N: MavericNode> Deleter for NodeDeleter<N> {
-    fn on_deleted<'r>(
+    fn on_deleted(
         &self,
         entity: Entity,
         commands: &mut ComponentCommands,

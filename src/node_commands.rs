@@ -84,7 +84,7 @@ impl<
             event: self.event,
             world: self.world,
             phantom: self.phantom,
-            ec: &mut self.ec,
+            ec: self.ec,
         };
         f(clone)
     }
@@ -137,7 +137,7 @@ impl<
     /// Returns true if this is a creation or undeletion, or if the context or args have changed
     fn is_hot(&self) -> bool {
         match self.event {
-            SetEvent::Created | SetEvent::Undeleted => return true,
+            SetEvent::Created | SetEvent::Undeleted => true,
             SetEvent::Updated => {
                 C::has_changed(self.context)
                     || self.previous.map(|p| !p.eq(self.args)).unwrap_or(true)
@@ -237,11 +237,11 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext, R:
         self,
     ) -> NodeCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, C, R, false> {
         NodeCommands {
-            args: self.args.clone(),
-            previous: self.previous.clone(),
-            context: self.context.clone(),
-            event: self.event.clone(),
-            phantom: Default::default(),
+            args: self.args,
+            previous: self.previous,
+            context: self.context,
+            event: self.event,
+            phantom: PhantomData,
             world: self.world,
             ec: self.ec,
         }

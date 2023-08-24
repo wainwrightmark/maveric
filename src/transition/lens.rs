@@ -29,9 +29,8 @@ pub trait SetValueLens: Lens {
 
 impl<L: GetMutLens> SetValueLens for L {
     fn try_set(object: &mut <Self as Lens>::Object, value: <Self as Lens>::Value) {
-        match L::try_get_mut(object) {
-            Some(o) => *o = value,
-            None => {}
+        if let Some(o) = L::try_get_mut(object) {
+            *o = value
         }
     }
 }
@@ -63,7 +62,7 @@ impl<T: std::fmt::Debug + Send + Sync + 'static> GetMutLens for IdentityLens<T> 
 impl<T: std::fmt::Debug + Send + Sync + 'static> Clone for IdentityLens<T> {
     fn clone(&self) -> Self {
         Self {
-            phantom: self.phantom.clone(),
+            phantom: self.phantom,
         }
     }
 }

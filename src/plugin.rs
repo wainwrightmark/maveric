@@ -17,7 +17,7 @@ pub trait CanRegisterMaveric {
 impl CanRegisterMaveric for App {
     fn register_maveric<R: MavericRoot>(&mut self) -> &mut Self {
         if !self.is_plugin_added::<ScheduleForRemovalPlugin>() {
-            self.add_plugins(ScheduleForRemovalPlugin::default());
+            self.add_plugins(ScheduleForRemovalPlugin);
         }
 
         self.add_systems(First, sync_state::<R>);
@@ -39,9 +39,9 @@ fn handle_scheduled_for_removal(
     }
 }
 
-fn sync_state<'a, R: MavericRoot>(
+fn sync_state<R: MavericRoot>(
     mut commands: Commands,
-    param: StaticSystemParam<R::ContextParam<'a>>,
+    param: StaticSystemParam<R::ContextParam<'_>>,
     root_query: Query<(Entity, &MavericChildComponent<R>), Without<Parent>>,
     world: &World,
 ) {
@@ -66,7 +66,7 @@ mod tests {
     pub fn test_plugin() {
         let mut app = App::new();
 
-        app.add_plugins(TimePlugin::default());
+        app.add_plugins(TimePlugin);
 
         app.init_resource::<TreeState>().register_maveric::<Root>();
         app.update();

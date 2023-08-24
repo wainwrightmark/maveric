@@ -31,10 +31,8 @@ impl<'c, 'w, 's, 'a, 'world> ComponentCommands<'c, 'w, 's, 'a, 'world> {
                 self.remove::<Transition<L>>();
                 return current_value;
             }
-        } else {
-            if current_value.approx_eq(&destination) {
-                return current_value;
-            }
+        } else if current_value.approx_eq(&destination) {
+            return current_value;
         }
 
         self.insert(Transition::<L> {

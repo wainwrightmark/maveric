@@ -5,7 +5,7 @@ use bevy::prelude::*;
 pub trait NodeContext {
     type Wrapper<'c>;
 
-    fn has_changed<'c>(wrapper: &Self::Wrapper<'c>) -> bool;
+    fn has_changed(wrapper: &Self::Wrapper<'_>) -> bool;
 }
 
 impl<R: Resource> NodeContext for R {
@@ -23,7 +23,7 @@ macro_rules! impl_nc {
         impl<$($T : NodeContext,)*> NodeContext for $NC<$($T,)*> {
             type Wrapper<'c> = ($($T::Wrapper<'c>,)*);
 
-            fn has_changed<'c>(wrapper: &Self::Wrapper<'c>) -> bool {
+            fn has_changed(wrapper: &Self::Wrapper<'_>) -> bool {
                 let ($($t,)*) = wrapper;
                 $($T::has_changed($t) ||)* false
             }
@@ -43,7 +43,7 @@ pub struct NoContext;
 impl NodeContext for NoContext {
     type Wrapper<'c> = ();
 
-    fn has_changed<'c>(_wrapper: &Self::Wrapper<'c>) -> bool {
+    fn has_changed(_wrapper: &Self::Wrapper<'_>) -> bool {
         false
     }
 }
