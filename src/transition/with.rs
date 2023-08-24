@@ -73,8 +73,7 @@ pub trait CanHaveTransition: MavericNode + Sized {
     {
         WithTransition {
             node: self,
-            transition: (initial_value,
-            update_transition),
+            transition: (initial_value, update_transition),
             deletion,
         }
     }
@@ -97,13 +96,16 @@ where
     pub deletion: P,
 }
 
-impl<N: MavericNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> PartialEq for WithTransition<N, L, P>
+impl<N: MavericNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> PartialEq
+    for WithTransition<N, L, P>
 where
     L::Value: Tweenable,
     L::Object: Clone + Component,
 {
     fn eq(&self, other: &Self) -> bool {
-        self.node == other.node && self.transition == other.transition && self.deletion == other.deletion
+        self.node == other.node
+            && self.transition == other.transition
+            && self.deletion == other.deletion
     }
 }
 
@@ -115,16 +117,12 @@ where
 {
     type Context = N::Context;
 
-    fn set<R: MavericRoot>(
-        data: NodeData<Self, Self::Context, R, true>,
-        commands: &mut NodeCommands,
-    ) {
-        let data2 = data.clone();
-        N::set(data.map_args(|x| &x.node), commands);
+    fn set_components<R: MavericRoot>(mut commands: NodeCommands<Self, Self::Context, R, false>) {
+        commands.scope(|commands| N::set_components(commands.map_args(|x| &x.node)));
 
-        data2
-            .map_args(|x| &x.transition).ignore_context()
-            .components_advanced(commands, |args, _, _, event, commands| {
+        commands.map_args(|x| &x.transition)
+            .ignore_context()
+            .components_advanced(|args, _, _, event, commands| {
                 let (initial_value, update_transition) = args;
 
                 let transition = match event {
@@ -181,21 +179,25 @@ where
             });
     }
 
+    fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>) {
+        N::set_children(commands.map_args(|x| &x.node))
+    }
+
     fn on_deleted<'r>(&self, commands: &mut ComponentCommands) -> DeletionPolicy {
         let base = self.node.on_deleted(commands);
 
         let Some(component) = commands
-                .get::<L::Object>() else {                    
+                .get::<L::Object>() else {
                     return base;};
 
         let previous = &<L as GetValueLens>::try_get_value(component);
 
         let Some(previous) = previous else {
-            
+
             return  base;};
 
         let Some(deletion_path) = self.deletion.get_step(previous) else{
-            
+
             return  base;};
 
         let duration = deletion_path
@@ -211,10 +213,6 @@ where
             step: deletion_path,
         });
 
-        
-
         DeletionPolicy::Linger(duration)
     }
 }
-
-

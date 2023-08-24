@@ -132,13 +132,12 @@ struct Branch;
 impl MavericNode for Branch {
     type Context = TreeState;
 
+    fn set_components<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, false>) {}
 
-    fn set<R: MavericRoot>(
-        data: NodeData<Self, Self::Context, R, true>,
-        commands: &mut NodeCommands,
-    ) {
-        data.ignore_args()
-            .unordered_children_with_context(commands, |context, commands| {
+    fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>) {
+        commands
+            .ignore_args()
+            .unordered_children_with_context(|context, commands| {
                 for x in 0..(context.blue_leaf_count) {
                     commands.add_child(x, Leaf::Blue, &());
                 }
@@ -157,4 +156,3 @@ enum Leaf {
     Blue,
     Red,
 }
-

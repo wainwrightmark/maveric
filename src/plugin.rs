@@ -68,8 +68,7 @@ mod tests {
 
         app.add_plugins(TimePlugin::default());
 
-        app.init_resource::<TreeState>()
-            .register_maveric::<Root>();
+        app.init_resource::<TreeState>().register_maveric::<Root>();
         app.update();
 
         check_leaves(&mut app, 0, 0);
@@ -161,12 +160,11 @@ mod tests {
     impl MavericNode for Branch {
         type Context = TreeState;
 
-        fn set<R: MavericRoot>(
-            args: NodeData<Self, Self::Context, R, true>,
-            commands: &mut NodeCommands,
-        ) {
-            args.ignore_args()
-                .ordered_children_with_context(commands, |context, commands| {
+        fn set_components<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, false>) {}
+
+        fn set_children<R: MavericRoot>(data: NodeCommands<Self, Self::Context, R, true>) {
+            data.ignore_args()
+                .ordered_children_with_context(|context, commands| {
                     for x in 0..(context.blue_leaf_count) {
                         commands.add_child(x, Leaf::Blue, &());
                     }
@@ -189,10 +187,8 @@ mod tests {
     impl MavericNode for Leaf {
         type Context = NoContext;
 
-        fn set<R: MavericRoot>(
-            _args: NodeData<Self, Self::Context, R, true>,
-            _commands: &mut NodeCommands,
-        ) {
-        }
+        fn set_components<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, false>) {}
+
+        fn set_children<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, true>) {}
     }
 }

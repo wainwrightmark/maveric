@@ -16,16 +16,15 @@ pub struct TextNode<T: Into<String> + PartialEq + Clone + Send + Sync + 'static>
 impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode for TextNode<T> {
     type Context = AssetServer;
 
-    fn set<R: MavericRoot>(
-        mut data: NodeData<Self, Self::Context, R, true>,
-        commands: &mut NodeCommands,
-    ) {
-        data.clone()
-            .ignore_args()
-            .ignore_context()
-            .insert(commands, TextBundle::default());
+    fn set_components<R: MavericRoot>(mut commands: NodeCommands<Self, Self::Context, R, false>) {
+        commands.scope(|commands| {
+            commands
+                .ignore_args()
+                .ignore_context()
+                .insert(TextBundle::default())
+        });
 
-        data.insert_with_args_and_context(commands, |args, server| {
+        commands.insert_with_args_and_context(|args, server| {
             let font = get_or_load_asset(args.font, &server);
             let mut bundle = Text::from_section(
                 args.text.clone(),
@@ -41,4 +40,6 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode fo
             bundle
         });
     }
+
+    fn set_children<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, true>) {}
 }

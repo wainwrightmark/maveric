@@ -3,23 +3,39 @@ use bevy::ecs::system::EntityCommands;
 pub use bevy::prelude::*;
 
 pub(crate) fn create_recursive<'c, R: MavericRoot, N: MavericNode>(
-    ec: EntityCommands,
+    mut ec: EntityCommands,
     node: N,
     context: &<N::Context as NodeContext>::Wrapper<'c>,
     key: ChildKey,
     world: &World,
-)-> Entity {
+) -> Entity {
+    let component_commands = NodeCommands::<N, N::Context, R, false>::new(
+        &node,
+        None,
+        context,
+        SetEvent::Created,
+        world,
+        &mut ec,
+    );
 
-    let args = NodeData::<N, N::Context, R, true>::new(&node, None, context, SetEvent::Created);
-    let mut commands = NodeCommands::new(ec, world);
+    N::set_components(component_commands);
 
-    N::set(args, &mut commands);
+    let children_commands = NodeCommands::<N, N::Context, R, true>::new(
+        &node,
+        None,
+        context,
+        SetEvent::Created,
+        world,
+        &mut ec,
+    );
+
+    N::set_children(children_commands);
 
     let hnc = MavericNodeComponent::new(node);
     let hcc = MavericChildComponent::<R>::new::<N>(key.into());
 
-    commands.ec.insert((hnc, hcc));
-    commands.ec.id()
+    ec.insert((hnc, hcc));
+    ec.id()
 }
 
 /// Recursively delete an entity. Returns the entity id if it is to linger.
@@ -33,9 +49,9 @@ pub(crate) fn delete_recursive<'c, R: RootChildren>(
         return Some(entity);
     }
 
-    let ec = commands.entity(entity);
-    let mut nc = NodeCommands::new(ec, world);
-    let mut cc = ComponentCommands::new(&mut nc, SetEvent::Updated);
+    let mut ec = commands.entity(entity);
+
+    let mut cc = ComponentCommands::new(&mut ec, world, SetEvent::Updated);
 
     let dp: DeletionPolicy = world
         .get::<MavericChildComponent<R>>(entity)
@@ -44,7 +60,7 @@ pub(crate) fn delete_recursive<'c, R: RootChildren>(
 
     match dp {
         DeletionPolicy::DeleteImmediately => {
-            nc.ec.despawn_recursive();
+            ec.despawn_recursive();
             return None;
         }
         DeletionPolicy::Linger(duration) => {
@@ -52,7 +68,7 @@ pub(crate) fn delete_recursive<'c, R: RootChildren>(
                 timer: Timer::new(duration, TimerMode::Once),
             });
 
-            return Some(nc.ec.id());
+            return Some(ec.id());
         }
     }
 }
@@ -80,18 +96,18 @@ pub(crate) fn update_recursive<'c, R: MavericRoot, N: MavericNode>(
         .then_some(SetEvent::Undeleted)
         .unwrap_or(SetEvent::Updated);
 
-    //let concrete_commands = ConcreteComponentCommands::new(world, &mut ec);
-    //let args = NodeArgs::new(&node, previous, context, event, concrete_commands);
+    let component_commands =
+        NodeCommands::<N, N::Context, R, false>::new(&node, previous, context, event, world, &mut ec);
 
-    let args =
-        NodeData::<N, N::Context, R, true> ::new(&node, previous, context, event);
-    let mut commands = NodeCommands::new(ec, world);
+    N::set_components(component_commands);
 
-    N::set(args, &mut commands);
+    let children_commands =
+        NodeCommands::<N, N::Context, R, true>::new(&node, previous, context, event, world, &mut ec);
+    N::set_children(children_commands);
 
     let node_changed = previous.map(|p| !p.eq(&node)).unwrap_or(true);
 
     if node_changed {
-        commands.ec.insert(MavericNodeComponent::<N> { node });
+        ec.insert(MavericNodeComponent::<N> { node });
     }
 }

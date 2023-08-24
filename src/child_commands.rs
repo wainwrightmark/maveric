@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use std::{any::type_name, marker::PhantomData};
 
-use bevy::{prelude::*, utils::hashbrown::HashMap};
+use bevy::{ecs::system::EntityCommands, prelude::*, utils::hashbrown::HashMap};
 
 pub trait ChildCommands {
     fn add_child<NChild: MavericNode>(
@@ -13,7 +13,8 @@ pub trait ChildCommands {
 }
 
 pub struct UnorderedChildCommands<'c, 'w, 's, 'a, 'world, R: MavericRoot> {
-    commands: &'c mut NodeCommands<'w, 's, 'a, 'world>,
+    ec: &'c mut EntityCommands<'w, 's, 'a>,
+    world: &'world World,
     remaining_old_entities: HashMap<ChildKey, Entity>,
     phantom: PhantomData<R>,
 }
@@ -33,17 +34,16 @@ impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> ChildCommands
             //check if this node has changed
 
             if self
-                .commands
                 .world
                 .get::<MavericNodeComponent<NChild>>(entity)
                 .is_some()
             {
                 update_recursive::<R, NChild>(
-                    self.commands.ec.commands(),
+                    self.ec.commands(),
                     entity,
                     child,
                     context,
-                    self.commands.world,
+                    self.world,
                 );
                 return; // do not spawn a new child;
             }
@@ -52,44 +52,41 @@ impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> ChildCommands
                 type_name::<NChild>()
             );
             // The node type has changed - delete this entity and readd
-            self.commands
-                .ec
-                .commands()
-                .entity(entity)
-                .despawn_recursive();
+            self.ec.commands().entity(entity).despawn_recursive();
         }
 
-        self.commands.ec.with_children(|cb| {
+        self.ec.with_children(|cb| {
             let cec = cb.spawn_empty();
-            create_recursive::<R, NChild>(cec, child, context, key, self.commands.world);
+            create_recursive::<R, NChild>(cec, child, context, key, self.world);
         });
     }
 }
 
 impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> UnorderedChildCommands<'c, 'w, 's, 'a, 'world, R> {
-    pub(crate) fn new(commands: &'c mut NodeCommands<'w, 's, 'a, 'world>) -> Self {
-        let children = commands.world.get::<Children>(commands.ec.id());
+    pub(crate) fn new(ec: &'c mut EntityCommands<'w, 's, 'a>, world: &'world World) -> Self {
+        let children = world.get::<Children>(ec.id());
 
         match children {
             Some(children) => {
                 let remaining_old_entities: HashMap<ChildKey, Entity> = children
                     .iter()
                     .flat_map(|entity| {
-                        commands
-                            .world
+                        world
                             .get::<MavericChildComponent<R>>(*entity)
                             .map(|hcc| (hcc.key, *entity))
                     })
                     .collect();
 
                 Self {
-                    commands,
+                    ec,
+                    world,
                     remaining_old_entities,
                     phantom: PhantomData,
                 }
             }
             None => Self {
-                commands,
+                ec,
+                world,
                 remaining_old_entities: Default::default(),
                 phantom: PhantomData,
             },
@@ -99,13 +96,14 @@ impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> UnorderedChildCommands<'c, 'w, 's, 
     pub(crate) fn finish(self) {
         //remove all remaining old entities
         for (_key, entity) in self.remaining_old_entities {
-            let _ = delete_recursive::<R>(self.commands.ec.commands(), entity, self.commands.world);
+            let _ = delete_recursive::<R>(self.ec.commands(), entity, self.world);
         }
     }
 }
 
 pub struct OrderedChildCommands<'c, 'w, 's, 'a, 'world, R: MavericRoot> {
-    commands: &'c mut NodeCommands<'w, 's, 'a, 'world>,
+    ec: &'c mut EntityCommands<'w, 's, 'a>,
+    world: &'world World,
     phantom: PhantomData<R>,
 
     remaining_old_entities: HashMap<ChildKey, (usize, Entity)>,
@@ -129,17 +127,16 @@ impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> ChildCommands
             //check if this node has changed
 
             if self
-                .commands
                 .world
                 .get::<MavericNodeComponent<NChild>>(entity)
                 .is_some()
             {
                 update_recursive::<R, NChild>(
-                    self.commands.ec.commands(),
+                    self.ec.commands(),
                     entity,
                     child,
                     context,
-                    self.commands.world,
+                    self.world,
                 );
                 self.new_children.push(entity);
                 self.new_indices.push(Some(old_index));
@@ -150,24 +147,19 @@ impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> ChildCommands
                 type_name::<NChild>()
             );
             // The node type has changed - delete this entity and readd
-            self.commands
-                .ec
-                .commands()
-                .entity(entity)
-                .despawn_recursive();
+            self.ec.commands().entity(entity).despawn_recursive();
         };
 
-        let new_commands = self.commands.ec.commands().spawn_empty();
-        let id =
-            create_recursive::<R, NChild>(new_commands, child, context, key, self.commands.world);
+        let new_commands = self.ec.commands().spawn_empty();
+        let id = create_recursive::<R, NChild>(new_commands, child, context, key, self.world);
         self.new_children.push(id);
         self.new_indices.push(None);
     }
 }
 
 impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> OrderedChildCommands<'c, 'w, 's, 'a, 'world, R> {
-    pub(crate) fn new(commands: &'c mut NodeCommands<'w, 's, 'a, 'world>) -> Self {
-        let children = commands.world.get::<Children>(commands.ec.id());
+    pub(crate) fn new(ec: &'c mut EntityCommands<'w, 's, 'a>, world: &'world World) -> Self {
+        let children = world.get::<Children>(ec.id());
         //let tree = tree.clone();
         match children {
             Some(children) => {
@@ -175,15 +167,15 @@ impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> OrderedChildCommands<'c, 'w, 's, 'a
                     .iter()
                     .enumerate()
                     .flat_map(|(index, entity)| {
-                        commands
-                            .world
+                        world
                             .get::<MavericChildComponent<R>>(*entity)
                             .map(|hcc| (hcc.key, (index, *entity)))
                     })
                     .collect();
 
                 Self {
-                    commands,
+                    ec,
+                    world,
                     remaining_old_entities,
 
                     phantom: PhantomData,
@@ -192,7 +184,8 @@ impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> OrderedChildCommands<'c, 'w, 's, 'a
                 }
             }
             None => Self {
-                commands,
+                ec,
+                world,
                 remaining_old_entities: Default::default(),
                 phantom: PhantomData,
                 new_children: vec![],
@@ -218,7 +211,7 @@ impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> OrderedChildCommands<'c, 'w, 's, 'a
 
         //remove all remaining old entities
         for (_key, (old_deleted_index, entity)) in self.remaining_old_entities {
-            let Some(lingering_entity) = delete_recursive::<R>(self.commands.ec.commands(), entity, self.commands.world) else {continue;};
+            let Some(lingering_entity) = delete_recursive::<R>(self.ec.commands(), entity, self.world) else {continue;};
 
             if !order_changed {
                 continue;
@@ -253,7 +246,7 @@ impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> OrderedChildCommands<'c, 'w, 's, 'a
             }
         }
         if order_changed {
-            self.commands.ec.replace_children(&self.new_children);
+            self.ec.replace_children(&self.new_children);
         }
     }
 }
@@ -413,12 +406,14 @@ mod tests {
     impl MavericNode for Branch {
         type Context = NC2<TreeState, LingerState>;
 
-        fn set<R: MavericRoot>(
-            data: NodeData<Self, Self::Context, R, true>,
-            commands: &mut NodeCommands,
-        ) {
-            data.ignore_args()
-                .ordered_children_with_context(commands, |context, commands| {
+        fn set_components<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, false>) {
+
+        }
+
+        fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>) {
+            commands
+                .ignore_args()
+                .ordered_children_with_context(|context, commands| {
                     for &number in context.0 .0.iter() {
                         let linger = context.1 .0.contains(&number);
                         commands.add_child(number, Leaf { number, linger }, &());
@@ -444,10 +439,8 @@ mod tests {
             }
         }
 
-        fn set<R: MavericRoot>(
-            _data: NodeData<Self, Self::Context, R, true>,
-            _commands: &mut NodeCommands,
-        ) {
-        }
+        fn set_components<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, false>) {}
+
+        fn set_children<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, true>) {}
     }
 }

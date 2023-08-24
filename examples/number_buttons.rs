@@ -86,27 +86,24 @@ pub struct CommandGrid;
 impl MavericNode for CommandGrid {
     type Context = AssetServer;
 
-    fn set<R: MavericRoot>(
-        data: NodeData<Self, Self::Context, R, true>,
-        commands: &mut NodeCommands,
-    ) {
-        data.clone().ignore_args().ignore_context().insert(
-            commands,
-            NodeBundle {
-                style: Style {
-                    width: Val::Percent(100.0),
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    display: Display::Flex,
-                    flex_direction: FlexDirection::Row,
-                    ..default()
-                },
+    fn set_components<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, false>) {
+        commands.ignore_args().ignore_context().insert(NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                display: Display::Flex,
+                flex_direction: FlexDirection::Row,
                 ..default()
             },
-        );
+            ..default()
+        });
+    }
 
-        data.ignore_args()
-            .unordered_children_with_context(commands, |context, commands| {
+    fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>) {
+        commands
+            .ignore_args()
+            .unordered_children_with_context(|context, commands| {
                 for command in [Command::AddNew, Command::Reset] {
                     let key: &'static str = command.into();
                     let node = ButtonNode {
@@ -122,7 +119,7 @@ impl MavericNode for CommandGrid {
                             color: BUTTON_TEXT_COLOR,
                             alignment: TextAlignment::Center,
                             linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
-                        },)
+                        },),
                     };
 
                     commands.add_child(key, node, &context);
@@ -137,27 +134,24 @@ pub struct DynamicGrid;
 impl MavericNode for DynamicGrid {
     type Context = NC2<UIState, AssetServer>;
 
-    fn set<R: MavericRoot>(
-        data: NodeData<Self, Self::Context, R, true>,
-        commands: &mut NodeCommands,
-    ) {
-        data.clone().ignore_args().ignore_context().insert(
-            commands,
-            NodeBundle {
-                style: Style {
-                    width: Val::Percent(100.0),
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    display: Display::Flex,
-                    flex_direction: FlexDirection::Row,
-                    ..default()
-                },
+    fn set_components<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, false>) {
+        commands.ignore_args().ignore_context().insert(NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                display: Display::Flex,
+                flex_direction: FlexDirection::Row,
                 ..default()
             },
-        );
+            ..default()
+        });
+    }
 
-        data.ignore_args()
-            .ordered_children_with_context(commands, |context, commands| {
+    fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>) {
+        commands
+            .ignore_args()
+            .ordered_children_with_context(|context, commands| {
                 for number in context.0.dynamic_buttons.iter().cloned() {
                     let node = ButtonNode {
                         style: ButtonStyle,
@@ -172,7 +166,7 @@ impl MavericNode for DynamicGrid {
                             color: BUTTON_TEXT_COLOR,
                             alignment: TextAlignment::Center,
                             linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
-                        },)
+                        },),
                     };
 
                     let node = node
@@ -260,7 +254,7 @@ pub struct ButtonStyle;
 impl IntoBundle for ButtonStyle {
     type B = Style;
 
-    fn into_bundle(self)-> Self::B {
+    fn into_bundle(self) -> Self::B {
         Style {
             width: Val::Px(DYNAMIC_BOX_WIDTH),
             height: Val::Px(DYNAMIC_BOX_HEIGHT),

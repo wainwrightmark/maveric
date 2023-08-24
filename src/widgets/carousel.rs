@@ -34,67 +34,63 @@ impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Ma
 {
     type Context = <Child as MavericNode>::Context;
 
-    fn set<R: MavericRoot>(
-        data: NodeData<Self, Self::Context, R, true>,
-        commands: &mut NodeCommands,
-    ) {
-        data.clone().ignore_args().ignore_context().insert(
-            commands,
-            NodeBundle {
-                style: Style {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
-                    ..Default::default()
-                },
+    fn set_components<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, false>) {
+        commands.ignore_args().ignore_context().insert(NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
                 ..Default::default()
             },
-        );
+            ..Default::default()
+        })
+    }
 
-        data.ordered_children_with_args_and_context_advanced(commands,|node,previous,context, _,commands|{
-        const CENTER: f32 = 50.0;
-        const PAGE_WIDTH: f32 = 200.0;
-        const LEFT: f32 = CENTER - PAGE_WIDTH;
-        const RIGHT: f32 = CENTER + PAGE_WIDTH;
+    fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>) {
+        commands.ordered_children_advanced(|node,previous,context, _,commands|{
+            const CENTER: f32 = 50.0;
+            const PAGE_WIDTH: f32 = 200.0;
+            const LEFT: f32 = CENTER - PAGE_WIDTH;
+            const RIGHT: f32 = CENTER + PAGE_WIDTH;
 
-        let Some(center_page) = (node.get_child)(node.current_page) else {return;};
-        let mut center_page_initial = CENTER;
+            let Some(center_page) = (node.get_child)(node.current_page) else {return;};
+            let mut center_page_initial = CENTER;
 
-        'previous: {
-            if let Some(Self {
-                current_page: previous_page_number,
-                ..
-            }) = previous
-            {
-                let (current_position, previous_position) =
-                    match previous_page_number.cmp(&node.current_page) {
-                        std::cmp::Ordering::Less => (RIGHT, LEFT),
-                        std::cmp::Ordering::Equal => {
-                            break 'previous;
-                        }
-                        std::cmp::Ordering::Greater => (LEFT, RIGHT),
-                    };
+            'previous: {
+                if let Some(Self {
+                    current_page: previous_page_number,
+                    ..
+                }) = previous
+                {
+                    let (current_position, previous_position) =
+                        match previous_page_number.cmp(&node.current_page) {
+                            std::cmp::Ordering::Less => (RIGHT, LEFT),
+                            std::cmp::Ordering::Equal => {
+                                break 'previous;
+                            }
+                            std::cmp::Ordering::Greater => (LEFT, RIGHT),
+                        };
 
-                center_page_initial = current_position;
+                    center_page_initial = current_position;
 
-                let Some(previous_page) = (node.get_child)(*previous_page_number) else {break 'previous;};
+                    let Some(previous_page) = (node.get_child)(*previous_page_number) else {break 'previous;};
 
-                let previous_page = previous_page.with_transition_in::<StyleLeftLens>(
-                    Val::Percent(CENTER),
-                    Val::Percent(previous_position),
-                    node.transition_duration,
-                );
+                    let previous_page = previous_page.with_transition_in::<StyleLeftLens>(
+                        Val::Percent(CENTER),
+                        Val::Percent(previous_position),
+                        node.transition_duration,
+                    );
 
-                commands.add_child(*previous_page_number, previous_page, context);
+                    commands.add_child(*previous_page_number, previous_page, context);
+                }
             }
-        }
 
-        let center_page = center_page.with_transition_in::<StyleLeftLens>(
-            Val::Percent(center_page_initial),
-            Val::Percent(CENTER),
-            node.transition_duration,
-        );
+            let center_page = center_page.with_transition_in::<StyleLeftLens>(
+                Val::Percent(center_page_initial),
+                Val::Percent(CENTER),
+                node.transition_duration,
+            );
 
-        commands.add_child(node.current_page, center_page, context);
-        });
+            commands.add_child(node.current_page, center_page, context);
+            });
     }
 }

@@ -197,72 +197,65 @@ pub enum MainOrLevelMenu {
 impl MavericNode for MainOrLevelMenu {
     type Context = NC2<MenuState, AssetServer>;
 
-    fn set<R: MavericRoot>(
-        data: NodeData<Self, Self::Context, R, true>,
-        commands: &mut NodeCommands,
-    ) {
-        data.clone().ignore_args().ignore_context().insert(
-            commands,
-            NodeBundle {
-                style: Style {
-                    position_type: PositionType::Absolute,
-                    left: Val::Percent(50.0),  // Val::Px(MENU_OFFSET),
-                    right: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
-                    top: Val::Px(MENU_OFFSET),
-                    display: Display::Flex,
-                    flex_direction: FlexDirection::Column,
+    fn set_components<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, false>) {
+        commands.ignore_args().ignore_context().insert(NodeBundle {
+            style: Style {
+                position_type: PositionType::Absolute,
+                left: Val::Percent(50.0),  // Val::Px(MENU_OFFSET),
+                right: Val::Percent(50.0), // Val::Px(MENU_OFFSET),
+                top: Val::Px(MENU_OFFSET),
+                display: Display::Flex,
+                flex_direction: FlexDirection::Column,
 
-                    ..Default::default()
-                },
-                z_index: ZIndex::Global(10),
                 ..Default::default()
             },
-        );
+            z_index: ZIndex::Global(10),
+            ..Default::default()
+        });
+    }
 
-        data.unordered_children_with_args_and_context(
-            commands,
-            |args, context, commands| match args {
-                MainOrLevelMenu::Main => {
-                    for (key, action) in ButtonAction::main_buttons().iter().enumerate() {
-                        let button = text_button_node(*action);
-                        let button = button.with_transition_in::<BackgroundColorLens>(
-                            Color::WHITE.with_a(0.0),
-                            Color::WHITE,
-                            Duration::from_secs_f32(1.0),
-                        );
+    fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>) {
+        commands.unordered_children_with_args_and_context(|args, context, commands| match args {
+            MainOrLevelMenu::Main => {
+                for (key, action) in ButtonAction::main_buttons().iter().enumerate() {
+                    let button = text_button_node(*action);
+                    let button = button.with_transition_in::<BackgroundColorLens>(
+                        Color::WHITE.with_a(0.0),
+                        Color::WHITE,
+                        Duration::from_secs_f32(1.0),
+                    );
 
-                        commands.add_child(key as u32, button, &context.1)
-                    }
+                    commands.add_child(key as u32, button, &context.1)
+                }
 
+                commands.add_child(
+                    "image",
+                    ImageNode {
+                        style: BigImageNodeStyle,
+                        background_color: Color::WHITE,
+                        path: r#"images\MedalsGold.png"#,
+                    },
+                    &context.1,
+                )
+            }
+            MainOrLevelMenu::Level(page) => {
+                let start = page * LEVELS_PER_PAGE;
+                let end = start + LEVELS_PER_PAGE;
+
+                for (key, level) in (start..end).enumerate() {
                     commands.add_child(
-                        "image",
-                        ImageNode {
-                            style: BigImageNodeStyle,
-                            background_color: Color::WHITE,
-                            path: r#"images\MedalsGold.png"#,
-                        },
+                        key as u32,
+                        text_and_image_button_node(
+                            ButtonAction::GotoLevel { level },
+                            r#"images/MedalsBlack.png"#,
+                        ),
                         &context.1,
                     )
                 }
-                MainOrLevelMenu::Level(page) => {
-                    let start = page * LEVELS_PER_PAGE;
-                    let end = start + LEVELS_PER_PAGE;
 
-                    for (key, level) in (start..end).enumerate() {
-                        commands.add_child(
-                            key as u32,
-                            text_and_image_button_node(
-                                ButtonAction::GotoLevel { level },
-                                r#"images/MedalsBlack.png"#,
-                            ),
-                            &context.1,
-                        )
-                    }
-
-                    commands.add_child("buttons", LevelMenuArrows(*page), &context.1);
-                }
-            },
-        );
+                commands.add_child("buttons", LevelMenuArrows(*page), &context.1);
+            }
+        });
     }
 }
 
@@ -272,42 +265,38 @@ pub struct LevelMenuArrows(u32);
 impl MavericNode for LevelMenuArrows {
     type Context = AssetServer;
 
-    fn set<R: MavericRoot>(
-        data: NodeData<Self, Self::Context, R, true>,
-        commands: &mut NodeCommands,
-    ) {
-        data.clone().ignore_args().ignore_context().insert(
-            commands,
-            NodeBundle {
-                style: Style {
-                    position_type: PositionType::Relative,
-                    left: Val::Percent(0.0),
-                    display: Display::Flex,
-                    flex_direction: FlexDirection::Row,
+    fn set_components<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, false>) {
+        commands.ignore_args().ignore_context().insert(NodeBundle {
+            style: Style {
+                position_type: PositionType::Relative,
+                left: Val::Percent(0.0),
+                display: Display::Flex,
+                flex_direction: FlexDirection::Row,
 
-                    width: Val::Px(TEXT_BUTTON_WIDTH),
-                    height: Val::Px(TEXT_BUTTON_HEIGHT),
-                    margin: UiRect {
-                        left: Val::Auto,
-                        right: Val::Auto,
-                        top: Val::Px(5.0),
-                        bottom: Val::Px(5.0),
-                    },
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    flex_grow: 0.0,
-                    flex_shrink: 0.0,
-                    border: UiRect::all(UI_BORDER_WIDTH),
-
-                    ..Default::default()
+                width: Val::Px(TEXT_BUTTON_WIDTH),
+                height: Val::Px(TEXT_BUTTON_HEIGHT),
+                margin: UiRect {
+                    left: Val::Auto,
+                    right: Val::Auto,
+                    top: Val::Px(5.0),
+                    bottom: Val::Px(5.0),
                 },
-                background_color: BackgroundColor(TEXT_BUTTON_BACKGROUND),
-                border_color: BorderColor(BUTTON_BORDER),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                flex_grow: 0.0,
+                flex_shrink: 0.0,
+                border: UiRect::all(UI_BORDER_WIDTH),
+
                 ..Default::default()
             },
-        );
+            background_color: BackgroundColor(TEXT_BUTTON_BACKGROUND),
+            border_color: BorderColor(BUTTON_BORDER),
+            ..Default::default()
+        });
+    }
 
-        data.unordered_children_with_args_and_context(commands, |args, context, commands| {
+    fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>) {
+        commands.unordered_children_with_args_and_context(|args, context, commands| {
             if args.0 == 0 {
                 commands.add_child("left", icon_button_node(ButtonAction::OpenMenu), context)
             } else {

@@ -67,16 +67,18 @@ struct Branch;
 impl MavericNode for Branch {
     type Context = NC2<TreeState, LingerState>;
 
+    fn set_components<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, false>) {}
 
-    fn set<R: MavericRoot>(data: NodeData<Self, Self::Context, R, true>, commands: &mut NodeCommands) {
-        data.ignore_args().ordered_children_with_context(commands, |context, commands|{
-            for &number in context.0 .0.iter() {
-                let linger = context.1 .0;
-                commands.add_child(number, Leaf { number, linger }, &());
-            }
-        });
+    fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>) {
+        commands
+            .ignore_args()
+            .ordered_children_with_context(|context, commands| {
+                for &number in context.0 .0.iter() {
+                    let linger = context.1 .0;
+                    commands.add_child(number, Leaf { number, linger }, &());
+                }
+            });
     }
-
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -88,12 +90,9 @@ struct Leaf {
 impl MavericNode for Leaf {
     type Context = NoContext;
 
+    fn set_components<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, false>) {}
 
-    fn set<R: MavericRoot>(_data: NodeData<Self, Self::Context, R, true>, _commands: &mut NodeCommands) {
-
-    }
-
-
+    fn set_children<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, true>) {}
 
     fn on_deleted<'r>(&self, _commands: &mut ComponentCommands) -> DeletionPolicy {
         if self.linger {

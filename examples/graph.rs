@@ -55,7 +55,7 @@ impl RootChildren for Root {
                         font: FONT_PATH,
                         alignment: TextAlignment::Center,
                         linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
-                    },)
+                    },),
                 },
                 &context.1,
             )
@@ -107,14 +107,12 @@ struct GraphNode(u32);
 impl MavericNode for NumberNode {
     type Context = AssetServer;
 
-    fn set<R: MavericRoot>(
-        data: NodeData<Self, Self::Context, R, true>,
-        commands: &mut NodeCommands,
-    ) {
-        data.clone()
-            .ignore_context()
-            .ignore_args()
-            .components_advanced(commands, |_args, _previous, _context, event, commands| {
+    fn set_components<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, false>) {
+        let mut commands = commands.ignore_context();
+        commands.insert_with_args(|a| GraphNode(a.0));
+
+        commands.ignore_args().components_advanced(
+            |_args, _previous, _context, event, commands| {
                 if event == SetEvent::Created {
                     commands.insert(NodeBundle {
                         style: Style {
@@ -134,13 +132,12 @@ impl MavericNode for NumberNode {
                         ..Default::default()
                     })
                 }
-            });
+            },
+        );
+    }
 
-        data.clone()
-            .ignore_context()
-            .insert_with_args(commands, |a| GraphNode(a.0));
-
-        data.unordered_children_with_args_and_context(commands, |args, context, commands| {
+    fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>) {
+        commands.unordered_children_with_args_and_context(|args, context, commands| {
             commands.add_child(
                 0,
                 TextNode {
@@ -251,7 +248,7 @@ pub struct ButtonStyle;
 impl IntoBundle for ButtonStyle {
     type B = Style;
 
-    fn into_bundle(self)-> Self::B {
+    fn into_bundle(self) -> Self::B {
         Style {
             width: Val::Px(TEXT_BUTTON_WIDTH),
             height: Val::Px(TEXT_BUTTON_HEIGHT),
@@ -270,8 +267,6 @@ impl IntoBundle for ButtonStyle {
             ..Default::default()
         }
     }
-
-
 }
 
 pub const TEXT_BUTTON_WIDTH: f32 = 360.;

@@ -47,7 +47,7 @@ impl RootChildren for Root {
                     font: FONT_PATH,
                     alignment: TextAlignment::Center,
                     linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
-                },)
+                },),
             },
             &context.1,
         )
@@ -81,7 +81,7 @@ pub struct ButtonStyle;
 impl IntoBundle for ButtonStyle {
     type B = Style;
 
-    fn into_bundle(self)-> Self::B {
+    fn into_bundle(self) -> Self::B {
         Style {
             width: Val::Px(TEXT_BUTTON_WIDTH),
             height: Val::Px(TEXT_BUTTON_HEIGHT),
@@ -100,8 +100,6 @@ impl IntoBundle for ButtonStyle {
             ..Default::default()
         }
     }
-
-
 }
 
 pub const TEXT_BUTTON_WIDTH: f32 = 360.;

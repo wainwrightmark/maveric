@@ -13,33 +13,38 @@ pub struct ImageNode<S: IntoBundle<B = Style>> {
 impl<S: IntoBundle<B = Style>> MavericNode for ImageNode<S> {
     type Context = AssetServer;
 
-    fn set<R: MavericRoot>(
-        data: NodeData<Self, Self::Context, R, true>,
-        commands: &mut NodeCommands,
-    ) {
-        data.clone()
-            .ignore_args()
-            .ignore_context()
-            .insert(commands, ImageBundle::default());
+    fn set_components<R: MavericRoot>(mut commands: NodeCommands<Self, Self::Context, R, false>) {
+        commands.scope(|commands| {
+            commands
+                .ignore_args()
+                .ignore_context()
+                .insert(ImageBundle::default())
+        });
 
-        data.clone()
-            .map_args(|x| &x.path)
-            .insert_with_args_and_context(commands, |path, server| {
-                let texture = get_or_load_asset::<Image>(*path, server);
-                UiImage {
-                    texture,
-                    flip_x: false,
-                    flip_y: false,
-                }
-            });
+        commands.scope(|commands| {
+            commands
+                .map_args(|x| &x.path)
+                .insert_with_args_and_context(|path, server| {
+                    let texture = get_or_load_asset::<Image>(*path, server);
+                    UiImage {
+                        texture,
+                        flip_x: false,
+                        flip_y: false,
+                    }
+                })
+        });
 
-        data.clone()
-            .ignore_context()
-            .map_args(|x| &x.style)
-            .insert_bundle(commands);
-        data.clone()
+        commands.scope(|commands| {
+            commands
+                .ignore_context()
+                .map_args(|x| &x.style)
+                .insert_bundle()
+        });
+        commands
             .ignore_context()
             .map_args(|x| &x.background_color)
-            .insert_with_args(commands, |color| BackgroundColor(*color));
+            .insert_with_args(|color| BackgroundColor(*color));
     }
+
+    fn set_children<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, true>) {}
 }
