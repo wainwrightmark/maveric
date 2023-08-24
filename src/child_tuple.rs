@@ -31,4 +31,3 @@ impl_child_tuple!(T0,);
 impl_child_tuple!(T0, (T1, 1));
 impl_child_tuple!(T0, (T1, 1), (T2, 2));
 impl_child_tuple!(T0, (T1, 1), (T2, 2), (T3, 3));
-

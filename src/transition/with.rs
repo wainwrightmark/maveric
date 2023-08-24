@@ -120,7 +120,8 @@ where
     fn set_components<R: MavericRoot>(mut commands: NodeCommands<Self, Self::Context, R, false>) {
         commands.scope(|commands| N::set_components(commands.map_args(|x| &x.node)));
 
-        commands.map_args(|x| &x.transition)
+        commands
+            .map_args(|x| &x.transition)
             .ignore_context()
             .components_advanced(|args, _, _, event, commands| {
                 let (initial_value, update_transition) = args;

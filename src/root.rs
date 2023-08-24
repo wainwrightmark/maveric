@@ -3,7 +3,7 @@ use bevy::ecs::system::{StaticSystemParam, SystemParam};
 use crate::prelude::*;
 
 pub trait MavericRoot: RootChildren {
-    type ContextParam<'c> : SystemParam;
+    type ContextParam<'c>: SystemParam;
     fn get_context<'a, 'c, 'w: 'c, 's>(
         param: StaticSystemParam<'w, 's, Self::ContextParam<'a>>,
     ) -> <Self::Context as NodeContext>::Wrapper<'c>;
@@ -17,8 +17,6 @@ pub trait RootChildren: Send + Sync + 'static {
         commands: &mut impl ChildCommands,
     );
 }
-
-
 
 /// Implement `Root` for a node. The node must implement `RootChildren`
 #[macro_export]

@@ -1,12 +1,12 @@
-use std::marker::PhantomData;
 use crate::prelude::*;
+use std::marker::PhantomData;
 
 pub trait Deleter: Send + Sync + 'static {
     fn on_deleted<'r>(
         &self,
         entity: Entity,
         commands: &mut ComponentCommands,
-        world: &World
+        world: &World,
     ) -> DeletionPolicy;
 }
 
@@ -28,7 +28,7 @@ impl<N: MavericNode> Deleter for NodeDeleter<N> {
         &self,
         entity: Entity,
         commands: &mut ComponentCommands,
-        world: &World
+        world: &World,
     ) -> DeletionPolicy {
         if let Some(n) = world.get::<MavericNodeComponent<N>>(entity) {
             N::on_deleted(&n.node, commands)

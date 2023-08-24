@@ -406,9 +406,7 @@ mod tests {
     impl MavericNode for Branch {
         type Context = NC2<TreeState, LingerState>;
 
-        fn set_components<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, false>) {
-
-        }
+        fn set_components<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, false>) {}
 
         fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>) {
             commands

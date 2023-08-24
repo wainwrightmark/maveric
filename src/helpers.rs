@@ -96,13 +96,15 @@ pub(crate) fn update_recursive<'c, R: MavericRoot, N: MavericNode>(
         .then_some(SetEvent::Undeleted)
         .unwrap_or(SetEvent::Updated);
 
-    let component_commands =
-        NodeCommands::<N, N::Context, R, false>::new(&node, previous, context, event, world, &mut ec);
+    let component_commands = NodeCommands::<N, N::Context, R, false>::new(
+        &node, previous, context, event, world, &mut ec,
+    );
 
     N::set_components(component_commands);
 
-    let children_commands =
-        NodeCommands::<N, N::Context, R, true>::new(&node, previous, context, event, world, &mut ec);
+    let children_commands = NodeCommands::<N, N::Context, R, true>::new(
+        &node, previous, context, event, world, &mut ec,
+    );
     N::set_children(children_commands);
 
     let node_changed = previous.map(|p| !p.eq(&node)).unwrap_or(true);

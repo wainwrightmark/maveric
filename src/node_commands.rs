@@ -167,12 +167,9 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext, R:
         f: impl FnOnce(&'n N, Option<&'p N>, &'c1 C::Wrapper<'c2>, SetEvent, &mut ComponentCommands),
     ) {
         if self.is_hot() {
-
             let mut occ = ComponentCommands::new(self.ec, self.world, self.event);
             f(self.args, self.previous, self.context, self.event, &mut occ);
         }
-
-
     }
 }
 

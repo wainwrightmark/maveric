@@ -7,19 +7,19 @@ pub(crate) struct RootCommands<'w, 's, 'b, 'q, R: MavericRoot> {
     commands: &'b mut Commands<'w, 's>,
     remaining_old_entities: HashMap<ChildKey, Entity>,
     world: &'q World,
-    phantom: PhantomData<R>
+    phantom: PhantomData<R>,
 }
 
-impl<'w, 's, 'b, 'w1,'q : 'w1, R: MavericRoot> RootCommands<'w, 's, 'b, 'q, R> {
+impl<'w, 's, 'b, 'w1, 'q: 'w1, R: MavericRoot> RootCommands<'w, 's, 'b, 'q, R> {
     pub(crate) fn new<'w2, 's2>(
         commands: &'b mut Commands<'w, 's>,
         world: &'q World,
-        query: Query< (Entity, &MavericChildComponent<R>), Without<Parent>>,
+        query: Query<(Entity, &MavericChildComponent<R>), Without<Parent>>,
     ) -> Self {
         let remaining_old_entities: HashMap<ChildKey, Entity> = query
             .into_iter()
             .map(|x| (x.1.key, x.0))
-            .map(|(key, entity)| (key, entity) )
+            .map(|(key, entity)| (key, entity))
             .collect();
 
         // info!("Children {:?}", {
@@ -38,12 +38,12 @@ impl<'w, 's, 'b, 'w1,'q : 'w1, R: MavericRoot> RootCommands<'w, 's, 'b, 'q, R> {
 
     pub(crate) fn finish(self) {
         for (_key, er) in self.remaining_old_entities {
-            let _= delete_recursive::<R>(self.commands, er, self.world);
+            let _ = delete_recursive::<R>(self.commands, er, self.world);
         }
     }
 }
 
-impl<'w, 's, 'b, 'w1,'q, R: MavericRoot> ChildCommands for RootCommands<'w, 's, 'b, 'q, R> {
+impl<'w, 's, 'b, 'w1, 'q, R: MavericRoot> ChildCommands for RootCommands<'w, 's, 'b, 'q, R> {
     fn add_child<NChild: MavericNode>(
         &mut self,
         key: impl Into<ChildKey>,
@@ -54,7 +54,11 @@ impl<'w, 's, 'b, 'w1,'q, R: MavericRoot> ChildCommands for RootCommands<'w, 's, 
 
         match self.remaining_old_entities.remove(&key) {
             Some(entity) => {
-                if self.world.get::<MavericNodeComponent<NChild>>(entity).is_some() {
+                if self
+                    .world
+                    .get::<MavericNodeComponent<NChild>>(entity)
+                    .is_some()
+                {
                     update_recursive::<R, NChild>(
                         self.commands,
                         entity,

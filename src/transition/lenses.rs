@@ -15,7 +15,7 @@ macro_rules! define_lens {
         }
 
         impl GetRefLens for $L {
-            fn try_get_ref(object: &Self::Object) -> Option<&Self::Value>  {
+            fn try_get_ref(object: &Self::Object) -> Option<&Self::Value> {
                 Some(&object.$p)
             }
         }
@@ -65,8 +65,6 @@ macro_rules! define_lens_transparent {
     };
 }
 
-
-
 define_lens!(TransformTranslationLens, Transform, Vec3, translation);
 define_lens!(TransformRotationLens, Transform, Quat, rotation);
 define_lens!(TransformScaleLens, Transform, Vec3, scale);
@@ -81,8 +79,6 @@ define_lens!(Vec3ZLens, Vec3, f32, z);
 pub type TransformRotationXLens = Prism2<TransformRotationLens, QuatXLens>;
 pub type TransformRotationYLens = Prism2<TransformRotationLens, QuatYLens>;
 pub type TransformRotationZLens = Prism2<TransformRotationLens, QuatZLens>;
-
-
 
 pub fn transform_speed(
     translation_units_per_second: f32,
