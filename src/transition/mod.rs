@@ -6,6 +6,7 @@ pub mod step;
 pub mod tweenable;
 pub mod with;
 pub mod deletion_path_maker;
+pub mod transition_value;
 
 #[cfg(feature="more_bevy")]
 pub mod ui_lenses;
@@ -18,6 +19,7 @@ pub mod prelude {
     pub use crate::transition::tweenable::*;
     pub use crate::transition::with::*;
     pub use crate::transition::deletion_path_maker::*;
+    pub use crate::transition::transition_value::*;
 
     #[cfg(feature="more_bevy")]
     pub use crate::transition::ui_lenses::*;
