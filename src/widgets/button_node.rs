@@ -16,7 +16,7 @@ impl<Marker: IntoBundle, S: IntoBundle<B = Style>, C: ChildTuple> MavericNode
 {
     type Context = C::Context;
 
-    fn set_components<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, false>) {
+    fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
         let mut commands = commands.ignore_context();
 
         commands.scope(|commands| commands.ignore_args().insert(ButtonBundle::default()));
@@ -36,7 +36,7 @@ impl<Marker: IntoBundle, S: IntoBundle<B = Style>, C: ChildTuple> MavericNode
         });
     }
 
-    fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
         commands.map_args(|x| &x.children).add_children();
     }
 }

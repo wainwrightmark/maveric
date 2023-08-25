@@ -34,7 +34,7 @@ impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Ma
 {
     type Context = <Child as MavericNode>::Context;
 
-    fn set_components<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, false>) {
+    fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
         commands.ignore_args().ignore_context().insert(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
@@ -45,7 +45,7 @@ impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Ma
         })
     }
 
-    fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
         commands.ordered_children_advanced(|node,previous,context, _,commands|{
             const CENTER: f32 = 50.0;
             const PAGE_WIDTH: f32 = 200.0;

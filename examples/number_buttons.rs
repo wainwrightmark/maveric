@@ -86,7 +86,7 @@ pub struct CommandGrid;
 impl MavericNode for CommandGrid {
     type Context = AssetServer;
 
-    fn set_components<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, false>) {
+    fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
         commands.ignore_args().ignore_context().insert(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
@@ -100,7 +100,7 @@ impl MavericNode for CommandGrid {
         });
     }
 
-    fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
         commands
             .ignore_args()
             .unordered_children_with_context(|context, commands| {
@@ -134,7 +134,7 @@ pub struct DynamicGrid;
 impl MavericNode for DynamicGrid {
     type Context = NC2<UIState, AssetServer>;
 
-    fn set_components<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, false>) {
+    fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
         commands.ignore_args().ignore_context().insert(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
@@ -148,7 +148,7 @@ impl MavericNode for DynamicGrid {
         });
     }
 
-    fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
         commands
             .ignore_args()
             .ordered_children_with_context(|context, commands| {

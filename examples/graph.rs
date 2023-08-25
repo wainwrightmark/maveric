@@ -107,7 +107,7 @@ struct GraphNode(u32);
 impl MavericNode for NumberNode {
     type Context = AssetServer;
 
-    fn set_components<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, false>) {
+    fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
         let mut commands = commands.ignore_context();
         commands.insert_with_args(|a| GraphNode(a.0));
 
@@ -136,7 +136,7 @@ impl MavericNode for NumberNode {
         );
     }
 
-    fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
         commands.unordered_children_with_args_and_context(|args, context, commands| {
             commands.add_child(
                 0,

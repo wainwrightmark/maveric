@@ -132,9 +132,9 @@ struct Branch;
 impl MavericNode for Branch {
     type Context = TreeState;
 
-    fn set_components<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, false>) {}
+    fn set_components(_commands: SetComponentCommands<Self, Self::Context>) {}
 
-    fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
         commands
             .ignore_args()
             .unordered_children_with_context(|context, commands| {

@@ -8,13 +8,15 @@ pub mod deleter;
 pub mod helpers;
 pub mod into_components;
 pub mod node;
-pub mod node_commands;
+
 pub mod node_context;
 pub mod plugin;
 pub mod root;
 pub mod root_commands;
 pub mod set_event;
 pub mod transition;
+pub mod set_children_commands;
+pub mod set_components_commands;
 #[cfg(feature = "more_bevy")]
 pub mod widgets;
 
@@ -27,7 +29,8 @@ pub mod prelude {
     pub use crate::deleter::*;
     pub use crate::into_components::*;
     pub use crate::node::*;
-    pub use crate::node_commands::*;
+    pub use crate::set_children_commands::*;
+    pub use crate::set_components_commands::*;
     pub use crate::node_context::*;
     pub use crate::plugin::*;
     pub use crate::root::*;

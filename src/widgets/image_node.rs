@@ -13,7 +13,7 @@ pub struct ImageNode<S: IntoBundle<B = Style>> {
 impl<S: IntoBundle<B = Style>> MavericNode for ImageNode<S> {
     type Context = AssetServer;
 
-    fn set_components<R: MavericRoot>(mut commands: NodeCommands<Self, Self::Context, R, false>) {
+    fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
         commands.scope(|commands| {
             commands
                 .ignore_args()
@@ -46,5 +46,5 @@ impl<S: IntoBundle<B = Style>> MavericNode for ImageNode<S> {
             .insert_with_args(|color| BackgroundColor(*color));
     }
 
-    fn set_children<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, true>) {}
+    fn set_children<R: MavericRoot>(_commands: SetChildrenCommands<Self, Self::Context, R>) {}
 }

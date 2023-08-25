@@ -67,9 +67,9 @@ struct Branch;
 impl MavericNode for Branch {
     type Context = NC2<TreeState, LingerState>;
 
-    fn set_components<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, false>) {}
+    fn set_components(_commands: SetComponentCommands<Self, Self::Context>) {}
 
-    fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
         commands
             .ignore_args()
             .ordered_children_with_context(|context, commands| {
@@ -90,9 +90,9 @@ struct Leaf {
 impl MavericNode for Leaf {
     type Context = NoContext;
 
-    fn set_components<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, false>) {}
+    fn set_components(_commands: SetComponentCommands<Self, Self::Context>) {}
 
-    fn set_children<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, true>) {}
+    fn set_children<R: MavericRoot>(_commands: SetChildrenCommands<Self, Self::Context, R>) {}
 
     fn on_deleted<'r>(&self, _commands: &mut ComponentCommands) -> DeletionPolicy {
         if self.linger {

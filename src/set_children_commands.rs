@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use bevy::ecs::system::EntityCommands;
 
 use crate::prelude::*;
-pub struct NodeCommands<
+pub struct SetChildrenCommands<
     'n,
     'p,
     'c1,
@@ -16,7 +16,6 @@ pub struct NodeCommands<
     N: PartialEq,
     C: NodeContext,
     R: MavericRoot,
-    const CHILDREN: bool,
 > {
     args: &'n N,
     previous: Option<&'p N>,
@@ -27,21 +26,8 @@ pub struct NodeCommands<
     phantom: PhantomData<R>,
 }
 
-impl<
-        'n,
-        'p,
-        'c1,
-        'c2,
-        'world,
-        'ec,
-        'w,
-        's,
-        'a,
-        N: PartialEq,
-        C: NodeContext,
-        R: MavericRoot,
-        const CHILDREN: bool,
-    > NodeCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, C, R, CHILDREN>
+impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext, R: MavericRoot>
+    SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, C, R>
 {
     pub(crate) fn new(
         args: &'n N,
@@ -62,52 +48,25 @@ impl<
         }
     }
 
-    pub fn scope<'ec2, 'selfie>(
-        &'selfie mut self,
-        f: impl FnOnce(NodeCommands<'n, 'p, 'c1, 'c2, 'world, 'ec2, 'w, 's, 'a, N, C, R, false>),
-    ) where
-        'n: 'ec2,
-        'p: 'ec2,
-        'c1: 'ec2,
-        'c2: 'ec2,
-        'world: 'ec2,
-        'ec: 'ec2,
-        'w: 'ec2,
-        's: 'ec2,
-        'a: 'ec2,
-        'selfie: 'ec2,
-    {
-        let clone = NodeCommands {
-            args: self.args,
-            previous: self.previous,
-            context: self.context,
-            event: self.event,
-            world: self.world,
-            phantom: self.phantom,
-            ec: self.ec,
-        };
-        f(clone)
-    }
-
     pub fn ignore_args(
         self,
-    ) -> NodeCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, (), C, R, CHILDREN> {
+    ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, (), C, R> {
         self.map_args(|_| &())
     }
 
     pub fn ignore_context(
         self,
-    ) -> NodeCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, NoContext, R, CHILDREN> {
+    ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, NoContext, R> {
         self.map_context(|_| &())
     }
 
     pub fn map_args<N2: PartialEq>(
         self,
         map: impl Fn(&N) -> &N2,
-    ) -> NodeCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N2, C, R, CHILDREN> {
+    ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N2, C, R> {
         let new_args = map(self.args);
 
-        NodeCommands {
+        SetChildrenCommands {
             args: new_args,
             previous: self.previous.map(map),
             context: self.context,
@@ -121,9 +80,9 @@ impl<
     pub fn map_context<C2: NodeContext>(
         self,
         map: impl FnOnce(&'c1 C::Wrapper<'c2>) -> &'c1 C2::Wrapper<'c2>,
-    ) -> NodeCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, C2, R, CHILDREN> {
+    ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, C2, R> {
         let new_context = map(self.context);
-        NodeCommands {
+        SetChildrenCommands {
             args: self.args,
             previous: self.previous,
             context: new_context,
@@ -146,68 +105,6 @@ impl<
     }
 }
 
-impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext, R: MavericRoot>
-    NodeCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, C, R, false>
-{
-    pub fn insert_with_args_and_context<B: Bundle>(
-        &mut self,
-
-        f: impl FnOnce(&'n N, &'c1 C::Wrapper<'c2>) -> B,
-    ) {
-        // if self.is_hot(){
-        //     info!("insert {}", std::any::type_name::<B>());
-        // }
-
-        self.components_advanced(|n, _, c, _, cc| cc.insert(f(n, c)))
-    }
-
-    pub fn components_advanced(
-        &mut self,
-
-        f: impl FnOnce(&'n N, Option<&'p N>, &'c1 C::Wrapper<'c2>, SetEvent, &mut ComponentCommands),
-    ) {
-        if self.is_hot() {
-            let mut occ = ComponentCommands::new(self.ec, self.world, self.event);
-            f(self.args, self.previous, self.context, self.event, &mut occ);
-        }
-    }
-}
-
-impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq + IntoBundle, R: MavericRoot>
-    NodeCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, NoContext, R, false>
-{
-    pub fn insert_bundle(&mut self) {
-        if self.is_hot() {
-            //info!("insert {}", std::any::type_name::<N>());
-            self.ec.insert(self.args.clone().into_bundle());
-        }
-    }
-}
-
-impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, R: MavericRoot>
-    NodeCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, (), NoContext, R, false>
-{
-    pub fn insert<B: Bundle>(&mut self, b: B) {
-        self.insert_with_args_and_context(|_, _| b)
-    }
-}
-
-impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, R: MavericRoot>
-    NodeCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, NoContext, R, false>
-{
-    pub fn insert_with_args<B: Bundle>(&mut self, f: impl FnOnce(&'n N) -> B) {
-        self.insert_with_args_and_context(|n, _| f(n))
-    }
-}
-
-impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, C: NodeContext, R: MavericRoot>
-    NodeCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, (), C, R, false>
-{
-    pub fn insert_with_context<B: Bundle>(&mut self, f: impl FnOnce(&'c1 C::Wrapper<'c2>) -> B) {
-        self.insert_with_args_and_context(|_, c| f(c))
-    }
-}
-
 impl<
         'n,
         'p,
@@ -221,7 +118,7 @@ impl<
         N: ChildTuple<Context = C>,
         C: NodeContext,
         R: MavericRoot,
-    > NodeCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, C, R, true>
+    > SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, C, R>
 {
     pub fn add_children(self) {
         self.unordered_children_with_args_and_context(|args, context, commands| {
@@ -231,21 +128,9 @@ impl<
 }
 
 impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext, R: MavericRoot>
-    NodeCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, C, R, true>
+    SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, C, R>
 {
-    pub fn no_children(
-        self,
-    ) -> NodeCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, C, R, false> {
-        NodeCommands {
-            args: self.args,
-            previous: self.previous,
-            context: self.context,
-            event: self.event,
-            phantom: PhantomData,
-            world: self.world,
-            ec: self.ec,
-        }
-    }
+    pub fn no_children(self) {}
 
     pub fn ordered_children_with_args_and_context(
         self,
@@ -305,7 +190,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext, R:
 }
 
 impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, R: MavericRoot>
-    NodeCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, (), NoContext, R, true>
+    SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, (), NoContext, R>
 {
     pub fn ordered_children(self, f: impl FnOnce(&mut OrderedChildCommands<R>)) {
         self.ordered_children_with_args_and_context(|_, _, cc| f(cc))
@@ -317,7 +202,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, R: MavericRoot>
 }
 
 impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, R: MavericRoot>
-    NodeCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, NoContext, R, true>
+    SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, NoContext, R>
 {
     pub fn ordered_children_with_args(self, f: impl FnOnce(&'n N, &mut OrderedChildCommands<R>)) {
         self.ordered_children_with_args_and_context(|n, _, cc| f(n, cc))
@@ -333,7 +218,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, R: MavericRoot>
 }
 
 impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, C: NodeContext, R: MavericRoot>
-    NodeCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, (), C, R, true>
+    SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, (), C, R>
 {
     pub fn ordered_children_with_context(
         self,

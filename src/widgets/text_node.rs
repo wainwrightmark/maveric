@@ -16,7 +16,7 @@ pub struct TextNode<T: Into<String> + PartialEq + Clone + Send + Sync + 'static>
 impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode for TextNode<T> {
     type Context = AssetServer;
 
-    fn set_components<R: MavericRoot>(mut commands: NodeCommands<Self, Self::Context, R, false>) {
+    fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
         commands.scope(|commands| {
             commands
                 .ignore_args()
@@ -41,5 +41,5 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode fo
         });
     }
 
-    fn set_children<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, true>) {}
+    fn set_children<R: MavericRoot>(_commands: SetChildrenCommands<Self, Self::Context, R>) {}
 }

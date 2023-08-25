@@ -160,10 +160,10 @@ mod tests {
     impl MavericNode for Branch {
         type Context = TreeState;
 
-        fn set_components<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, false>) {}
+        fn set_components(_commands: SetComponentCommands<Self, Self::Context>) {}
 
-        fn set_children<R: MavericRoot>(data: NodeCommands<Self, Self::Context, R, true>) {
-            data.ignore_args()
+        fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
+            commands.ignore_args()
                 .ordered_children_with_context(|context, commands| {
                     for x in 0..(context.blue_leaf_count) {
                         commands.add_child(x, Leaf::Blue, &());
@@ -187,8 +187,8 @@ mod tests {
     impl MavericNode for Leaf {
         type Context = NoContext;
 
-        fn set_components<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, false>) {}
+        fn set_components(_commands: SetComponentCommands<Self, Self::Context>) {}
 
-        fn set_children<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, true>) {}
+        fn set_children<R: MavericRoot>(_commands: SetChildrenCommands<Self, Self::Context, R>) {}
     }
 }

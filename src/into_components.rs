@@ -18,10 +18,10 @@ impl<T: Bundle + PartialEq + Clone> IntoBundle for T {
 impl<T: IntoBundle> MavericNode for T {
     type Context = NoContext;
 
-    fn set_components<R: MavericRoot>(data: NodeCommands<Self, Self::Context, R, false>) {
+    fn set_components(data: SetComponentCommands<Self, Self::Context>) {
         data.ignore_context()
             .insert_with_args(|a| a.clone().into_bundle());
     }
 
-    fn set_children<R: MavericRoot>(_commands: NodeCommands<Self, Self::Context, R, true>) {}
+    fn set_children<R: MavericRoot>(_commands: SetChildrenCommands<Self, Self::Context, R>) {}
 }

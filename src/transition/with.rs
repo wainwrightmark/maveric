@@ -117,7 +117,7 @@ where
 {
     type Context = N::Context;
 
-    fn set_components<R: MavericRoot>(mut commands: NodeCommands<Self, Self::Context, R, false>) {
+    fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
         commands.scope(|commands| N::set_components(commands.map_args(|x| &x.node)));
 
         commands
@@ -180,7 +180,7 @@ where
             });
     }
 
-    fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
         N::set_children(commands.map_args(|x| &x.node))
     }
 

@@ -197,7 +197,7 @@ pub enum MainOrLevelMenu {
 impl MavericNode for MainOrLevelMenu {
     type Context = NC2<MenuState, AssetServer>;
 
-    fn set_components<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, false>) {
+    fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
         commands.ignore_args().ignore_context().insert(NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
@@ -214,7 +214,7 @@ impl MavericNode for MainOrLevelMenu {
         });
     }
 
-    fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
         commands.unordered_children_with_args_and_context(|args, context, commands| match args {
             MainOrLevelMenu::Main => {
                 for (key, action) in ButtonAction::main_buttons().iter().enumerate() {
@@ -265,7 +265,7 @@ pub struct LevelMenuArrows(u32);
 impl MavericNode for LevelMenuArrows {
     type Context = AssetServer;
 
-    fn set_components<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, false>) {
+    fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
         commands.ignore_args().ignore_context().insert(NodeBundle {
             style: Style {
                 position_type: PositionType::Relative,
@@ -295,7 +295,7 @@ impl MavericNode for LevelMenuArrows {
         });
     }
 
-    fn set_children<R: MavericRoot>(commands: NodeCommands<Self, Self::Context, R, true>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
         commands.unordered_children_with_args_and_context(|args, context, commands| {
             if args.0 == 0 {
                 commands.add_child("left", icon_button_node(ButtonAction::OpenMenu), context)
