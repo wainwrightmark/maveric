@@ -18,33 +18,37 @@ pub struct SetChildrenCommands<
     C: NodeContext,
     R: MavericRoot,
 > {
-    args: &'n N,
-    previous: Option<&'p N>,
-    context: &'c1 C::Wrapper<'c2>,
-    event: SetEvent,
+    args: NodeArgs<'n, 'p, 'c1, 'c2, N, C>,
     world: &'world World,
     ec: &'ec mut EntityCommands<'w, 's, 'a>,
     alloc: &'alloc mut Allocator,
     phantom: PhantomData<R>,
 }
 
-impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N: PartialEq, C: NodeContext, R: MavericRoot>
-    SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N, C, R>
+impl<
+        'n,
+        'p,
+        'c1,
+        'c2,
+        'world,
+        'ec,
+        'w,
+        's,
+        'a,
+        'alloc,
+        N: PartialEq,
+        C: NodeContext,
+        R: MavericRoot,
+    > SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N, C, R>
 {
     pub(crate) fn new(
-        args: &'n N,
-        previous: Option<&'p N>,
-        context: &'c1 C::Wrapper<'c2>,
-        event: SetEvent,
+        args: NodeArgs<'n, 'p, 'c1, 'c2, N, C>,
         world: &'world World,
         ec: &'ec mut EntityCommands<'w, 's, 'a>,
         alloc: &'alloc mut Allocator,
     ) -> Self {
         Self {
             args,
-            previous,
-            context,
-            event,
             world,
             ec,
             alloc,
@@ -60,7 +64,8 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N: PartialEq, C: NodeCon
 
     pub fn ignore_context(
         self,
-    ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N, NoContext, R> {
+    ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N, NoContext, R>
+    {
         self.map_context(|_| &())
     }
 
@@ -68,17 +73,12 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N: PartialEq, C: NodeCon
         self,
         map: impl Fn(&N) -> &N2,
     ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N2, C, R> {
-        let new_args = map(self.args);
-
         SetChildrenCommands {
-            args: new_args,
-            previous: self.previous.map(map),
-            context: self.context,
-            event: self.event,
+            args: self.args.map_node(map),
             phantom: self.phantom,
             world: self.world,
             ec: self.ec,
-            alloc: self.alloc
+            alloc: self.alloc,
         }
     }
 
@@ -86,27 +86,12 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N: PartialEq, C: NodeCon
         self,
         map: impl FnOnce(&'c1 C::Wrapper<'c2>) -> &'c1 C2::Wrapper<'c2>,
     ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N, C2, R> {
-        let new_context = map(self.context);
         SetChildrenCommands {
-            args: self.args,
-            previous: self.previous,
-            context: new_context,
-            event: self.event,
+            args: self.args.map_context(map),
             phantom: self.phantom,
             world: self.world,
             ec: self.ec,
-            alloc: self.alloc
-        }
-    }
-
-    /// Returns true if this is a creation or undeletion, or if the context or args have changed
-    fn is_hot(&self) -> bool {
-        match self.event {
-            SetEvent::Created | SetEvent::Undeleted => true,
-            SetEvent::Updated => {
-                C::has_changed(self.context)
-                    || self.previous.map(|p| !p.eq(self.args)).unwrap_or(true)
-            }
+            alloc: self.alloc,
         }
     }
 }
@@ -134,8 +119,21 @@ impl<
     }
 }
 
-impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N: PartialEq, C: NodeContext, R: MavericRoot>
-    SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N, C, R>
+impl<
+        'n,
+        'p,
+        'c1,
+        'c2,
+        'world,
+        'ec,
+        'w,
+        's,
+        'a,
+        'alloc,
+        N: PartialEq,
+        C: NodeContext,
+        R: MavericRoot,
+    > SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N, C, R>
 {
     pub fn no_children(self) {}
 
@@ -144,7 +142,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N: PartialEq, C: NodeCon
 
         f: impl FnOnce(&'n N, &'c1 C::Wrapper<'c2>, &mut OrderedChildCommands<R>),
     ) {
-        self.ordered_children_advanced(|n, _, c, _, cc| f(n, c, cc))
+        self.ordered(|a, cc| f(a.node, a.context, cc));
     }
 
     pub fn unordered_children_with_args_and_context(
@@ -152,47 +150,35 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N: PartialEq, C: NodeCon
 
         f: impl FnOnce(&'n N, &'c1 C::Wrapper<'c2>, &mut UnorderedChildCommands<R>),
     ) {
-        self.unordered_children_advanced(|n, _, c, _, cc| f(n, c, cc))
+        self.unordered(|a, cc| f(a.node, a.context, cc));
     }
 
-    pub fn ordered_children_advanced(
+    /// Gives you full access to args and commands
+    /// You must add children if you call this, even if not hot
+    pub fn ordered(
         self,
 
-        f: impl FnOnce(
-            &'n N,
-            Option<&'p N>,
-            &'c1 C::Wrapper<'c2>,
-            SetEvent,
-            &mut OrderedChildCommands<R>,
-        ),
+        f: impl FnOnce(&NodeArgs<'n, 'p, 'c1, 'c2, N, C>, &mut OrderedChildCommands<R>),
     ) {
-        if !self.is_hot() {
-            return;
+        if self.args.is_hot() {
+            let mut occ = OrderedChildCommands::<R>::new(self.ec, self.world, self.alloc);
+            f(&self.args, &mut occ);
+            occ.finish();
         }
-
-        let mut occ = OrderedChildCommands::<R>::new(self.ec, self.world, self.alloc);
-        f(self.args, self.previous, self.context, self.event, &mut occ);
-        occ.finish();
     }
 
-    pub fn unordered_children_advanced(
+    /// Gives you full access to args and commands
+    /// You must add children if you call this, even if not hot
+    pub fn unordered(
         self,
 
-        f: impl FnOnce(
-            &'n N,
-            Option<&'p N>,
-            &'c1 C::Wrapper<'c2>,
-            SetEvent,
-            &mut UnorderedChildCommands<R>,
-        ),
+        f: impl FnOnce(&NodeArgs<'n, 'p, 'c1, 'c2, N, C>, &mut UnorderedChildCommands<R>),
     ) {
-        if !self.is_hot() {
-            return;
+        if self.args.is_hot() {
+            let mut ucc = UnorderedChildCommands::<R>::new(self.ec, self.world, self.alloc);
+            f(&self.args, &mut ucc);
+            ucc.finish();
         }
-
-        let mut occ = UnorderedChildCommands::<R>::new(self.ec, self.world, self.alloc);
-        f(self.args, self.previous, self.context, self.event, &mut occ);
-        occ.finish();
     }
 }
 

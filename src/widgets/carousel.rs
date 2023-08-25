@@ -42,11 +42,13 @@ impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Ma
                 ..Default::default()
             },
             ..Default::default()
-        })
+        });
     }
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
-        commands.ordered_children_advanced(|node,previous,context, _,commands|{
+        commands.ordered(|args,commands|{
+
+            let NodeArgs { context, event:_event, node, previous } = args;
             const CENTER: f32 = 50.0;
             const PAGE_WIDTH: f32 = 200.0;
             const LEFT: f32 = CENTER - PAGE_WIDTH;

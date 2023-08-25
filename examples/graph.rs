@@ -108,32 +108,27 @@ impl MavericNode for NumberNode {
     type Context = AssetServer;
 
     fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
-        let mut commands = commands.ignore_context();
-        commands.insert_with_args(|a| GraphNode(a.0));
-
-        commands.ignore_args().components_advanced(
-            |_args, _previous, _context, event, commands| {
-                if event == SetEvent::Created {
-                    commands.insert(NodeBundle {
-                        style: Style {
-                            position_type: PositionType::Absolute,
-                            width: Val::Px(NODE_SIZE),
-                            height: Val::Px(NODE_SIZE),
-                            border: UiRect::all(Val::Px(NODE_BORDER)),
-                            left: Val::Percent(50.),
-                            top: Val::Percent(50.),
-                            align_items: AlignItems::Center,
-                            justify_items: JustifyItems::Center,
-                            align_content: AlignContent::Center,
-                            ..Default::default()
-                        },
-                        background_color: BackgroundColor(Color::WHITE),
-                        border_color: BorderColor(Color::GRAY),
-                        ..Default::default()
-                    })
-                }
-            },
-        );
+        commands
+            .ignore_context()
+            .insert_with_node(|a| GraphNode(a.0))
+            .ignore_args()
+            .insert(NodeBundle {
+                style: Style {
+                    position_type: PositionType::Absolute,
+                    width: Val::Px(NODE_SIZE),
+                    height: Val::Px(NODE_SIZE),
+                    border: UiRect::all(Val::Px(NODE_BORDER)),
+                    left: Val::Percent(50.),
+                    top: Val::Percent(50.),
+                    align_items: AlignItems::Center,
+                    justify_items: JustifyItems::Center,
+                    align_content: AlignContent::Center,
+                    ..Default::default()
+                },
+                background_color: BackgroundColor(Color::WHITE),
+                border_color: BorderColor(Color::GRAY),
+                ..Default::default()
+            });
     }
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {

@@ -19,20 +19,20 @@ impl<Marker: IntoBundle, S: IntoBundle<B = Style>, C: ChildTuple> MavericNode
     fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
         let mut commands = commands.ignore_context();
 
-        commands.scope(|commands| commands.ignore_args().insert(ButtonBundle::default()));
+        commands.scope(|commands| commands.ignore_args().insert(ButtonBundle::default()).finish());
 
-        commands.scope(|commands| commands.map_args(|x| &x.style).insert_bundle());
-        commands.scope(|commands| commands.map_args(|x| &x.visibility).insert_bundle());
-        commands.scope(|commands| commands.map_args(|x| &x.marker).insert_bundle());
+        commands.scope(|commands| commands.map_args(|x| &x.style).insert_bundle().finish());
+        commands.scope(|commands| commands.map_args(|x| &x.visibility).insert_bundle().finish());
+        commands.scope(|commands| commands.map_args(|x| &x.marker).insert_bundle().finish());
         commands.scope(|commands| {
             commands
                 .map_args(|x| &x.background_color)
-                .insert_with_args(|color| BackgroundColor(*color))
+                .insert_with_node(|color| BackgroundColor(*color));
         });
         commands.scope(|commands| {
             commands
                 .map_args(|x| &x.border_color)
-                .insert_with_args(|color| BorderColor(*color))
+                .insert_with_node(|color| BorderColor(*color));
         });
     }
 

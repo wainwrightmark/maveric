@@ -123,10 +123,10 @@ where
         commands
             .map_args(|x| &x.transition)
             .ignore_context()
-            .components_advanced(|args, _, _, event, commands| {
-                let (initial_value, update_transition) = args;
+            .advanced(|args, commands| {
+                let (initial_value, update_transition) = args.node;
 
-                let transition = match event {
+                let transition = match args.event {
                     SetEvent::Created => {
                         let in_transition = TransitionStep::new_arc(
                             initial_value.clone(),
@@ -139,21 +139,25 @@ where
                         })
                     }
                     SetEvent::Updated => {
-                        if let Some(previous_path) = commands.get::<Transition<L>>() {
-                            if update_transition.contains(&previous_path.step) {
-                                //info!("Same path found - no change");
-                                None
+                        if args.is_hot() {
+                            if let Some(previous_path) = commands.get::<Transition<L>>() {
+                                if update_transition.contains(&previous_path.step) {
+                                    //info!("Same path found - no change");
+                                    None
+                                } else {
+                                    //info!("New path found");
+                                    Some(Transition {
+                                        step: update_transition.clone(),
+                                    })
+                                }
                             } else {
-                                //info!("New path found");
+                                //info!("No path found");
                                 Some(Transition {
                                     step: update_transition.clone(),
                                 })
                             }
-                        } else {
-                            //info!("No path found");
-                            Some(Transition {
-                                step: update_transition.clone(),
-                            })
+                        }else{
+                            None
                         }
                     }
                     SetEvent::Undeleted => {
@@ -187,19 +191,19 @@ where
     fn on_deleted<'r>(&self, commands: &mut ComponentCommands) -> DeletionPolicy {
         let base = self.node.on_deleted(commands);
 
-        let Some(component) = commands
-                .get::<L::Object>() else {
-                    return base;};
+        let Some(component) = commands.get::<L::Object>() else {
+            return base;
+        };
 
         let previous = &<L as GetValueLens>::try_get_value(component);
 
         let Some(previous) = previous else {
+            return base;
+        };
 
-            return  base;};
-
-        let Some(deletion_path) = self.deletion.get_step(previous) else{
-
-            return  base;};
+        let Some(deletion_path) = self.deletion.get_step(previous) else {
+            return base;
+        };
 
         let duration = deletion_path
             .remaining_duration(previous)

@@ -18,32 +18,32 @@ impl<S: IntoBundle<B = Style>> MavericNode for ImageNode<S> {
             commands
                 .ignore_args()
                 .ignore_context()
-                .insert(ImageBundle::default())
+                .insert(ImageBundle::default());
         });
 
         commands.scope(|commands| {
             commands
                 .map_args(|x| &x.path)
-                .insert_with_args_and_context(|path, server| {
+                .insert_with_node_and_context(|path, server| {
                     let texture = get_or_load_asset::<Image>(*path, server);
                     UiImage {
                         texture,
                         flip_x: false,
                         flip_y: false,
                     }
-                })
+                });
         });
 
         commands.scope(|commands| {
             commands
                 .ignore_context()
                 .map_args(|x| &x.style)
-                .insert_bundle()
+                .insert_bundle();
         });
         commands
             .ignore_context()
             .map_args(|x| &x.background_color)
-            .insert_with_args(|color| BackgroundColor(*color));
+            .insert_with_node(|color| BackgroundColor(*color));
     }
 
     fn set_children<R: MavericRoot>(_commands: SetChildrenCommands<Self, Self::Context, R>) {}

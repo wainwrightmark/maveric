@@ -20,7 +20,7 @@ impl<T: IntoBundle> MavericNode for T {
 
     fn set_components(data: SetComponentCommands<Self, Self::Context>) {
         data.ignore_context()
-            .insert_with_args(|a| a.clone().into_bundle());
+            .insert_with_node(|a| a.clone().into_bundle());
     }
 
     fn set_children<R: MavericRoot>(_commands: SetChildrenCommands<Self, Self::Context, R>) {}
