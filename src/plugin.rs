@@ -1,3 +1,5 @@
+use std::borrow::BorrowMut;
+
 use crate::prelude::*;
 use bevy::{ecs::system::StaticSystemParam, prelude::*};
 
@@ -44,6 +46,7 @@ fn sync_state<R: MavericRoot>(
     param: StaticSystemParam<R::ContextParam<'_>>,
     root_query: Query<(Entity, &MavericChildComponent<R>), Without<Parent>>,
     world: &World,
+    mut allocator: Local<Allocator>
 ) {
     let context = R::get_context(param);
 
@@ -52,10 +55,14 @@ fn sync_state<R: MavericRoot>(
         return;
     }
 
-    let mut root_commands = RootCommands::new(&mut commands, world, root_query);
+    let mut allocator = allocator.borrow_mut();
+
+    let mut root_commands = RootCommands::new(&mut commands, world, root_query, &mut allocator);
 
     R::set_children(&context, &mut root_commands);
     root_commands.finish();
+
+    //allocator.print_info();
 }
 
 #[cfg(test)]

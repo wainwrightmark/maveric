@@ -3,47 +3,50 @@ use std::{any::type_name, marker::PhantomData};
 use crate::prelude::*;
 use bevy::{prelude::*, utils::hashbrown::HashMap};
 
-pub(crate) struct RootCommands<'w, 's, 'b, 'q, R: MavericRoot> {
+pub(crate) struct RootCommands<'w, 's, 'b, 'q, 'alloc, R: MavericRoot> {
     commands: &'b mut Commands<'w, 's>,
     remaining_old_entities: HashMap<ChildKey, Entity>,
     world: &'q World,
     phantom: PhantomData<R>,
+    allocator: &'alloc mut Allocator
 }
 
-impl<'w, 's, 'b, 'w1, 'q: 'w1, R: MavericRoot> RootCommands<'w, 's, 'b, 'q, R> {
+impl<'w, 's, 'b, 'w1, 'q: 'w1,'alloc, R: MavericRoot> RootCommands<'w, 's, 'b, 'q,'alloc, R> {
     pub(crate) fn new(
         commands: &'b mut Commands<'w, 's>,
         world: &'q World,
         query: Query<(Entity, &MavericChildComponent<R>), Without<Parent>>,
+        allocator: &'alloc mut Allocator
     ) -> Self {
-        let remaining_old_entities: HashMap<ChildKey, Entity> = query
+        let mut remaining_old_entities: HashMap<ChildKey, Entity> = allocator.unordered_entities.claim();
+
+        remaining_old_entities.extend(
+            query
             .into_iter()
             .map(|x| (x.1.key, x.0))
             .map(|(key, entity)| (key, entity))
-            .collect();
 
-        // info!("Children {:?}", {
-        //     let mut keys: Vec<_> = remaining_old_entities.keys().collect();
-        //     keys.sort();
-        //     keys
-        // });
+        );
 
         Self {
             commands,
             remaining_old_entities,
             world,
             phantom: PhantomData,
+            allocator
         }
     }
 
     pub(crate) fn finish(self) {
-        for (_key, er) in self.remaining_old_entities {
-            let _ = delete_recursive::<R>(self.commands, er, self.world);
+        for (_key, er) in self.remaining_old_entities.iter() {
+            let _ = delete_recursive::<R>(self.commands, *er, self.world);
         }
+
+        self.allocator.unordered_entities.reclaim(self.remaining_old_entities);
     }
 }
 
-impl<'w, 's, 'b, 'q, R: MavericRoot> ChildCommands for RootCommands<'w, 's, 'b, 'q, R> {
+impl<'w, 's, 'b, 'q,'alloc, R: MavericRoot> ChildCommands for RootCommands<'w, 's, 'b, 'q,'alloc, R> {
     fn add_child<NChild: MavericNode>(
         &mut self,
         key: impl Into<ChildKey>,
@@ -65,6 +68,7 @@ impl<'w, 's, 'b, 'q, R: MavericRoot> ChildCommands for RootCommands<'w, 's, 'b, 
                         child,
                         context,
                         self.world,
+                        self.allocator
                     );
                 } else {
                     warn!(
@@ -75,12 +79,12 @@ impl<'w, 's, 'b, 'q, R: MavericRoot> ChildCommands for RootCommands<'w, 's, 'b, 
                     self.commands.entity(entity).despawn_recursive();
 
                     let cec = self.commands.spawn_empty();
-                    create_recursive::<R, NChild>(cec, child, context, key, self.world);
+                    create_recursive::<R, NChild>(cec, child, context, key, self.world, self.allocator);
                 }
             }
             None => {
                 let cec = self.commands.spawn_empty();
-                create_recursive::<R, NChild>(cec, child, context, key, self.world);
+                create_recursive::<R, NChild>(cec, child, context, key, self.world, self.allocator);
             }
         }
     }

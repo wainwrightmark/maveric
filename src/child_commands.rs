@@ -12,15 +12,16 @@ pub trait ChildCommands {
     );
 }
 
-pub struct UnorderedChildCommands<'c, 'w, 's, 'a, 'world, R: MavericRoot> {
+pub struct UnorderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> {
     ec: &'c mut EntityCommands<'w, 's, 'a>,
     world: &'world World,
     remaining_old_entities: HashMap<ChildKey, Entity>,
+    allocator: &'alloc mut Allocator,
     phantom: PhantomData<R>,
 }
 
-impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> ChildCommands
-    for UnorderedChildCommands<'c, 'w, 's, 'a, 'world, R>
+impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
+    for UnorderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R>
 {
     fn add_child<NChild: MavericNode>(
         &mut self,
@@ -44,6 +45,7 @@ impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> ChildCommands
                     child,
                     context,
                     self.world,
+                    self.allocator
                 );
                 return; // do not spawn a new child;
             }
@@ -57,51 +59,59 @@ impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> ChildCommands
 
         self.ec.with_children(|cb| {
             let cec = cb.spawn_empty();
-            create_recursive::<R, NChild>(cec, child, context, key, self.world);
+            create_recursive::<R, NChild>(cec, child, context, key, self.world, self.allocator);
         });
     }
 }
 
-impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> UnorderedChildCommands<'c, 'w, 's, 'a, 'world, R> {
-    pub(crate) fn new(ec: &'c mut EntityCommands<'w, 's, 'a>, world: &'world World) -> Self {
+impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> UnorderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R> {
+    pub(crate) fn new(
+        ec: &'c mut EntityCommands<'w, 's, 'a>,
+        world: &'world World,
+        allocator: &'alloc mut Allocator,
+    ) -> Self {
         let children = world.get::<Children>(ec.id());
-
+        let mut remaining_old_entities: HashMap<ChildKey, Entity> =
+            allocator.unordered_entities.claim();
         match children {
             Some(children) => {
-                let remaining_old_entities: HashMap<ChildKey, Entity> = children
-                    .iter()
-                    .flat_map(|entity| {
-                        world
-                            .get::<MavericChildComponent<R>>(*entity)
-                            .map(|hcc| (hcc.key, *entity))
-                    })
-                    .collect();
+                remaining_old_entities.extend(children.iter().flat_map(|entity| {
+                    world
+                        .get::<MavericChildComponent<R>>(*entity)
+                        .map(|hcc| (hcc.key, *entity))
+                }));
 
                 Self {
                     ec,
                     world,
                     remaining_old_entities,
                     phantom: PhantomData,
+                    allocator
                 }
             }
             None => Self {
                 ec,
                 world,
-                remaining_old_entities: Default::default(),
+                remaining_old_entities,
                 phantom: PhantomData,
+                allocator
             },
         }
     }
 
     pub(crate) fn finish(self) {
         //remove all remaining old entities
-        for (_key, entity) in self.remaining_old_entities {
-            let _ = delete_recursive::<R>(self.ec.commands(), entity, self.world);
+        for (_key, entity) in self.remaining_old_entities.iter() {
+            let _ = delete_recursive::<R>(self.ec.commands(), *entity, self.world);
         }
+
+        self.allocator
+            .unordered_entities
+            .reclaim(self.remaining_old_entities);
     }
 }
 
-pub struct OrderedChildCommands<'c, 'w, 's, 'a, 'world, R: MavericRoot> {
+pub struct OrderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> {
     ec: &'c mut EntityCommands<'w, 's, 'a>,
     world: &'world World,
     phantom: PhantomData<R>,
@@ -110,10 +120,12 @@ pub struct OrderedChildCommands<'c, 'w, 's, 'a, 'world, R: MavericRoot> {
 
     new_children: Vec<Entity>,
     new_indices: Vec<Option<usize>>,
+    allocator: &'alloc mut Allocator
+
 }
 
-impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> ChildCommands
-    for OrderedChildCommands<'c, 'w, 's, 'a, 'world, R>
+impl<'c, 'w, 's, 'a, 'world,'alloc, R: MavericRoot> ChildCommands
+    for OrderedChildCommands<'c, 'w, 's, 'a, 'world,'alloc, R>
 {
     fn add_child<NChild: MavericNode>(
         &mut self,
@@ -137,6 +149,7 @@ impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> ChildCommands
                     child,
                     context,
                     self.world,
+                    self.allocator
                 );
                 self.new_children.push(entity);
                 self.new_indices.push(Some(old_index));
@@ -151,46 +164,40 @@ impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> ChildCommands
         };
 
         let new_commands = self.ec.commands().spawn_empty();
-        let id = create_recursive::<R, NChild>(new_commands, child, context, key, self.world);
+        let id = create_recursive::<R, NChild>(new_commands, child, context, key, self.world, self.allocator);
         self.new_children.push(id);
         self.new_indices.push(None);
     }
 }
 
-impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> OrderedChildCommands<'c, 'w, 's, 'a, 'world, R> {
-    pub(crate) fn new(ec: &'c mut EntityCommands<'w, 's, 'a>, world: &'world World) -> Self {
-        let children = world.get::<Children>(ec.id());
-        //let tree = tree.clone();
-        match children {
-            Some(children) => {
-                let remaining_old_entities: HashMap<ChildKey, (usize, Entity)> = children
-                    .iter()
-                    .enumerate()
-                    .flat_map(|(index, entity)| {
-                        world
-                            .get::<MavericChildComponent<R>>(*entity)
-                            .map(|hcc| (hcc.key, (index, *entity)))
-                    })
-                    .collect();
+impl<'c, 'w, 's, 'a, 'world,'alloc, R: MavericRoot> OrderedChildCommands<'c, 'w, 's, 'a, 'world,'alloc, R> {
+    pub(crate) fn new(
+        ec: &'c mut EntityCommands<'w, 's, 'a>,
+        world: &'world World,
+        allocator: &'alloc mut Allocator,
+    ) -> Self {
+        let mut remaining_old_entities: HashMap<ChildKey, (usize, Entity)> =
+            allocator.ordered_entities.claim();
 
-                Self {
-                    ec,
-                    world,
-                    remaining_old_entities,
+        if let Some(children) = world.get::<Children>(ec.id()) {
+            remaining_old_entities.extend(children.iter().enumerate().flat_map(
+                |(index, entity)| {
+                    world
+                        .get::<MavericChildComponent<R>>(*entity)
+                        .map(|hcc| (hcc.key, (index, *entity)))
+                },
+            ));
+        }
 
-                    phantom: PhantomData,
-                    new_children: vec![],
-                    new_indices: vec![],
-                }
-            }
-            None => Self {
-                ec,
-                world,
-                remaining_old_entities: Default::default(),
-                phantom: PhantomData,
-                new_children: vec![],
-                new_indices: vec![],
-            },
+        Self {
+            ec,
+            world,
+            remaining_old_entities,
+
+            phantom: PhantomData,
+            new_children: allocator.ordered_children.claim(),
+            new_indices: allocator.ordered_indices.claim(),
+            allocator: allocator
         }
     }
 
@@ -199,7 +206,10 @@ impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> OrderedChildCommands<'c, 'w, 's, 'a
             let mut changed = false;
             let mut last = 0;
             'oc: for old_index in self.new_indices.iter() {
-                let Some(old_index) = *old_index else{ changed = true; break 'oc;};
+                let Some(old_index) = *old_index else {
+                    changed = true;
+                    break 'oc;
+                };
                 if old_index < last {
                     changed = true;
                     break 'oc;
@@ -210,8 +220,12 @@ impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> OrderedChildCommands<'c, 'w, 's, 'a
         };
 
         //remove all remaining old entities
-        for (_key, (old_deleted_index, entity)) in self.remaining_old_entities {
-            let Some(lingering_entity) = delete_recursive::<R>(self.ec.commands(), entity, self.world) else {continue;};
+        for (_key, (old_deleted_index, entity)) in self.remaining_old_entities.iter() {
+            let Some(lingering_entity) =
+                delete_recursive::<R>(self.ec.commands(), *entity, self.world)
+            else {
+                continue;
+            };
 
             if !order_changed {
                 continue;
@@ -219,8 +233,12 @@ impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> OrderedChildCommands<'c, 'w, 's, 'a
 
             let mut closest_to_next: Option<(usize, usize)> = None;
             'inner: for (new_index, old_index) in self.new_indices.iter().enumerate() {
-                let Some(old_index) = old_index else {continue;};
-                let Some(distance) = old_index.checked_sub(old_deleted_index) else{continue;};
+                let Some(old_index) = old_index else {
+                    continue;
+                };
+                let Some(distance) = old_index.checked_sub(*old_deleted_index) else {
+                    continue;
+                };
 
                 let replace = if let Some((prev_distance, _)) = closest_to_next {
                     distance < prev_distance
@@ -239,15 +257,19 @@ impl<'c, 'w, 's, 'a, 'world, R: MavericRoot> OrderedChildCommands<'c, 'w, 's, 'a
 
             if let Some((_, new_index)) = closest_to_next {
                 self.new_children.insert(new_index, lingering_entity);
-                self.new_indices.insert(new_index, Some(old_deleted_index));
+                self.new_indices.insert(new_index, Some(*old_deleted_index));
             } else {
                 self.new_children.push(lingering_entity);
-                self.new_indices.push(Some(old_deleted_index));
+                self.new_indices.push(Some(*old_deleted_index));
             }
         }
         if order_changed {
             self.ec.replace_children(&self.new_children);
         }
+
+        self.allocator.ordered_children.reclaim(self.new_children);
+        self.allocator.ordered_entities.reclaim(self.remaining_old_entities);
+        self.allocator.ordered_indices.reclaim(self.new_indices);
     }
 }
 

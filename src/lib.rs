@@ -17,6 +17,7 @@ pub mod set_event;
 pub mod transition;
 pub mod set_children_commands;
 pub mod set_components_commands;
+pub mod allocator;
 #[cfg(feature = "more_bevy")]
 pub mod widgets;
 
@@ -42,6 +43,7 @@ pub mod prelude {
     pub(crate) use crate::components::*;
     pub(crate) use crate::helpers::*;
     pub(crate) use crate::root_commands::*;
+    pub(crate) use crate::allocator::*;
 
     pub use crate::impl_maveric_root;
 }
