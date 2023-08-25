@@ -1,7 +1,11 @@
 use crate::prelude::*;
 use std::{any::type_name, marker::PhantomData};
 
-use bevy::{ecs::system::EntityCommands, prelude::*, utils::hashbrown::HashMap};
+use bevy::{
+    ecs::system::EntityCommands,
+    prelude::*,
+    utils::hashbrown::HashMap,
+};
 
 pub trait ChildCommands {
     fn add_child<NChild: MavericNode>(
@@ -12,12 +16,31 @@ pub trait ChildCommands {
     );
 }
 
+#[derive(Debug, Default)]
+struct DuplicateChecker {
+    #[cfg(debug_assertions)]
+    set: bevy::utils::HashSet<ChildKey>,
+}
+
+impl DuplicateChecker {
+    #[inline]
+    pub (crate) fn test(&mut self, _key: ChildKey){
+        #[cfg(debug_assertions)]
+        {
+            if !self.set.insert(_key){
+                panic!("Duplicate Child Key {_key}")
+            }
+        }
+    }
+}
+
 pub struct UnorderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> {
     ec: &'c mut EntityCommands<'w, 's, 'a>,
     world: &'world World,
     remaining_old_entities: HashMap<ChildKey, Entity>,
     allocator: &'alloc mut Allocator,
     phantom: PhantomData<R>,
+    duplicate_checker: DuplicateChecker
 }
 
 impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
@@ -30,6 +53,8 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
         context: &<NChild::Context as NodeContext>::Wrapper<'_>,
     ) {
         let key = key.into();
+
+        self.duplicate_checker.test(key);
 
         if let Some(entity) = self.remaining_old_entities.remove(&key) {
             //check if this node has changed
@@ -45,7 +70,7 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
                     child,
                     context,
                     self.world,
-                    self.allocator
+                    self.allocator,
                 );
                 return; // do not spawn a new child;
             }
@@ -64,7 +89,9 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
     }
 }
 
-impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> UnorderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R> {
+impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot>
+    UnorderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R>
+{
     pub(crate) fn new(
         ec: &'c mut EntityCommands<'w, 's, 'a>,
         world: &'world World,
@@ -73,29 +100,21 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> UnorderedChildCommands<'c, 
         let children = world.get::<Children>(ec.id());
         let mut remaining_old_entities: HashMap<ChildKey, Entity> =
             allocator.unordered_entities.claim();
-        match children {
-            Some(children) => {
-                remaining_old_entities.extend(children.iter().flat_map(|entity| {
-                    world
-                        .get::<MavericChildComponent<R>>(*entity)
-                        .map(|hcc| (hcc.key, *entity))
-                }));
+        if let Some(children) = children {
+            remaining_old_entities.extend(children.iter().flat_map(|entity| {
+                world
+                    .get::<MavericChildComponent<R>>(*entity)
+                    .map(|hcc| (hcc.key, *entity))
+            }));
+        }
 
-                Self {
-                    ec,
-                    world,
-                    remaining_old_entities,
-                    phantom: PhantomData,
-                    allocator
-                }
-            }
-            None => Self {
-                ec,
-                world,
-                remaining_old_entities,
-                phantom: PhantomData,
-                allocator
-            },
+        Self {
+            ec,
+            world,
+            remaining_old_entities,
+            phantom: PhantomData,
+            allocator,
+            duplicate_checker: DuplicateChecker::default()
         }
     }
 
@@ -120,12 +139,12 @@ pub struct OrderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> 
 
     new_children: Vec<Entity>,
     new_indices: Vec<Option<usize>>,
-    allocator: &'alloc mut Allocator
-
+    allocator: &'alloc mut Allocator,
+    duplicate_checker: DuplicateChecker
 }
 
-impl<'c, 'w, 's, 'a, 'world,'alloc, R: MavericRoot> ChildCommands
-    for OrderedChildCommands<'c, 'w, 's, 'a, 'world,'alloc, R>
+impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
+    for OrderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R>
 {
     fn add_child<NChild: MavericNode>(
         &mut self,
@@ -134,6 +153,8 @@ impl<'c, 'w, 's, 'a, 'world,'alloc, R: MavericRoot> ChildCommands
         context: &<NChild::Context as NodeContext>::Wrapper<'_>,
     ) {
         let key = key.into();
+
+        self.duplicate_checker.test(key);
 
         if let Some((old_index, entity)) = self.remaining_old_entities.remove(&key) {
             //check if this node has changed
@@ -149,7 +170,7 @@ impl<'c, 'w, 's, 'a, 'world,'alloc, R: MavericRoot> ChildCommands
                     child,
                     context,
                     self.world,
-                    self.allocator
+                    self.allocator,
                 );
                 self.new_children.push(entity);
                 self.new_indices.push(Some(old_index));
@@ -164,13 +185,22 @@ impl<'c, 'w, 's, 'a, 'world,'alloc, R: MavericRoot> ChildCommands
         };
 
         let new_commands = self.ec.commands().spawn_empty();
-        let id = create_recursive::<R, NChild>(new_commands, child, context, key, self.world, self.allocator);
+        let id = create_recursive::<R, NChild>(
+            new_commands,
+            child,
+            context,
+            key,
+            self.world,
+            self.allocator,
+        );
         self.new_children.push(id);
         self.new_indices.push(None);
     }
 }
 
-impl<'c, 'w, 's, 'a, 'world,'alloc, R: MavericRoot> OrderedChildCommands<'c, 'w, 's, 'a, 'world,'alloc, R> {
+impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot>
+    OrderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R>
+{
     pub(crate) fn new(
         ec: &'c mut EntityCommands<'w, 's, 'a>,
         world: &'world World,
@@ -197,7 +227,8 @@ impl<'c, 'w, 's, 'a, 'world,'alloc, R: MavericRoot> OrderedChildCommands<'c, 'w,
             phantom: PhantomData,
             new_children: allocator.ordered_children.claim(),
             new_indices: allocator.ordered_indices.claim(),
-            allocator: allocator
+            allocator: allocator,
+            duplicate_checker: DuplicateChecker::default()
         }
     }
 
@@ -268,7 +299,9 @@ impl<'c, 'w, 's, 'a, 'world,'alloc, R: MavericRoot> OrderedChildCommands<'c, 'w,
         }
 
         self.allocator.ordered_children.reclaim(self.new_children);
-        self.allocator.ordered_entities.reclaim(self.remaining_old_entities);
+        self.allocator
+            .ordered_entities
+            .reclaim(self.remaining_old_entities);
         self.allocator.ordered_indices.reclaim(self.new_indices);
     }
 }
@@ -334,6 +367,20 @@ mod tests {
             TreeState(vec![4, 2]),
             vec![(3, true), (4, false), (2, false), (5, true)],
         );
+    }
+
+    #[test]
+    #[should_panic]
+    pub fn test_duplicate_key(){
+        let mut app = App::new();
+        app.add_plugins(TimePlugin);
+
+        app.init_resource::<TreeState>()
+            .init_resource::<LingerState>()
+            .register_maveric::<Root>();
+
+        update_state(&mut app, TreeState(vec![123,123])); //Duplicate key should fail in debug mode
+        app.update();
     }
 
     fn test_linger(

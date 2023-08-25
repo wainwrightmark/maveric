@@ -4,5 +4,5 @@
 - [x] Ordered Children
 - [x] Feature flags
 - [x] Simplify
-- [ ] Reuse child commands to reduce allocations
-- [ ] Check for duplicate keys in debug mode
+- [x] Reuse child commands to reduce allocations
+- [x] Check for duplicate keys in debug mode
