@@ -21,8 +21,6 @@ pub(crate) struct Allocator {
 //     }
 // }
 
-
-
 pub(crate) trait Clear {
     fn clear(&mut self);
 }

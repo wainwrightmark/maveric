@@ -19,10 +19,20 @@ impl<Marker: IntoBundle, S: IntoBundle<B = Style>, C: ChildTuple> MavericNode
     fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
         let mut commands = commands.ignore_context();
 
-        commands.scope(|commands| commands.ignore_args().insert(ButtonBundle::default()).finish());
+        commands.scope(|commands| {
+            commands
+                .ignore_args()
+                .insert(ButtonBundle::default())
+                .finish()
+        });
 
         commands.scope(|commands| commands.map_args(|x| &x.style).insert_bundle().finish());
-        commands.scope(|commands| commands.map_args(|x| &x.visibility).insert_bundle().finish());
+        commands.scope(|commands| {
+            commands
+                .map_args(|x| &x.visibility)
+                .insert_bundle()
+                .finish()
+        });
         commands.scope(|commands| commands.map_args(|x| &x.marker).insert_bundle().finish());
         commands.scope(|commands| {
             commands

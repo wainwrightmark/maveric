@@ -46,15 +46,21 @@ impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Ma
     }
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
-        commands.ordered(|args,commands|{
-
-            let NodeArgs { context, event:_event, node, previous } = args;
+        commands.ordered(|args, commands| {
+            let NodeArgs {
+                context,
+                event: _event,
+                node,
+                previous,
+            } = args;
             const CENTER: f32 = 50.0;
             const PAGE_WIDTH: f32 = 200.0;
             const LEFT: f32 = CENTER - PAGE_WIDTH;
             const RIGHT: f32 = CENTER + PAGE_WIDTH;
 
-            let Some(center_page) = (node.get_child)(node.current_page) else {return;};
+            let Some(center_page) = (node.get_child)(node.current_page) else {
+                return;
+            };
             let mut center_page_initial = CENTER;
 
             'previous: {
@@ -74,7 +80,9 @@ impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Ma
 
                     center_page_initial = current_position;
 
-                    let Some(previous_page) = (node.get_child)(*previous_page_number) else {break 'previous;};
+                    let Some(previous_page) = (node.get_child)(*previous_page_number) else {
+                        break 'previous;
+                    };
 
                     let previous_page = previous_page.with_transition_in::<StyleLeftLens>(
                         Val::Percent(CENTER),
@@ -93,6 +101,6 @@ impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Ma
             );
 
             commands.add_child(node.current_page, center_page, context);
-            });
+        });
     }
 }

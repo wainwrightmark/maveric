@@ -1,11 +1,7 @@
 use crate::prelude::*;
 use std::{any::type_name, marker::PhantomData};
 
-use bevy::{
-    ecs::system::EntityCommands,
-    prelude::*,
-    utils::hashbrown::HashMap,
-};
+use bevy::{ecs::system::EntityCommands, prelude::*, utils::hashbrown::HashMap};
 
 pub trait ChildCommands {
     fn add_child<NChild: MavericNode>(
@@ -24,10 +20,10 @@ struct DuplicateChecker {
 
 impl DuplicateChecker {
     #[inline]
-    pub (crate) fn test(&mut self, _key: ChildKey){
+    pub(crate) fn test(&mut self, _key: ChildKey) {
         #[cfg(debug_assertions)]
         {
-            if !self.set.insert(_key){
+            if !self.set.insert(_key) {
                 panic!("Duplicate Child Key {_key}")
             }
         }
@@ -40,7 +36,7 @@ pub struct UnorderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot
     remaining_old_entities: HashMap<ChildKey, Entity>,
     allocator: &'alloc mut Allocator,
     phantom: PhantomData<R>,
-    duplicate_checker: DuplicateChecker
+    duplicate_checker: DuplicateChecker,
 }
 
 impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
@@ -114,7 +110,7 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot>
             remaining_old_entities,
             phantom: PhantomData,
             allocator,
-            duplicate_checker: DuplicateChecker::default()
+            duplicate_checker: DuplicateChecker::default(),
         }
     }
 
@@ -140,7 +136,7 @@ pub struct OrderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> 
     new_children: Vec<Entity>,
     new_indices: Vec<Option<usize>>,
     allocator: &'alloc mut Allocator,
-    duplicate_checker: DuplicateChecker
+    duplicate_checker: DuplicateChecker,
 }
 
 impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
@@ -227,8 +223,8 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot>
             phantom: PhantomData,
             new_children: allocator.ordered_children.claim(),
             new_indices: allocator.ordered_indices.claim(),
-            allocator: allocator,
-            duplicate_checker: DuplicateChecker::default()
+            allocator,
+            duplicate_checker: DuplicateChecker::default(),
         }
     }
 
@@ -371,7 +367,7 @@ mod tests {
 
     #[test]
     #[should_panic]
-    pub fn test_duplicate_key(){
+    pub fn test_duplicate_key() {
         let mut app = App::new();
         app.add_plugins(TimePlugin);
 
@@ -379,7 +375,7 @@ mod tests {
             .init_resource::<LingerState>()
             .register_maveric::<Root>();
 
-        update_state(&mut app, TreeState(vec![123,123])); //Duplicate key should fail in debug mode
+        update_state(&mut app, TreeState(vec![123, 123])); //Duplicate key should fail in debug mode
         app.update();
     }
 

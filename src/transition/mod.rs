@@ -31,7 +31,7 @@ mod tests {
 
     use crate::transition::speed::ScalarSpeed;
 
-    use super::{speed::calculate_speed, prelude::Tweenable};
+    use super::{prelude::Tweenable, speed::calculate_speed};
 
     #[test]
     pub fn test_calculate_speed() {
@@ -40,14 +40,16 @@ mod tests {
     }
 
     #[test]
-    pub fn test_transition(){
-        let transitioned = <f32 as Tweenable>::transition_towards(&-10.0, &10.0, &ScalarSpeed::new(20.0), &0.5);
+    pub fn test_transition() {
+        let transitioned =
+            <f32 as Tweenable>::transition_towards(&-10.0, &10.0, &ScalarSpeed::new(20.0), &0.5);
         assert_eq!(transitioned, 0.0);
     }
 
     #[test]
-    pub fn test_complete_transition(){
-        let transitioned = <f32 as Tweenable>::transition_towards(&-1.0, &1.0, &ScalarSpeed::new(20.0), &0.5);
+    pub fn test_complete_transition() {
+        let transitioned =
+            <f32 as Tweenable>::transition_towards(&-1.0, &1.0, &ScalarSpeed::new(20.0), &0.5);
         assert_eq!(transitioned, 1.0);
     }
 }

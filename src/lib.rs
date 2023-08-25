@@ -9,16 +9,16 @@ pub mod helpers;
 pub mod into_components;
 pub mod node;
 
+pub mod allocator;
+pub mod node_args;
 pub mod node_context;
 pub mod plugin;
 pub mod root;
 pub mod root_commands;
-pub mod set_event;
-pub mod transition;
 pub mod set_children_commands;
 pub mod set_components_commands;
-pub mod allocator;
-pub mod node_args;
+pub mod set_event;
+pub mod transition;
 #[cfg(feature = "more_bevy")]
 pub mod widgets;
 
@@ -31,21 +31,21 @@ pub mod prelude {
     pub use crate::deleter::*;
     pub use crate::into_components::*;
     pub use crate::node::*;
-    pub use crate::set_children_commands::*;
-    pub use crate::set_components_commands::*;
+    pub use crate::node_args::*;
     pub use crate::node_context::*;
     pub use crate::plugin::*;
     pub use crate::root::*;
+    pub use crate::set_children_commands::*;
+    pub use crate::set_components_commands::*;
     pub use crate::set_event::*;
     pub use crate::transition::prelude::*;
-    pub use crate::node_args::*;
     #[cfg(feature = "more_bevy")]
     pub use crate::widgets::prelude::*;
 
+    pub(crate) use crate::allocator::*;
     pub(crate) use crate::components::*;
     pub(crate) use crate::helpers::*;
     pub(crate) use crate::root_commands::*;
-    pub(crate) use crate::allocator::*;
 
     pub use crate::impl_maveric_root;
 }

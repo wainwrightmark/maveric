@@ -73,7 +73,6 @@ where
     }
 }
 
-
 impl<L: Lens> TransitionStep<L>
 where
     L::Value: Tweenable,

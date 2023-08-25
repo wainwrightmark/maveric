@@ -10,17 +10,34 @@ pub struct NodeArgs<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext> {
 
 impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext> Clone for NodeArgs<'n, 'p, 'c1, 'c2, N, C> {
     fn clone(&self) -> Self {
-        Self { context: self.context.clone(), event: self.event.clone(), node: self.node.clone(), previous: self.previous.clone() }
+        Self {
+            context: self.context,
+            event: self.event,
+            node: self.node,
+            previous: self.previous,
+        }
     }
 }
 
 impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext> NodeArgs<'n, 'p, 'c1, 'c2, N, C> {
-    pub (crate) fn new(context: &'c1 C::Wrapper<'c2>, event: SetEvent, node: &'n N, previous: Option<&'p N>) -> Self { Self { context, event, node, previous } }
+    pub(crate) fn new(
+        context: &'c1 C::Wrapper<'c2>,
+        event: SetEvent,
+        node: &'n N,
+        previous: Option<&'p N>,
+    ) -> Self {
+        Self {
+            context,
+            event,
+            node,
+            previous,
+        }
+    }
 
     /// Returns true if this is a creation or undeletion, or if the context or args have changed
     pub fn is_hot(&self) -> bool {
         match self.event {
-            SetEvent::Created  => true,
+            SetEvent::Created => true,
             SetEvent::Updated | SetEvent::Undeleted => {
                 C::has_changed(self.context)
                     || self.previous.map(|p| !p.eq(self.node)).unwrap_or(true)

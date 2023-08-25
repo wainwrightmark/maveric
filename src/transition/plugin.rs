@@ -52,7 +52,9 @@ fn step_transition<L: Lens + GetValueLens + SetValueLens>(
 
         let from = L::try_get_value(component);
 
-        let Some(from) = from else {return;};
+        let Some(from) = from else {
+            return;
+        };
 
         let new_value =
             Tweenable::transition_towards(&from, &tp.step.destination, &speed, &delta_seconds);

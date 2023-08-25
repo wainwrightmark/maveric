@@ -46,7 +46,7 @@ fn sync_state<R: MavericRoot>(
     param: StaticSystemParam<R::ContextParam<'_>>,
     root_query: Query<(Entity, &MavericChildComponent<R>), Without<Parent>>,
     world: &World,
-    mut allocator: Local<Allocator>
+    mut allocator: Local<Allocator>,
 ) {
     let context = R::get_context(param);
 
@@ -55,9 +55,9 @@ fn sync_state<R: MavericRoot>(
         return;
     }
 
-    let mut allocator = allocator.borrow_mut();
+    let allocator = allocator.borrow_mut();
 
-    let mut root_commands = RootCommands::new(&mut commands, world, root_query, &mut allocator);
+    let mut root_commands = RootCommands::new(&mut commands, world, root_query, allocator);
 
     R::set_children(&context, &mut root_commands);
     root_commands.finish();
@@ -170,7 +170,8 @@ mod tests {
         fn set_components(_commands: SetComponentCommands<Self, Self::Context>) {}
 
         fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
-            commands.ignore_args()
+            commands
+                .ignore_args()
                 .ordered_children_with_context(|context, commands| {
                     for x in 0..(context.blue_leaf_count) {
                         commands.add_child(x, Leaf::Blue, &());

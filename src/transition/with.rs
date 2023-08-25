@@ -126,6 +126,8 @@ where
             .advanced(|args, commands| {
                 let (initial_value, update_transition) = args.node;
 
+                //info!("{args:?}");
+
                 let transition = match args.event {
                     SetEvent::Created => {
                         let in_transition = TransitionStep::new_arc(
@@ -156,7 +158,7 @@ where
                                     step: update_transition.clone(),
                                 })
                             }
-                        }else{
+                        } else {
                             None
                         }
                     }

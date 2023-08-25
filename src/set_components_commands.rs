@@ -2,8 +2,6 @@ use bevy::ecs::system::EntityCommands;
 
 use crate::prelude::*;
 
-
-
 pub struct SetComponentCommands<
     'n,
     'p,
@@ -96,18 +94,15 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
 impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
     SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, C>
 {
-    pub fn finish(self){
-
-    }
+    pub fn finish(self) {}
 
     pub fn insert_with_node_and_context<B: Bundle>(
         self,
         f: impl FnOnce(&'n N, &'c1 C::Wrapper<'c2>) -> B,
     ) -> Self {
         if self.args.is_hot() {
-            self.advanced(|a,c|c.insert(f(a.node, a.context)) )
-        }
-        else{
+            self.advanced(|a, c| c.insert(f(a.node, a.context)))
+        } else {
             self
         }
     }
@@ -128,7 +123,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
 impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq + IntoBundle>
     SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, NoContext>
 {
-    pub fn insert_bundle(self)-> Self {
+    pub fn insert_bundle(self) -> Self {
         if self.args.is_hot() {
             self.ec.insert(self.args.node.clone().into_bundle());
         }
