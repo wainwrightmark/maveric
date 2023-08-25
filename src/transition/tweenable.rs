@@ -9,22 +9,20 @@ use super::speed::{AngularSpeed, LinearSpeed, ScalarSpeed, Speed};
 
 pub trait Tweenable: Debug + Clone + Send + Sync + PartialEq + 'static {
     type Speed: Speed;
+
+    #[must_use]
     fn duration_to(
         &self,
         rhs: &Self,
         speed: &Self::Speed,
     ) -> Result<Duration, TryFromFloatSecsError>;
-    fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, delta_seconds: &f32) -> Self;
 
-    fn approx_eq(&self, rhs: &Self) -> bool;
+    #[must_use]
+    fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, delta_seconds: &f32) -> Self;
 }
 
 impl Tweenable for f32 {
     type Speed = ScalarSpeed;
-
-    fn approx_eq(&self, rhs: &Self) -> bool {
-        (self - rhs).abs() < f32::EPSILON
-    }
 
     fn duration_to(
         &self,
@@ -53,10 +51,6 @@ impl Tweenable for Vec2 {
         *self + diff.clamp_length_max(speed.units_per_second * delta_seconds)
     }
 
-    fn approx_eq(&self, rhs: &Self) -> bool {
-        self.abs_diff_eq(*rhs, f32::EPSILON)
-    }
-
     fn duration_to(
         &self,
         rhs: &Self,
@@ -80,10 +74,6 @@ impl Tweenable for Vec3 {
         *self + clamped
     }
 
-    fn approx_eq(&self, rhs: &Self) -> bool {
-        self.abs_diff_eq(*rhs, f32::EPSILON)
-    }
-
     fn duration_to(
         &self,
         rhs: &Self,
@@ -103,10 +93,6 @@ impl Tweenable for Quat {
     fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, delta_seconds: &f32) -> Self {
         let diff = *rhs - *self;
         *self + quat_clamp_length_max(diff, speed.radians_per_second * delta_seconds)
-    }
-
-    fn approx_eq(&self, rhs: &Self) -> bool {
-        self.abs_diff_eq(*rhs, f32::EPSILON)
     }
 
     fn duration_to(
@@ -146,14 +132,6 @@ impl Tweenable for Transform {
             rotation,
             scale,
         }
-    }
-
-    fn approx_eq(&self, rhs: &Self) -> bool {
-        (self.translation, self.rotation, self.scale).approx_eq(&(
-            rhs.translation,
-            rhs.rotation,
-            rhs.scale,
-        ))
     }
 }
 
@@ -214,10 +192,6 @@ impl Tweenable for Val {
             )),
             _ => *rhs,
         }
-    }
-
-    fn approx_eq(&self, rhs: &Self) -> bool {
-        self.eq(rhs)
     }
 }
 
@@ -402,10 +376,6 @@ impl Tweenable for Color {
             _ => rhs.clone(),
         }
     }
-
-    fn approx_eq(&self, rhs: &Self) -> bool {
-        self.eq(rhs)
-    }
 }
 
 fn quat_clamp_length_max(q: Quat, max: f32) -> Quat {
@@ -422,13 +392,6 @@ macro_rules! impl_tweenable {
         impl<$($T : Tweenable,)*> Tweenable for ($($T,)*) {
 
             type Speed = ($($T::Speed,)*);
-
-            fn approx_eq(&self, rhs: &Self) -> bool {
-                let ($($t,)*) = self;
-                let ($($r,)*) = rhs;
-
-                $($t.approx_eq($r) &&)* true
-            }
 
             fn duration_to(&self, rhs: &Self, speed: &Self::Speed) -> Result<Duration, TryFromFloatSecsError> {
                 let ($($t,)*) = self;

@@ -59,7 +59,7 @@ fn step_transition<L: Lens + GetValueLens + SetValueLens>(
 
         //info!("Transition from {from:?} to {new_value:?}");
 
-        if tp.step.destination.approx_eq(&new_value) && !tp.try_go_to_next_step() {
+        if tp.step.destination.eq(&new_value) && !tp.try_go_to_next_step() {
             commands.entity(entity).remove::<Transition<L>>();
         }
 

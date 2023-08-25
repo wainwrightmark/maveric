@@ -20,18 +20,18 @@ impl<'c, 'w, 's, 'a, 'world> ComponentCommands<'c, 'w, 's, 'a, 'world> {
         };
 
         if let Some(previous_path) = self.get::<Transition<L>>() {
-            if previous_path.step.destination.approx_eq(&destination)
+            if previous_path.step.destination.eq(&destination)
                 && previous_path.step.speed == speed
                 && previous_path.step.next.is_none()
             {
                 return current_value; //previous path is the same - do not replace
             }
 
-            if current_value.approx_eq(&destination) {
+            if current_value.eq(&destination) {
                 self.remove::<Transition<L>>();
                 return current_value;
             }
-        } else if current_value.approx_eq(&destination) {
+        } else if current_value.eq(&destination) {
             return current_value;
         }
 

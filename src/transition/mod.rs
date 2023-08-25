@@ -24,3 +24,30 @@ pub mod prelude {
     #[cfg(feature = "more_bevy")]
     pub use crate::transition::ui_lenses::*;
 }
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+
+    use crate::transition::speed::ScalarSpeed;
+
+    use super::{speed::calculate_speed, prelude::Tweenable};
+
+    #[test]
+    pub fn test_calculate_speed() {
+        let actual = calculate_speed::<f32>(&-1.0, &2.0, Duration::from_secs_f32(1.5));
+        assert_eq!(actual, ScalarSpeed::new(2.0));
+    }
+
+    #[test]
+    pub fn test_transition(){
+        let transitioned = <f32 as Tweenable>::transition_towards(&-10.0, &10.0, &ScalarSpeed::new(20.0), &0.5);
+        assert_eq!(transitioned, 0.0);
+    }
+
+    #[test]
+    pub fn test_complete_transition(){
+        let transitioned = <f32 as Tweenable>::transition_towards(&-1.0, &1.0, &ScalarSpeed::new(20.0), &0.5);
+        assert_eq!(transitioned, 1.0);
+    }
+}

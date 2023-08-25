@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-pub trait Lens: std::fmt::Debug + Clone + Send + Sync + 'static {
+pub trait Lens: std::fmt::Debug + Clone + PartialEq + Send + Sync + 'static {
     type Object;
     type Value: 'static;
 }
@@ -16,12 +16,6 @@ pub trait GetMutLens: GetRefLens {
 pub trait GetValueLens: Lens {
     fn try_get_value(object: &<Self as Lens>::Object) -> Option<<Self as Lens>::Value>;
 }
-
-// impl<V: Copy + 'static, L: GetRefLens<Value = V>> GetValueLens for L {
-//     fn get_value(object: &<Self as Lens>::Object) -> <Self as Lens>::Value {
-//         *L::get(object)
-//     }
-// }
 
 pub trait SetValueLens: Lens {
     fn try_set(object: &mut <Self as Lens>::Object, value: <Self as Lens>::Value);

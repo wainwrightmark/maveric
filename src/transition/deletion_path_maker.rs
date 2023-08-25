@@ -13,7 +13,7 @@ where
     fn get_step(&self, previous: &L::Value) -> Option<Arc<TransitionStep<L>>>;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DurationDeletionPathMaker<L: Lens + GetValueLens>
 where
     L::Value: Tweenable,
@@ -21,16 +21,6 @@ where
 {
     duration: Duration,
     destination: L::Value,
-}
-
-impl<L: Lens + GetValueLens> PartialEq for DurationDeletionPathMaker<L>
-where
-    L::Value: Tweenable,
-    L::Object: Clone + Component,
-{
-    fn eq(&self, other: &Self) -> bool {
-        self.duration == other.duration && self.destination.approx_eq(&other.destination)
-    }
 }
 
 impl<L: Lens + GetValueLens> DeletionPathMaker<L> for DurationDeletionPathMaker<L>

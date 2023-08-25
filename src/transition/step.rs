@@ -6,7 +6,7 @@ use std::{
     time::{Duration, TryFromFloatSecsError},
 };
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct TransitionStep<L: Lens>
 where
     L::Value: Tweenable,
@@ -73,16 +73,6 @@ where
     }
 }
 
-impl<L: Lens> PartialEq for TransitionStep<L>
-where
-    L::Value: Tweenable,
-{
-    fn eq(&self, other: &Self) -> bool {
-        self.destination.approx_eq(&other.destination)
-            && self.speed == other.speed
-            && self.phantom == other.phantom
-    }
-}
 
 impl<L: Lens> TransitionStep<L>
 where
