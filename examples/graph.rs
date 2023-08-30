@@ -132,7 +132,7 @@ impl MavericNode for NumberNode {
     }
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
-        commands.unordered_children_with_args_and_context(|args, context, commands| {
+        commands.unordered_children_with_node_and_context(|args, context, commands| {
             commands.add_child(
                 0,
                 TextNode {

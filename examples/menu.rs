@@ -215,7 +215,7 @@ impl MavericNode for MainOrLevelMenu {
     }
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
-        commands.unordered_children_with_args_and_context(|args, context, commands| match args {
+        commands.unordered_children_with_node_and_context(|args, context, commands| match args {
             MainOrLevelMenu::Main => {
                 for (key, action) in ButtonAction::main_buttons().iter().enumerate() {
                     let button = text_button_node(*action);
@@ -296,7 +296,7 @@ impl MavericNode for LevelMenuArrows {
     }
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
-        commands.unordered_children_with_args_and_context(|args, context, commands| {
+        commands.unordered_children_with_node_and_context(|args, context, commands| {
             if args.0 == 0 {
                 commands.add_child("left", icon_button_node(ButtonAction::OpenMenu), context)
             } else {
