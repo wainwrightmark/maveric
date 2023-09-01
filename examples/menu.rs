@@ -74,7 +74,7 @@ pub struct MenuRoot;
 
 impl_maveric_root!(MenuRoot);
 
-impl RootChildren for MenuRoot {
+impl MavericRootChildren for MenuRoot {
     type Context = NC2<MenuState, AssetServer>;
 
     fn set_children(

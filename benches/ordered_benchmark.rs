@@ -48,7 +48,7 @@ pub struct LingerState(bool);
 #[derive(Debug, Clone, PartialEq, Default)]
 struct Root;
 
-impl RootChildren for Root {
+impl MavericRootChildren for Root {
     type Context = NC2<TreeState, LingerState>;
 
     fn set_children(

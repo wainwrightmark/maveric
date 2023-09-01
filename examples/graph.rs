@@ -31,7 +31,7 @@ pub enum ButtonMarker {
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Root;
 
-impl RootChildren for Root {
+impl MavericRootChildren for Root {
     type Context = NC2<GraphState, AssetServer>;
 
     fn set_children<'r>(

@@ -24,7 +24,7 @@ pub struct Marker;
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Root;
 
-impl RootChildren for Root {
+impl MavericRootChildren for Root {
     type Context = NC2<CounterState, AssetServer>;
 
     fn set_children<'r>(

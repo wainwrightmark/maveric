@@ -184,7 +184,7 @@ impl MavericNode for DynamicGrid {
     }
 }
 
-impl RootChildren for Root {
+impl MavericRootChildren for Root {
     type Context = NC2<UIState, AssetServer>;
 
     fn set_children(

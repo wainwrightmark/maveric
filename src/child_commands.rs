@@ -454,7 +454,7 @@ mod tests {
 
     impl_maveric_root!(Root);
 
-    impl RootChildren for Root {
+    impl MavericRootChildren for Root {
         type Context = NC2<TreeState, LingerState>;
 
         fn set_children(

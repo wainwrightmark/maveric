@@ -111,7 +111,7 @@ pub struct TreeState {
 #[derive(Debug, Clone, PartialEq, Default)]
 struct Root;
 
-impl RootChildren for Root {
+impl MavericRootChildren for Root {
     type Context = TreeState;
 
     fn set_children(

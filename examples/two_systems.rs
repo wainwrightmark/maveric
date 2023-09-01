@@ -25,7 +25,7 @@ pub struct Marker;
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Root;
 
-impl RootChildren for Root {
+impl MavericRootChildren for Root {
     type Context = NC2<CounterState, AssetServer>;
 
     fn set_children<'r>(
@@ -80,7 +80,7 @@ fn button_system(
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Root2;
 
-impl RootChildren for Root2 {
+impl MavericRootChildren for Root2 {
     type Context = NC2<CounterState, AssetServer>;
 
     fn set_children(

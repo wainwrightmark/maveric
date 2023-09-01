@@ -36,7 +36,7 @@ pub(crate) fn create_recursive<R: MavericRoot, N: MavericNode>(
 
 /// Recursively delete an entity. Returns the entity id if it is to linger.
 #[must_use]
-pub(crate) fn delete_recursive<R: RootChildren>(
+pub(crate) fn delete_recursive<R: MavericRootChildren>(
     commands: &mut Commands,
     entity: Entity,
     world: &World,
