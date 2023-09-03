@@ -136,7 +136,7 @@ impl MavericNode for Branch {
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
         commands
-            .ignore_args()
+            .ignore_node()
             .unordered_children_with_context(|context, commands| {
                 for x in 0..(context.blue_leaf_count) {
                     commands.add_child(x, Leaf::Blue, &());

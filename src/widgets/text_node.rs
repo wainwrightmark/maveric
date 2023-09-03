@@ -19,7 +19,7 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode fo
     fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
         commands.scope(|commands| {
             commands
-                .ignore_args()
+                .ignore_node()
                 .ignore_context()
                 .insert(TextBundle::default());
         });

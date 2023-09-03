@@ -54,7 +54,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
         f(clone)
     }
 
-    pub fn ignore_args(
+    pub fn ignore_node(
         self,
     ) -> SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, (), C> {
         self.map_args(|_| &())

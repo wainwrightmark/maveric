@@ -87,7 +87,7 @@ impl MavericNode for CommandGrid {
     type Context = AssetServer;
 
     fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
-        commands.ignore_args().ignore_context().insert(NodeBundle {
+        commands.ignore_node().ignore_context().insert(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
                 align_items: AlignItems::Center,
@@ -102,7 +102,7 @@ impl MavericNode for CommandGrid {
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
         commands
-            .ignore_args()
+            .ignore_node()
             .unordered_children_with_context(|context, commands| {
                 for command in [Command::AddNew, Command::Reset] {
                     let key: &'static str = command.into();
@@ -135,7 +135,7 @@ impl MavericNode for DynamicGrid {
     type Context = NC2<UIState, AssetServer>;
 
     fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
-        commands.ignore_args().ignore_context().insert(NodeBundle {
+        commands.ignore_node().ignore_context().insert(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
                 align_items: AlignItems::Center,
@@ -150,7 +150,7 @@ impl MavericNode for DynamicGrid {
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
         commands
-            .ignore_args()
+            .ignore_node()
             .ordered_children_with_context(|context, commands| {
                 for number in context.0.dynamic_buttons.iter().cloned() {
                     let node = ButtonNode {

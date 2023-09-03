@@ -71,7 +71,7 @@ impl MavericNode for Branch {
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
         commands
-            .ignore_args()
+            .ignore_node()
             .ordered_children_with_context(|context, commands| {
                 for &number in context.0 .0.iter() {
                     let linger = context.1 .0;

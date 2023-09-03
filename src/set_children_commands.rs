@@ -56,7 +56,7 @@ impl<
         }
     }
 
-    pub fn ignore_args(
+    pub fn ignore_node(
         self,
     ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, (), C, R> {
         self.map_args(|_| &())

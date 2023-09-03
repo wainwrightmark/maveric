@@ -111,7 +111,7 @@ impl MavericNode for NumberNode {
         commands
             .ignore_context()
             .insert_with_node(|a| GraphNode(a.0))
-            .ignore_args()
+            .ignore_node()
             .insert(NodeBundle {
                 style: Style {
                     position_type: PositionType::Absolute,

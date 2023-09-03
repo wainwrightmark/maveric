@@ -35,7 +35,7 @@ impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Ma
     type Context = <Child as MavericNode>::Context;
 
     fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
-        commands.ignore_args().ignore_context().insert(NodeBundle {
+        commands.ignore_node().ignore_context().insert(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
                 height: Val::Percent(100.0),

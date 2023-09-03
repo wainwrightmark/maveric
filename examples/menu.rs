@@ -198,7 +198,7 @@ impl MavericNode for MainOrLevelMenu {
     type Context = NC2<MenuState, AssetServer>;
 
     fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
-        commands.ignore_args().ignore_context().insert(NodeBundle {
+        commands.ignore_node().ignore_context().insert(NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
                 left: Val::Percent(50.0),  // Val::Px(MENU_OFFSET),
@@ -266,7 +266,7 @@ impl MavericNode for LevelMenuArrows {
     type Context = AssetServer;
 
     fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
-        commands.ignore_args().ignore_context().insert(NodeBundle {
+        commands.ignore_node().ignore_context().insert(NodeBundle {
             style: Style {
                 position_type: PositionType::Relative,
                 left: Val::Percent(0.0),

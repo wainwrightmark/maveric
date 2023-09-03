@@ -21,7 +21,7 @@ impl<Marker: IntoBundle, S: IntoBundle<B = Style>, C: ChildTuple> MavericNode
 
         commands.scope(|commands| {
             commands
-                .ignore_args()
+                .ignore_node()
                 .insert(ButtonBundle::default())
                 .finish()
         });
