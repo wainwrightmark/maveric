@@ -111,7 +111,7 @@ impl<L: Lens> Transition<L>
 where
     L::Value: Tweenable,
 {
-    pub(crate) fn new(step: Arc<TransitionStep<L>>) -> Self {
+    pub fn new(step: Arc<TransitionStep<L>>) -> Self {
         Self {
             start: step.clone(),
             step,
