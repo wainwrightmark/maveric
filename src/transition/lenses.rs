@@ -9,7 +9,7 @@ macro_rules! define_lens {
         #[derive(Debug, Clone, PartialEq)]
         pub struct $L;
 
-        impl Lens for $L {
+        impl $crate::transition::prelude::Lens for $L {
             type Object = $O;
             type Value = $V;
         }
@@ -40,24 +40,24 @@ macro_rules! define_lens_transparent {
         #[derive(Debug, Clone, PartialEq)]
         pub struct $L;
 
-        impl Lens for $L {
+        impl $crate::transition::prelude::Lens for $L {
             type Object = $O;
             type Value = $V;
         }
 
-        impl GetRefLens for $L {
+        impl $crate::transition::prelude::GetRefLens for $L {
             fn try_get_ref(object: &Self::Object) -> Option<&Self::Value> {
                 Some(&object.0)
             }
         }
 
-        impl GetValueLens for $L {
+        impl $crate::transition::prelude::GetValueLens for $L {
             fn try_get_value(object: &Self::Object) -> Option<Self::Value> {
                 Some(object.0)
             }
         }
 
-        impl GetMutLens for $L {
+        impl $crate::transition::prelude::GetMutLens for $L {
             fn try_get_mut(object: &mut Self::Object) -> Option<&mut Self::Value> {
                 Some(&mut object.0)
             }

@@ -20,7 +20,7 @@ pub trait CanHaveTransition: MavericNode + Sized {
         L::Object: Clone + Component,
     {
         let speed = calculate_speed(&initial_value, &destination, duration);
-        let update_transition = TransitionStep::new_arc(destination, Some(speed), None);
+        let update_transition = TransitionStep::new_arc(destination, Some(speed), NextStep::None);
 
         self.with_transition(initial_value, update_transition, ())
     }
@@ -38,7 +38,7 @@ pub trait CanHaveTransition: MavericNode + Sized {
         L::Object: Clone + Component,
     {
         let speed = calculate_speed(&initial_value, &destination, in_duration);
-        let update_transition = TransitionStep::new_arc(destination, Some(speed), None);
+        let update_transition = TransitionStep::new_arc(destination, Some(speed), NextStep::None);
 
         self.with_transition(
             initial_value,
@@ -56,7 +56,7 @@ pub trait CanHaveTransition: MavericNode + Sized {
         L::Value: Tweenable,
         L::Object: Clone + Component,
     {
-        let update_transition = TransitionStep::new_arc(destination.clone(), Some(speed), None);
+        let update_transition = TransitionStep::new_arc(destination.clone(), Some(speed), NextStep::None);
 
         self.with_transition(destination, update_transition, ())
     }
@@ -83,7 +83,7 @@ impl<N: MavericNode> CanHaveTransition for N {}
 
 /// This requires the animation plugin
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct WithTransition<N: MavericNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>>
 where
     L::Value: Tweenable,
@@ -133,30 +133,24 @@ where
                         let in_transition = TransitionStep::new_arc(
                             initial_value.clone(),
                             None,
-                            Some(update_transition.clone()),
+                            NextStep::Step(update_transition.clone()),
                         );
 
-                        Some(Transition {
-                            step: in_transition,
-                        })
+                        Some(Transition::new(in_transition))
                     }
                     SetEvent::Updated => {
                         if args.is_hot() {
                             if let Some(previous_path) = commands.get::<Transition<L>>() {
-                                if update_transition.contains(&previous_path.step) {
+                                if previous_path.starts_with(&update_transition){
                                     //info!("Same path found - no change");
                                     None
-                                } else {
+                                }else{
                                     //info!("New path found");
-                                    Some(Transition {
-                                        step: update_transition.clone(),
-                                    })
+                                    Some(Transition::new(update_transition.clone()))
                                 }
                             } else {
                                 //info!("No path found");
-                                Some(Transition {
-                                    step: update_transition.clone(),
-                                })
+                                Some(Transition::new(update_transition.clone()) )
                             }
                         } else {
                             None
@@ -168,7 +162,7 @@ where
                                 TransitionStep::<L>::new_arc(
                                     destination,
                                     None,
-                                    Some(update_transition.clone()),
+                                    NextStep::Step(update_transition.clone()),
                                 )
                             } else {
                                 update_transition.clone()
@@ -177,7 +171,7 @@ where
                             update_transition.clone()
                         };
 
-                        Some(Transition { step })
+                        Some(Transition::new(step))
                     }
                 };
                 if let Some(transition) = transition {
@@ -216,9 +210,7 @@ where
             DeletionPolicy::Linger(d) => duration.max(d),
         };
 
-        commands.insert(Transition {
-            step: deletion_path,
-        });
+        commands.insert(Transition::new(deletion_path));
 
         DeletionPolicy::Linger(duration)
     }

@@ -1,6 +1,8 @@
 use crate::prelude::*;
+use crate::transition::ui_lenses::StyleLeftLens;
 use std::{marker::PhantomData, time::Duration};
 
+/// You must register the `StyleLeftLens` transition for this to work
 pub struct Carousel<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> {
     current_page: u32,
     get_child: F,

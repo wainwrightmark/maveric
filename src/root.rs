@@ -22,12 +22,12 @@ pub trait MavericRootChildren: Send + Sync + 'static {
 #[macro_export]
 macro_rules! impl_maveric_root {
     ($node: ident) => {
-        impl MavericRoot for $node {
-            type ContextParam<'c> = <<Self as MavericRootChildren>::Context as NodeContext>::Wrapper<'c>;
+        impl $crate::prelude::MavericRoot for $node {
+            type ContextParam<'c> = <<Self as MavericRootChildren>::Context as $crate::prelude::NodeContext>::Wrapper<'c>;
 
             fn get_context<'a, 'c, 'w: 'c, 's>(
                 param: bevy::ecs::system::StaticSystemParam<'w, 's, Self::ContextParam<'a>>,
-            ) -> <<Self as MavericRootChildren>::Context as NodeContext>::Wrapper<'c> {
+            ) -> <<Self as MavericRootChildren>::Context as $crate::prelude::NodeContext>::Wrapper<'c> {
                 param.into_inner()
             }
         }

@@ -133,7 +133,7 @@ impl Tweenable for Transform {
     }
 }
 
-#[cfg(feature = "more_bevy")]
+#[cfg(any(feature = "more_bevy", test))]
 impl Tweenable for Val {
     type Speed = <f32 as Tweenable>::Speed;
 
@@ -193,7 +193,7 @@ impl Tweenable for Val {
     }
 }
 
-#[cfg(feature = "more_bevy")]
+#[cfg(any(feature = "more_bevy", test))]
 impl Tweenable for Color {
     type Speed = ScalarSpeed;
 

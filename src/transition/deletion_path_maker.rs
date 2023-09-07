@@ -34,7 +34,7 @@ where
         Some(TransitionStep::new_arc(
             self.destination.clone(),
             Some(out_speed),
-            None,
+            NextStep::None,
         ))
     }
 }
