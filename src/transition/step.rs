@@ -122,7 +122,7 @@ where
         self.start.as_ref().eq(step)
     }
 
-    pub (crate) fn try_go_to_next_step(&mut self) -> bool {
+    pub(crate) fn try_go_to_next_step(&mut self) -> bool {
         match &self.step.next {
             NextStep::None => {
                 //info!("No next step");

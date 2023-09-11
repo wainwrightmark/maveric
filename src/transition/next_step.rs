@@ -52,17 +52,6 @@ where
     L::Value: Tweenable,
 {
     pub fn is_none(&self) -> bool {
-        match self {
-            NextStep::None => true,
-            _ => false,
-        }
+        matches!(self, NextStep::None)
     }
-
-    // pub fn inner_arc(&self) -> Option<Arc<TransitionStep<L>>> {
-    //     match self {
-    //         NextStep::None => None,
-    //         NextStep::Step(arc) => Some(arc.clone()),
-    //         NextStep::Cycle(weak) => weak.upgrade(),
-    //     }
-    // }
 }

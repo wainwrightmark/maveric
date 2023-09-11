@@ -56,7 +56,8 @@ pub trait CanHaveTransition: MavericNode + Sized {
         L::Value: Tweenable,
         L::Object: Clone + Component,
     {
-        let update_transition = TransitionStep::new_arc(destination.clone(), Some(speed), NextStep::None);
+        let update_transition =
+            TransitionStep::new_arc(destination.clone(), Some(speed), NextStep::None);
 
         self.with_transition(destination, update_transition, ())
     }
@@ -141,16 +142,16 @@ where
                     SetEvent::Updated => {
                         if args.is_hot() {
                             if let Some(previous_path) = commands.get::<Transition<L>>() {
-                                if previous_path.starts_with(&update_transition){
+                                if previous_path.starts_with(update_transition) {
                                     //info!("Same path found - no change");
                                     None
-                                }else{
+                                } else {
                                     //info!("New path found");
                                     Some(Transition::new(update_transition.clone()))
                                 }
                             } else {
                                 //info!("No path found");
-                                Some(Transition::new(update_transition.clone()) )
+                                Some(Transition::new(update_transition.clone()))
                             }
                         } else {
                             None

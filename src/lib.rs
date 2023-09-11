@@ -19,7 +19,7 @@ pub mod set_children_commands;
 pub mod set_components_commands;
 pub mod set_event;
 pub mod transition;
-#[cfg(any(feature = "more_bevy", test))]
+#[cfg(any(feature = "widgets", test))]
 pub mod widgets;
 
 pub mod prelude {
@@ -40,7 +40,7 @@ pub mod prelude {
     pub use crate::set_event::*;
     pub use crate::transition::prelude::*;
 
-    #[cfg(any(feature = "more_bevy", test))]
+    #[cfg(any(feature = "widgets", test))]
     pub use crate::widgets::prelude::*;
 
     pub(crate) use crate::allocator::*;

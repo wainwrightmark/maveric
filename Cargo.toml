@@ -17,33 +17,35 @@ criterion = { version = "0.5", features = ["html_reports"] }
 
 
 [features]
-more_bevy = ["bevy/bevy_render", "bevy/bevy_ui"]
+widgets = ["bevy_render", "bevy_ui"]
+bevy_render = ["bevy/bevy_render"]
+bevy_ui = ["bevy/bevy_ui"]
 
 
 [[example]]
 name = "menu"
 path = "examples/menu.rs"
-required-features = ["more_bevy"]
+required-features = ["widgets"]
 
 [[example]]
 name = "counter"
 path = "examples/counter.rs"
-required-features = ["more_bevy"]
+required-features = ["widgets"]
 
 [[example]]
 name = "two_systems"
 path = "examples/two_systems.rs"
-required-features = ["more_bevy"]
+required-features = ["widgets"]
 
 [[example]]
 name = "number_buttons"
 path = "examples/number_buttons.rs"
-required-features = ["more_bevy"]
+required-features = ["widgets"]
 
 [[example]]
 name = "graph"
 path = "examples/graph.rs"
-required-features = ["more_bevy"]
+required-features = ["widgets"]
 
 
 [[bench]]

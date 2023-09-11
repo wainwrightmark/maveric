@@ -9,7 +9,7 @@ pub mod transition_value;
 pub mod tweenable;
 pub mod with;
 
-#[cfg(any(feature = "more_bevy", test))]
+#[cfg(any(feature = "bevy_ui", test))]
 pub mod ui_lenses;
 
 pub mod prelude {
@@ -23,7 +23,7 @@ pub mod prelude {
     pub use crate::transition::tweenable::*;
     pub use crate::transition::with::*;
 
-    #[cfg(any(feature = "more_bevy", test))]
+    #[cfg(any(feature = "bevy_ui", test))]
     pub use crate::transition::ui_lenses::*;
 }
 
@@ -88,7 +88,7 @@ mod tests {
                 [Transform::from_translation(Vec3::X * 2.0)],
                 [Transform::from_translation(Vec3::X * 2.0)],
             ],
-            "step"
+            "step",
         );
     }
 
@@ -130,7 +130,7 @@ mod tests {
                 [Transform::from_translation(Vec3::Y * 2.0)],
                 [Transform::from_translation(Vec3::Y * 4.0)],
             ],
-            "step"
+            "step",
         );
     }
 
@@ -166,14 +166,14 @@ mod tests {
                 [Transform::from_translation(Vec3::X * -2.0)],
                 [Transform::from_translation(Vec3::X * -1.0)],
             ],
-            "step"
+            "step",
         );
     }
 
     fn assert_sequence<T: Component + Clone + PartialEq + Debug, const COUNT: usize>(
         app: &mut App,
         sequence: &[[T; COUNT]],
-        name: &str
+        name: &str,
     ) {
         for (index, expected) in sequence.iter().enumerate() {
             app.update();
@@ -181,11 +181,13 @@ mod tests {
         }
     }
 
-    fn assert_components<T: Component + Clone + PartialEq + Debug>(app: &mut App, expected: &[T], message: String) {
+    fn assert_components<T: Component + Clone + PartialEq + Debug>(
+        app: &mut App,
+        expected: &[T],
+        message: String,
+    ) {
         let actual: Vec<T> = query_all(app);
-        assert_eq!(
-            actual, expected, "{message}"
-        );
+        assert_eq!(actual, expected, "{message}");
     }
 
     fn query_all<T: Component + Clone>(app: &mut App) -> Vec<T> {
@@ -207,13 +209,14 @@ mod tests {
                 commands: &mut impl crate::widgets::prelude::ChildCommands,
             ) {
                 if context.0 {
-                    let child = Transform::default().with_transition_in_out::<TransformTranslationLens>(
-                        Vec3::default(),
-                        Vec3::X * 2.0,
-                        Vec3::X * -2.0,
-                        Duration::from_secs(2),
-                        Duration::from_secs(4),
-                    );
+                    let child = Transform::default()
+                        .with_transition_in_out::<TransformTranslationLens>(
+                            Vec3::default(),
+                            Vec3::X * 2.0,
+                            Vec3::X * -2.0,
+                            Duration::from_secs(2),
+                            Duration::from_secs(4),
+                        );
 
                     commands.add_child(0, child, &());
                 }
@@ -238,7 +241,7 @@ mod tests {
                 [Transform::from_translation(Vec3::X * 2.0)],
                 [Transform::from_translation(Vec3::X * 2.0)],
             ],
-            "transition inward"
+            "transition inward",
         );
 
         app.world.resource_mut::<ShouldHaveNodeResource>().0 = false;
@@ -250,7 +253,7 @@ mod tests {
                 [Transform::from_translation(Vec3::X * 0.0)],
                 [Transform::from_translation(Vec3::X * -1.0)],
             ],
-            "transition outward"
+            "transition outward",
         );
 
         assert_sequence::<Transform, 0>(&mut app, &[[], []], "after deleted");
