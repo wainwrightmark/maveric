@@ -113,7 +113,6 @@ macro_rules! impl_speed {
     };
 }
 
-impl_speed!();
 impl_speed!((T0, t0));
 impl_speed!((T0, t0), (T1, t1));
 impl_speed!((T0, t0), (T1, t1), (T2, t2));

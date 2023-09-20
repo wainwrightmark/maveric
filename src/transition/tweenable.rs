@@ -414,7 +414,6 @@ macro_rules! impl_tweenable {
     };
 }
 
-impl_tweenable!();
 impl_tweenable!((T0, t0, r0, s0));
 impl_tweenable!((T0, t0, r0, s0), (T1, t1, r1, s1));
 impl_tweenable!((T0, t0, r0, s0), (T1, t1, r1, s1), (T2, t2, r2, s2));
