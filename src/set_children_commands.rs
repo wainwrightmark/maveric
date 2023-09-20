@@ -135,7 +135,7 @@ impl<
         R: MavericRoot,
     > SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N, C, R>
 {
-    pub fn no_children(self) {}
+    pub const fn no_children(self) {}
 
     pub fn ordered_children_with_node_and_context(
         self,

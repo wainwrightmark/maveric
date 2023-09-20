@@ -94,7 +94,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
 impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
     SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, C>
 {
-    pub fn finish(self) {}
+    pub const fn finish(self) {}
 
     #[allow(clippy::return_self_not_must_use)]
     pub fn insert_with_node_and_context<B: Bundle>(

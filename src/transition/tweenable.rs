@@ -30,7 +30,7 @@ impl Tweenable for f32 {
         rhs: &Self,
         speed: &Self::Speed,
     ) -> Result<Duration, TryFromFloatSecsError> {
-        if (self - rhs).abs() < f32::EPSILON {
+        if (self - rhs).abs() < Self::EPSILON {
             return Ok(Duration::ZERO);
         }
 
@@ -40,7 +40,7 @@ impl Tweenable for f32 {
     fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, elapsed_seconds: &f32) -> Self {
         let diff = rhs - *self;
 
-        self + (diff.abs().min(speed.amount_per_second * elapsed_seconds) * diff.signum())
+        diff.abs().min(speed.amount_per_second * elapsed_seconds).mul_add(diff.signum(), *self)
     }
 }
 

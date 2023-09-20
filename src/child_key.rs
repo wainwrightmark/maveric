@@ -7,8 +7,8 @@ pub enum ChildKey {
 impl std::fmt::Display for ChildKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ChildKey::Number(u) => u.fmt(f),
-            ChildKey::String(s) => s.fmt(f),
+            Self::Number(u) => u.fmt(f),
+            Self::String(s) => s.fmt(f),
         }
     }
 }

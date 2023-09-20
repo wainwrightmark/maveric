@@ -20,7 +20,7 @@ impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext> Clone for NodeArgs<'n, 'p, 
 }
 
 impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext> NodeArgs<'n, 'p, 'c1, 'c2, N, C> {
-    pub(crate) fn new(
+    pub(crate) const fn new(
         context: &'c1 C::Wrapper<'c2>,
         event: SetEvent,
         node: &'n N,

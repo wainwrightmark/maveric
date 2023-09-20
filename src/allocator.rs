@@ -34,11 +34,7 @@ pub(crate) struct Slab<T: Default + Clear> {
 
 impl<T: Default + Clear> Slab<T> {
     pub fn claim(&mut self) -> T {
-        if let Some(x) = self.elements.pop() {
-            x
-        } else {
-            T::default()
-        }
+        self.elements.pop().map_or_else(|| T::default(), |x| x)
     }
 
     pub fn reclaim(&mut self, mut element: T) {

@@ -11,7 +11,7 @@ impl<T: Bundle + PartialEq + Clone> IntoBundle for T {
     type B = Self;
 
     fn into_bundle(self) -> Self::B {
-        self.clone()
+        self
     }
 }
 

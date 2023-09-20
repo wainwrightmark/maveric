@@ -44,7 +44,7 @@ where
     L::Value: Tweenable,
     L::Object: Clone + Component,
 {
-    pub fn new(duration: Duration, destination: L::Value) -> Self {
+    pub const fn new(duration: Duration, destination: L::Value) -> Self {
         Self {
             duration,
             destination,
@@ -67,7 +67,7 @@ where
     L::Value: Tweenable,
     L::Object: Clone + Component,
 {
-    fn get_step(&self, _previous: &<L as Lens>::Value) -> Option<Arc<TransitionStep<L>>> {
+    fn get_step(&self, _previous: &<L as Lens>::Value) -> Option<Arc<Self>> {
         Some(Arc::new(self.clone()))
     }
 }

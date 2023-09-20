@@ -11,7 +11,7 @@ pub struct Carousel<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Op
 }
 
 impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Carousel<Child, F> {
-    pub fn new(current_page: u32, get_child: F, transition_duration: Duration) -> Self {
+    pub const fn new(current_page: u32, get_child: F, transition_duration: Duration) -> Self {
         Self {
             current_page,
             get_child,
@@ -49,16 +49,18 @@ impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Ma
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
         commands.ordered(|args, commands| {
+            const CENTER: f32 = 50.0;
+            const PAGE_WIDTH: f32 = 200.0;
+            const LEFT: f32 = CENTER - PAGE_WIDTH;
+            const RIGHT: f32 = CENTER + PAGE_WIDTH;
+
             let NodeArgs {
                 context,
                 event: _event,
                 node,
                 previous,
             } = args;
-            const CENTER: f32 = 50.0;
-            const PAGE_WIDTH: f32 = 200.0;
-            const LEFT: f32 = CENTER - PAGE_WIDTH;
-            const RIGHT: f32 = CENTER + PAGE_WIDTH;
+            
 
             let Some(center_page) = (node.get_child)(node.current_page) else {
                 return;

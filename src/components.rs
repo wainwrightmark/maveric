@@ -10,7 +10,7 @@ pub(crate) struct MavericNodeComponent<N: MavericNode> {
 }
 
 impl<N: MavericNode> MavericNodeComponent<N> {
-    pub(crate) fn new(node: N) -> Self {
+    pub(crate) const fn new(node: N) -> Self {
         Self { node }
     }
 }

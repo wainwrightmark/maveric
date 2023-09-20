@@ -136,7 +136,7 @@ where
             }
             NextStep::Cycle(weak) => match weak.upgrade() {
                 Some(step) => {
-                    self.step = step.clone();
+                    self.step = step;
                     true
                 }
                 None => false,

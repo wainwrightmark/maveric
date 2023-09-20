@@ -9,9 +9,9 @@ pub enum DeletionPolicy {
 impl DeletionPolicy {
     #[must_use] pub fn linger(secs: f32) -> Self {
         if secs <= 0.0 {
-            DeletionPolicy::DeleteImmediately
+            Self::DeleteImmediately
         } else {
-            DeletionPolicy::Linger(Duration::from_secs_f32(secs))
+            Self::Linger(Duration::from_secs_f32(secs))
         }
     }
 }
