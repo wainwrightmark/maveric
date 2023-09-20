@@ -28,6 +28,7 @@ impl CanRegisterMaveric for App {
     }
 }
 
+#[allow(clippy::needless_pass_by_value)]
 fn handle_scheduled_for_removal(
     mut commands: Commands,
     time: Res<Time>,
@@ -36,11 +37,12 @@ fn handle_scheduled_for_removal(
     for (entity, mut schedule) in query.iter_mut() {
         schedule.timer.tick(time.delta());
         if schedule.timer.finished() {
-            commands.entity(entity).despawn_recursive()
+            commands.entity(entity).despawn_recursive();
         }
     }
 }
 
+#[allow(clippy::needless_pass_by_value)]
 fn sync_state<R: MavericRoot>(
     mut commands: Commands,
     param: StaticSystemParam<R::ContextParam<'_>>,
@@ -57,7 +59,7 @@ fn sync_state<R: MavericRoot>(
 
     let allocator = allocator.borrow_mut();
 
-    let mut root_commands = RootCommands::new(&mut commands, world, root_query, allocator);
+    let mut root_commands = RootCommands::new(&mut commands, world, &root_query, allocator);
 
     R::set_children(&context, &mut root_commands);
     root_commands.finish();

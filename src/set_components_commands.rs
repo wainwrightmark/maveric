@@ -51,7 +51,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
             world: self.world,
             ec: self.ec,
         };
-        f(clone)
+        f(clone);
     }
 
     #[must_use] pub fn ignore_node(
@@ -96,6 +96,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
 {
     pub fn finish(self) {}
 
+    #[allow(clippy::return_self_not_must_use)]
     pub fn insert_with_node_and_context<B: Bundle>(
         self,
         f: impl FnOnce(&'n N, &'c1 C::Wrapper<'c2>) -> B,
@@ -109,7 +110,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
 
     /// Gives you advanced access to the commands.
     /// You are responsible for checking if anything has changed.
-    pub fn advanced(
+    #[allow(clippy::return_self_not_must_use)] pub fn advanced(
         self,
 
         f: impl FnOnce(&NodeArgs<'n, 'p, 'c1, 'c2, N, C>, &mut ComponentCommands),
@@ -123,7 +124,8 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
 impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq + IntoBundle>
     SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, NoContext>
 {
-    #[must_use] pub fn insert_bundle(self) -> Self {
+    #[allow(clippy::return_self_not_must_use, clippy::must_use_candidate)]
+    pub fn insert_bundle(self) -> Self {
         if self.args.is_hot() {
             self.ec.insert(self.args.node.clone().into_bundle());
         }
@@ -135,6 +137,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq + IntoBundle>
 impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a>
     SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, (), NoContext>
 {
+    #[allow(clippy::return_self_not_must_use)]
     pub fn insert<B: Bundle>(self, b: B) -> Self {
         self.insert_with_node_and_context(|_, _| b)
     }
@@ -143,6 +146,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a>
 impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq>
     SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, NoContext>
 {
+    #[allow(clippy::return_self_not_must_use)]
     pub fn insert_with_node<B: Bundle>(self, f: impl FnOnce(&'n N) -> B) -> Self {
         self.insert_with_node_and_context(|n, _| f(n))
     }
@@ -151,6 +155,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq>
 impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, C: NodeContext>
     SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, (), C>
 {
+    #[allow(clippy::return_self_not_must_use)]
     pub fn insert_with_context<B: Bundle>(self, f: impl FnOnce(&'c1 C::Wrapper<'c2>) -> B) -> Self {
         self.insert_with_node_and_context(|_, c| f(c))
     }

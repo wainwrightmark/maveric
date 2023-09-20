@@ -27,10 +27,10 @@ pub(crate) fn create_recursive<R: MavericRoot, N: MavericNode>(
 
     N::set_children(children_commands);
 
-    let hnc = MavericNodeComponent::new(node);
-    let hcc = MavericChildComponent::<R>::new::<N>(key);
+    let node_component = MavericNodeComponent::new(node);
+    let child_component = MavericChildComponent::<R>::new::<N>(key);
 
-    ec.insert((hnc, hcc));
+    ec.insert((node_component, child_component));
     ec.id()
 }
 

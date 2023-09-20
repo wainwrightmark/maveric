@@ -38,7 +38,7 @@ impl<S: IntoBundle<B = Style>> MavericNode for ImageNode<S> {
             commands
                 .ignore_context()
                 .map_args(|x| &x.style)
-                .insert_bundle();
+                .insert_bundle().finish();
         });
         commands
             .ignore_context()

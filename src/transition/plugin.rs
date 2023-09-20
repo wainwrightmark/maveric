@@ -18,6 +18,7 @@ impl CanRegisterTransition for App {
     }
 }
 
+#[allow(clippy::needless_pass_by_value)]
 fn step_transition<L: Lens + GetValueLens + SetValueLens>(
     mut commands: Commands,
     time: Res<Time>,
@@ -35,12 +36,11 @@ fn step_transition<L: Lens + GetValueLens + SetValueLens>(
             loop {
                 if let Some(speed) = tp.step.speed {
                     break speed;
-                } else {
-                    <L as SetValueLens>::try_set(component, tp.step.destination.clone());
-                    if !tp.try_go_to_next_step() {
-                        commands.entity(entity).remove::<Transition<L>>();
-                        return;
-                    }
+                }
+                <L as SetValueLens>::try_set(component, tp.step.destination.clone());
+                if !tp.try_go_to_next_step() {
+                    commands.entity(entity).remove::<Transition<L>>();
+                    return;
                 }
             }
         };

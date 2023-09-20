@@ -20,6 +20,7 @@ struct DuplicateChecker {
 
 impl DuplicateChecker {
     #[inline]
+    #[allow(clippy::used_underscore_binding)]
     pub(crate) fn test(&mut self, _key: ChildKey) {
         #[cfg(debug_assertions)]
         {

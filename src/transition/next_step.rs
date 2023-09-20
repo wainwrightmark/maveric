@@ -18,8 +18,7 @@ where
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (NextStep::None, NextStep::None) => true,
-            (NextStep::None, _) => false,
-            (_, NextStep::None) => false,
+            (NextStep::None, _) | (_, NextStep::None) => false,
 
             (NextStep::Step(a), NextStep::Step(b)) => a.eq(b),
             (NextStep::Step(a), NextStep::Cycle(b)) => b.upgrade().is_some_and(|b| b.eq(a)),

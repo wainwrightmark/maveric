@@ -10,12 +10,15 @@ use super::speed::{AngularSpeed, LinearSpeed, ScalarSpeed, Speed};
 pub trait Tweenable: Debug + Clone + Send + Sync + PartialEq + 'static {
     type Speed: Speed;
 
+    /// # Errors 
+    /// If speed is zero
     fn duration_to(
         &self,
         rhs: &Self,
         speed: &Self::Speed,
     ) -> Result<Duration, TryFromFloatSecsError>;
 
+    #[must_use]
     fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, delta_seconds: &f32) -> Self;
 }
 
@@ -27,7 +30,7 @@ impl Tweenable for f32 {
         rhs: &Self,
         speed: &Self::Speed,
     ) -> Result<Duration, TryFromFloatSecsError> {
-        if self == rhs {
+        if (self - rhs).abs() < f32::EPSILON {
             return Ok(Duration::ZERO);
         }
 

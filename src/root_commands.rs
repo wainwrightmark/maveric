@@ -15,7 +15,7 @@ impl<'w, 's, 'b, 'w1, 'q: 'w1, 'alloc, R: MavericRoot> RootCommands<'w, 's, 'b, 
     pub(crate) fn new(
         commands: &'b mut Commands<'w, 's>,
         world: &'q World,
-        query: Query<(Entity, &MavericChildComponent<R>), Without<Parent>>,
+        query: &Query<(Entity, &MavericChildComponent<R>), Without<Parent>>,
         allocator: &'alloc mut Allocator,
     ) -> Self {
         let mut remaining_old_entities: HashMap<ChildKey, Entity> =
@@ -59,44 +59,41 @@ impl<'w, 's, 'b, 'q, 'alloc, R: MavericRoot> ChildCommands
     ) {
         let key = key.into();
 
-        match self.remaining_old_entities.remove(&key) {
-            Some(entity) => {
-                if self
-                    .world
-                    .get::<MavericNodeComponent<NChild>>(entity)
-                    .is_some()
-                {
-                    update_recursive::<R, NChild>(
-                        self.commands,
-                        entity,
-                        child,
-                        context,
-                        self.world,
-                        self.allocator,
-                    );
-                } else {
-                    warn!(
-                        "Child with key '{key}' has had node type changed to {}",
-                        type_name::<NChild>()
-                    );
-                    // The node type has changed - delete this entity and readd
-                    self.commands.entity(entity).despawn_recursive();
+        if let Some(entity) = self.remaining_old_entities.remove(&key) {
+            if self
+                .world
+                .get::<MavericNodeComponent<NChild>>(entity)
+                .is_some()
+            {
+                update_recursive::<R, NChild>(
+                    self.commands,
+                    entity,
+                    child,
+                    context,
+                    self.world,
+                    self.allocator,
+                );
+            } else {
+                warn!(
+                    "Child with key '{key}' has had node type changed to {}",
+                    type_name::<NChild>()
+                );
+                // The node type has changed - delete this entity and readd
+                self.commands.entity(entity).despawn_recursive();
 
-                    let cec = self.commands.spawn_empty();
-                    create_recursive::<R, NChild>(
-                        cec,
-                        child,
-                        context,
-                        key,
-                        self.world,
-                        self.allocator,
-                    );
-                }
-            }
-            None => {
                 let cec = self.commands.spawn_empty();
-                create_recursive::<R, NChild>(cec, child, context, key, self.world, self.allocator);
+                create_recursive::<R, NChild>(
+                    cec,
+                    child,
+                    context,
+                    key,
+                    self.world,
+                    self.allocator,
+                );
             }
-        }
+        } else {
+                        let cec = self.commands.spawn_empty();
+                        create_recursive::<R, NChild>(cec, child, context, key, self.world, self.allocator);
+                    }
     }
 }

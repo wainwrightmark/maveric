@@ -11,16 +11,6 @@ pub(crate) struct Allocator {
     pub unordered_entities: Slab<HashMap<ChildKey, Entity>>,
 }
 
-// impl Allocator {
-//     pub fn print_info(&self){
-//         println!("Allocator");
-//         self.ordered_children.print_info();
-//         self.ordered_indices.print_info();
-//         self.ordered_entities.print_info();
-//         self.unordered_entities.print_info();
-//     }
-// }
-
 pub(crate) trait Clear {
     fn clear(&mut self);
 }
@@ -53,11 +43,6 @@ impl<T: Default + Clear> Slab<T> {
 
     pub fn reclaim(&mut self, mut element: T) {
         element.clear();
-        self.elements.push(element)
+        self.elements.push(element);
     }
-
-    // pub fn print_info(&self){
-
-    //     println!("{} {}", std::any::type_name::<T>(), self.elements.len())
-    // }
 }

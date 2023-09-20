@@ -5,6 +5,7 @@ use super::tweenable::Tweenable;
 pub trait Speed: std::fmt::Debug + Copy + Clone + PartialEq + Send + Sync + 'static {
     const ONE_PER_SECOND: Self;
 
+    #[must_use]
     fn mul(self, rhs: f32) -> Self;
 }
 
@@ -118,6 +119,8 @@ impl_speed!((T0, t0), (T1, t1));
 impl_speed!((T0, t0), (T1, t1), (T2, t2));
 impl_speed!((T0, t0), (T1, t1), (T2, t2), (T3, t3));
 
+/// # Panics
+/// If `T::Speed::ONE_PER_SECOND` is zero
 pub fn calculate_speed<T: Tweenable>(t1: &T, t2: &T, duration: Duration) -> T::Speed {
     let time_to_run = t1
         .duration_to(t2, &<T::Speed as Speed>::ONE_PER_SECOND)
