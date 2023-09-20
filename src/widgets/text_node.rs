@@ -25,7 +25,7 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode fo
         });
 
         commands.insert_with_node_and_context(|args, server| {
-            let font = get_or_load_asset(args.font, &server);
+            let font = get_or_load_asset(args.font, server);
             let mut bundle = Text::from_section(
                 args.text.clone(),
                 TextStyle {

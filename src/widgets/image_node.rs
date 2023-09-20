@@ -25,7 +25,7 @@ impl<S: IntoBundle<B = Style>> MavericNode for ImageNode<S> {
             commands
                 .map_args(|x| &x.path)
                 .insert_with_node_and_context(|path, server| {
-                    let texture = get_or_load_asset::<Image>(*path, server);
+                    let texture = get_or_load_asset::<Image>(path, server);
                     UiImage {
                         texture,
                         flip_x: false,

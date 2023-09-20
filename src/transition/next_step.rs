@@ -51,7 +51,7 @@ impl<L: Lens> NextStep<L>
 where
     L::Value: Tweenable,
 {
-    pub fn is_none(&self) -> bool {
+    #[must_use] pub fn is_none(&self) -> bool {
         matches!(self, NextStep::None)
     }
 }

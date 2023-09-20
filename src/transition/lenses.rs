@@ -80,7 +80,7 @@ pub type TransformRotationXLens = Prism2<TransformRotationLens, QuatXLens>;
 pub type TransformRotationYLens = Prism2<TransformRotationLens, QuatYLens>;
 pub type TransformRotationZLens = Prism2<TransformRotationLens, QuatZLens>;
 
-pub fn transform_speed(
+#[must_use] pub fn transform_speed(
     translation_units_per_second: f32,
     radians_per_second: f32,
     scale_units_per_second: f32,

@@ -54,13 +54,13 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
         f(clone)
     }
 
-    pub fn ignore_node(
+    #[must_use] pub fn ignore_node(
         self,
     ) -> SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, (), C> {
         self.map_args(|_| &())
     }
 
-    pub fn ignore_context(
+    #[must_use] pub fn ignore_context(
         self,
     ) -> SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, NoContext> {
         self.map_context(|_| &())
@@ -123,7 +123,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
 impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq + IntoBundle>
     SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, NoContext>
 {
-    pub fn insert_bundle(self) -> Self {
+    #[must_use] pub fn insert_bundle(self) -> Self {
         if self.args.is_hot() {
             self.ec.insert(self.args.node.clone().into_bundle());
         }

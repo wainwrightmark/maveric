@@ -148,7 +148,7 @@ impl Tweenable for Val {
             | (Val::Vw(l), Val::Vw(r))
             | (Val::Vh(l), Val::Vh(r))
             | (Val::VMin(l), Val::VMin(r))
-            | (Val::VMax(l), Val::VMax(r)) => <f32 as Tweenable>::duration_to(&l, r, speed),
+            | (Val::VMax(l), Val::VMax(r)) => <f32 as Tweenable>::duration_to(l, r, speed),
             _ => Ok(Duration::ZERO),
         }
     }
@@ -156,34 +156,34 @@ impl Tweenable for Val {
     fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, delta_seconds: &f32) -> Self {
         match (self, rhs) {
             (Val::Px(l), Val::Px(r)) => Val::Px(<f32 as Tweenable>::transition_towards(
-                &l,
+                l,
                 r,
                 speed,
                 delta_seconds,
             )),
             (Val::Percent(l), Val::Percent(r)) => Val::Percent(
-                <f32 as Tweenable>::transition_towards(&l, r, speed, delta_seconds),
+                <f32 as Tweenable>::transition_towards(l, r, speed, delta_seconds),
             ),
             (Val::Vw(l), Val::Vw(r)) => Val::Vw(<f32 as Tweenable>::transition_towards(
-                &l,
+                l,
                 r,
                 speed,
                 delta_seconds,
             )),
             (Val::Vh(l), Val::Vh(r)) => Val::Vh(<f32 as Tweenable>::transition_towards(
-                &l,
+                l,
                 r,
                 speed,
                 delta_seconds,
             )),
             (Val::VMin(l), Val::VMin(r)) => Val::VMin(<f32 as Tweenable>::transition_towards(
-                &l,
+                l,
                 r,
                 speed,
                 delta_seconds,
             )),
             (Val::VMax(l), Val::VMax(r)) => Val::VMax(<f32 as Tweenable>::transition_towards(
-                &l,
+                l,
                 r,
                 speed,
                 delta_seconds,
@@ -371,7 +371,7 @@ impl Tweenable for Color {
                 hue: hue.transition_towards(hue2, speed, delta_seconds),
                 alpha: alpha.transition_towards(alpha2, speed, delta_seconds),
             },
-            _ => rhs.clone(),
+            _ => *rhs,
         }
     }
 }

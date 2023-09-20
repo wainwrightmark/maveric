@@ -33,7 +33,7 @@ impl Speed for ScalarSpeed {
 }
 
 impl ScalarSpeed {
-    pub fn new(amount_per_second: f32) -> Self {
+    #[must_use] pub fn new(amount_per_second: f32) -> Self {
         Self { amount_per_second }
     }
 }
@@ -63,7 +63,7 @@ impl Speed for LinearSpeed {
 }
 
 impl LinearSpeed {
-    pub fn new(units_per_second: f32) -> Self {
+    #[must_use] pub fn new(units_per_second: f32) -> Self {
         Self { units_per_second }
     }
 }
@@ -93,7 +93,7 @@ impl Speed for AngularSpeed {
 }
 
 impl AngularSpeed {
-    pub fn new(radians_per_second: f32) -> Self {
+    #[must_use] pub fn new(radians_per_second: f32) -> Self {
         Self { radians_per_second }
     }
 }
