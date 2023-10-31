@@ -68,9 +68,77 @@ macro_rules! define_lens_transparent {
 define_lens!(TransformTranslationLens, Transform, Vec3, translation);
 define_lens!(TransformRotationLens, Transform, Quat, rotation);
 define_lens!(TransformScaleLens, Transform, Vec3, scale);
-define_lens!(QuatXLens, Quat, f32, x);
-define_lens!(QuatYLens, Quat, f32, y);
-define_lens!(QuatZLens, Quat, f32, z);
+
+const EULER_ROT: EulerRot = EulerRot::YXZ;
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct QuatXLens;
+
+impl Lens for QuatXLens {
+    type Object = Quat;
+    type Value = f32;
+}
+
+impl GetValueLens for QuatXLens {
+    fn try_get_value(object: &Self::Object) -> Option<Self::Value> {
+        let (_y, x, _z) = object.to_euler(EULER_ROT);
+        Some(x)
+    }
+}
+
+impl SetValueLens for QuatXLens {
+    fn try_set(object: &mut <Self as Lens>::Object, value: <Self as Lens>::Value) {
+        let (y, _x, z) = object.to_euler(EULER_ROT);
+        let new_quat = Quat::from_euler(EULER_ROT, y, value, z);
+        *object = new_quat
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct QuatYLens;
+
+impl Lens for QuatYLens {
+    type Object = Quat;
+    type Value = f32;
+}
+
+impl GetValueLens for QuatYLens {
+    fn try_get_value(object: &Self::Object) -> Option<Self::Value> {
+        let (y, _x, _z) = object.to_euler(EULER_ROT);
+        Some(y)
+    }
+}
+
+impl SetValueLens for QuatYLens {
+    fn try_set(object: &mut <Self as Lens>::Object, value: <Self as Lens>::Value) {
+        let (_y, x, z) = object.to_euler(EULER_ROT);
+        let new_quat = Quat::from_euler(EULER_ROT, value, x, z);
+        *object = new_quat
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct QuatZLens;
+
+impl Lens for QuatZLens {
+    type Object = Quat;
+    type Value = f32;
+}
+
+impl GetValueLens for QuatZLens {
+    fn try_get_value(object: &Self::Object) -> Option<Self::Value> {
+        let (_y, _x, z) = object.to_euler(EULER_ROT);
+        Some(z)
+    }
+}
+
+impl SetValueLens for QuatZLens {
+    fn try_set(object: &mut <Self as Lens>::Object, value: <Self as Lens>::Value) {
+        let (y, x, _) = object.to_euler(EULER_ROT);
+        let new_quat = Quat::from_euler(EULER_ROT, y, x, value);
+        *object = new_quat
+    }
+}
 
 define_lens!(Vec3XLens, Vec3, f32, x);
 define_lens!(Vec3YLens, Vec3, f32, y);
@@ -79,6 +147,24 @@ define_lens!(Vec3ZLens, Vec3, f32, z);
 pub type TransformRotationXLens = Prism2<TransformRotationLens, QuatXLens>;
 pub type TransformRotationYLens = Prism2<TransformRotationLens, QuatYLens>;
 pub type TransformRotationZLens = Prism2<TransformRotationLens, QuatZLens>;
+
+impl SetValueLens for TransformRotationXLens {
+    fn try_set(object: &mut <Self as Lens>::Object, value: <Self as Lens>::Value) {
+        QuatXLens::try_set(&mut object.rotation, value)
+    }
+}
+
+impl SetValueLens for TransformRotationYLens {
+    fn try_set(object: &mut <Self as Lens>::Object, value: <Self as Lens>::Value) {
+        QuatYLens::try_set(&mut object.rotation, value)
+    }
+}
+
+impl SetValueLens for TransformRotationZLens {
+    fn try_set(object: &mut <Self as Lens>::Object, value: <Self as Lens>::Value) {
+        QuatZLens::try_set(&mut object.rotation, value)
+    }
+}
 
 pub fn transform_speed(
     translation_units_per_second: f32,
@@ -90,4 +176,30 @@ pub fn transform_speed(
         AngularSpeed::new(radians_per_second),
         LinearSpeed::new(scale_units_per_second),
     )
+}
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+    use bevy::prelude::Quat;
+
+    #[test]
+    pub fn test_rotation_lens() {
+        let mut quat = Quat::from_rotation_x(1.0);
+
+        assert_eq!(QuatZLens::try_get_value(&quat), Some(0.0));
+
+        QuatZLens::try_set(&mut quat, 2.0);
+
+        assert_eq!(QuatZLens::try_get_value(&quat), Some(2.0000002));
+
+        assert_eq!(QuatXLens::try_get_value(&quat), Some(1.0000001));
+
+        QuatYLens::try_set(&mut quat, 3.0);
+
+        assert_eq!(QuatZLens::try_get_value(&quat), Some(2.0));
+
+        assert_eq!(QuatXLens::try_get_value(&quat), Some(1.0000001));
+        assert_eq!(QuatYLens::try_get_value(&quat), Some(3.0));
+    }
 }
