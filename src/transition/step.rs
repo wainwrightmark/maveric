@@ -73,6 +73,8 @@ where
         })
     }
 
+    /// # Panics
+    /// If `steps` is empty
     pub fn new_cycle(
         steps: impl ExactSizeIterator
             + DoubleEndedIterator<Item = (L::Value, <L::Value as Tweenable>::Speed)>,
@@ -89,9 +91,8 @@ where
                 };
                 if index == 0 {
                     return step;
-                } else {
-                    next = NextStep::Step(Arc::new(step));
                 }
+                next = NextStep::Step(Arc::new(step));
             }
             panic!("cannot create transition cycle with no steps")
         })
@@ -135,7 +136,7 @@ where
             }
             NextStep::Cycle(weak) => match weak.upgrade() {
                 Some(step) => {
-                    self.step = step.clone();
+                    self.step = step;
                     true
                 }
                 None => false,

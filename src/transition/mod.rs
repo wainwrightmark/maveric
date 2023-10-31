@@ -29,6 +29,7 @@ pub mod prelude {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::nursery)]
     use std::{fmt::Debug, time::Duration};
 
     use bevy::{prelude::*, time::TimePlugin, time::TimeUpdateStrategy};

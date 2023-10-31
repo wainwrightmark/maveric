@@ -17,14 +17,13 @@ where
 {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (NextStep::None, NextStep::None) => true,
-            (NextStep::None, _) => false,
-            (_, NextStep::None) => false,
+            (Self::None, Self::None) => true,
+            (Self::None, _) | (_, Self::None) => false,
 
-            (NextStep::Step(a), NextStep::Step(b)) => a.eq(b),
-            (NextStep::Step(a), NextStep::Cycle(b)) => b.upgrade().is_some_and(|b| b.eq(a)),
-            (NextStep::Cycle(a), NextStep::Step(b)) => a.upgrade().is_some_and(|a| a.eq(b)),
-            (NextStep::Cycle(a), NextStep::Cycle(b)) => a.ptr_eq(b) || a.upgrade().eq(&b.upgrade()),
+            (Self::Step(a), Self::Step(b)) => a.eq(b),
+            (Self::Step(a), Self::Cycle(b)) => b.upgrade().is_some_and(|b| b.eq(a)),
+            (Self::Cycle(a), Self::Step(b)) => a.upgrade().is_some_and(|a| a.eq(b)),
+            (Self::Cycle(a), Self::Cycle(b)) => a.ptr_eq(b) || a.upgrade().eq(&b.upgrade()),
         }
     }
 }
@@ -51,7 +50,7 @@ impl<L: Lens> NextStep<L>
 where
     L::Value: Tweenable,
 {
-    pub fn is_none(&self) -> bool {
-        matches!(self, NextStep::None)
+    #[must_use] pub const fn is_none(&self) -> bool {
+        matches!(self, Self::None)
     }
 }

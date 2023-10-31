@@ -23,7 +23,7 @@ impl<Marker: IntoBundle, S: IntoBundle<B = Style>, C: ChildTuple> MavericNode
             commands
                 .ignore_node()
                 .insert(ButtonBundle::default())
-                .finish()
+                .finish();
         });
 
         commands.scope(|commands| commands.map_args(|x| &x.style).insert_bundle().finish());
@@ -31,7 +31,7 @@ impl<Marker: IntoBundle, S: IntoBundle<B = Style>, C: ChildTuple> MavericNode
             commands
                 .map_args(|x| &x.visibility)
                 .insert_bundle()
-                .finish()
+                .finish();
         });
         commands.scope(|commands| commands.map_args(|x| &x.marker).insert_bundle().finish());
         commands.scope(|commands| {

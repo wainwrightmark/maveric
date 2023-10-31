@@ -30,10 +30,6 @@ impl<N: MavericNode> Deleter for NodeDeleter<N> {
         commands: &mut ComponentCommands,
         world: &World,
     ) -> DeletionPolicy {
-        if let Some(n) = world.get::<MavericNodeComponent<N>>(entity) {
-            N::on_deleted(&n.node, commands)
-        } else {
-            DeletionPolicy::DeleteImmediately
-        }
+        world.get::<MavericNodeComponent<N>>(entity).map_or(DeletionPolicy::DeleteImmediately, |n| N::on_deleted(&n.node, commands))
     }
 }

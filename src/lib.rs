@@ -1,3 +1,10 @@
+#![deny(clippy::all)]
+#![warn(clippy::pedantic)]
+#![warn(clippy::nursery)]
+//#![warn(clippy::cargo)]
+#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::option_if_let_else)]
+
 pub mod child_commands;
 pub mod child_deletion_policy;
 pub mod child_key;

@@ -20,12 +20,11 @@ struct DuplicateChecker {
 
 impl DuplicateChecker {
     #[inline]
+    #[allow(clippy::used_underscore_binding)]
     pub(crate) fn test(&mut self, _key: ChildKey) {
         #[cfg(debug_assertions)]
         {
-            if !self.set.insert(_key) {
-                panic!("Duplicate Child Key {_key}")
-            }
+            assert!(self.set.insert(_key), "Duplicate Child Key {_key}");
         }
     }
 }
@@ -97,7 +96,7 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot>
         let mut remaining_old_entities: HashMap<ChildKey, Entity> =
             allocator.unordered_entities.claim();
         if let Some(children) = children {
-            remaining_old_entities.extend(children.iter().flat_map(|entity| {
+            remaining_old_entities.extend(children.iter().filter_map(|entity| {
                 world
                     .get::<MavericChildComponent<R>>(*entity)
                     .map(|hcc| (hcc.key, *entity))
@@ -206,7 +205,7 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot>
             allocator.ordered_entities.claim();
 
         if let Some(children) = world.get::<Children>(ec.id()) {
-            remaining_old_entities.extend(children.iter().enumerate().flat_map(
+            remaining_old_entities.extend(children.iter().enumerate().filter_map(
                 |(index, entity)| {
                     world
                         .get::<MavericChildComponent<R>>(*entity)
@@ -232,7 +231,7 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot>
         let order_changed = {
             let mut changed = false;
             let mut last = 0;
-            'oc: for old_index in self.new_indices.iter() {
+            'oc: for old_index in &self.new_indices {
                 let Some(old_index) = *old_index else {
                     changed = true;
                     break 'oc;
@@ -477,7 +476,7 @@ mod tests {
             commands
                 .ignore_node()
                 .ordered_children_with_context(|context, commands| {
-                    for &number in context.0 .0.iter() {
+                    for &number in &context.0 .0 {
                         let linger = context.1 .0.contains(&number);
                         commands.add_child(number, Leaf { number, linger }, &());
                     }

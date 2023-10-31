@@ -5,6 +5,7 @@ use super::tweenable::Tweenable;
 pub trait Speed: std::fmt::Debug + Copy + Clone + PartialEq + Send + Sync + 'static {
     const ONE_PER_SECOND: Self;
 
+    #[must_use]
     fn mul(self, rhs: f32) -> Self;
 }
 
@@ -33,7 +34,7 @@ impl Speed for ScalarSpeed {
 }
 
 impl ScalarSpeed {
-    pub fn new(amount_per_second: f32) -> Self {
+    #[must_use] pub const fn new(amount_per_second: f32) -> Self {
         Self { amount_per_second }
     }
 }
@@ -63,7 +64,7 @@ impl Speed for LinearSpeed {
 }
 
 impl LinearSpeed {
-    pub fn new(units_per_second: f32) -> Self {
+    #[must_use] pub const fn new(units_per_second: f32) -> Self {
         Self { units_per_second }
     }
 }
@@ -93,7 +94,7 @@ impl Speed for AngularSpeed {
 }
 
 impl AngularSpeed {
-    pub fn new(radians_per_second: f32) -> Self {
+    #[must_use] pub const fn new(radians_per_second: f32) -> Self {
         Self { radians_per_second }
     }
 }
@@ -113,12 +114,13 @@ macro_rules! impl_speed {
     };
 }
 
-impl_speed!();
 impl_speed!((T0, t0));
 impl_speed!((T0, t0), (T1, t1));
 impl_speed!((T0, t0), (T1, t1), (T2, t2));
 impl_speed!((T0, t0), (T1, t1), (T2, t2), (T3, t3));
 
+/// # Panics
+/// If `T::Speed::ONE_PER_SECOND` is zero
 pub fn calculate_speed<T: Tweenable>(t1: &T, t2: &T, duration: Duration) -> T::Speed {
     let time_to_run = t1
         .duration_to(t2, &<T::Speed as Speed>::ONE_PER_SECOND)

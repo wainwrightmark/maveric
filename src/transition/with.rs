@@ -182,7 +182,7 @@ where
     }
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
-        N::set_children(commands.map_args(|x| &x.node))
+        N::set_children(commands.map_args(|x| &x.node));
     }
 
     fn on_deleted<'r>(&self, commands: &mut ComponentCommands) -> DeletionPolicy {

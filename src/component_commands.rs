@@ -20,7 +20,7 @@ impl<'c, 'w, 's, 'a, 'world> ComponentCommands<'c, 'w, 's, 'a, 'world> {
         }
     }
 
-    pub fn get<T: Component>(&self) -> Option<&T> {
+    #[must_use] pub fn get<T: Component>(&self) -> Option<&T> {
         if self.set_event == SetEvent::Created {
             None
         } else {

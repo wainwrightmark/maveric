@@ -56,13 +56,13 @@ impl<
         }
     }
 
-    pub fn ignore_node(
+    #[must_use] pub fn ignore_node(
         self,
     ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, (), C, R> {
         self.map_args(|_| &())
     }
 
-    pub fn ignore_context(
+    #[must_use] pub fn ignore_context(
         self,
     ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N, NoContext, R>
     {
@@ -114,8 +114,8 @@ impl<
 {
     pub fn add_children(self) {
         self.unordered_children_with_node_and_context(|args, context, commands| {
-            args.add_children(context, commands)
-        })
+            args.add_children(context, commands);
+        });
     }
 }
 
@@ -135,7 +135,7 @@ impl<
         R: MavericRoot,
     > SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N, C, R>
 {
-    pub fn no_children(self) {}
+    pub const fn no_children(self) {}
 
     pub fn ordered_children_with_node_and_context(
         self,
@@ -186,11 +186,11 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, R: MavericRoot>
     SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, (), NoContext, R>
 {
     pub fn ordered_children(self, f: impl FnOnce(&mut OrderedChildCommands<R>)) {
-        self.ordered_children_with_node_and_context(|_, _, cc| f(cc))
+        self.ordered_children_with_node_and_context(|_, _, cc| f(cc));
     }
 
     pub fn unordered_children(self, f: impl FnOnce(&mut UnorderedChildCommands<R>)) {
-        self.unordered_children_with_node_and_context(|_, _, cc| f(cc))
+        self.unordered_children_with_node_and_context(|_, _, cc| f(cc));
     }
 }
 
@@ -198,7 +198,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N: PartialEq, R: Maveric
     SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N, NoContext, R>
 {
     pub fn ordered_children_with_node(self, f: impl FnOnce(&'n N, &mut OrderedChildCommands<R>)) {
-        self.ordered_children_with_node_and_context(|n, _, cc| f(n, cc))
+        self.ordered_children_with_node_and_context(|n, _, cc| f(n, cc));
     }
 
     pub fn unordered_children_with_node(
@@ -206,7 +206,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N: PartialEq, R: Maveric
 
         f: impl FnOnce(&'n N, &mut UnorderedChildCommands<R>),
     ) {
-        self.unordered_children_with_node_and_context(|n, _, cc| f(n, cc))
+        self.unordered_children_with_node_and_context(|n, _, cc| f(n, cc));
     }
 }
 
@@ -218,7 +218,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, C: NodeContext, R: Maver
 
         f: impl FnOnce(&'c1 C::Wrapper<'c2>, &mut OrderedChildCommands<R>),
     ) {
-        self.ordered_children_with_node_and_context(|_n, c, cc| f(c, cc))
+        self.ordered_children_with_node_and_context(|_n, c, cc| f(c, cc));
     }
 
     pub fn unordered_children_with_context(
@@ -226,6 +226,6 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, C: NodeContext, R: Maver
 
         f: impl FnOnce(&'c1 C::Wrapper<'c2>, &mut UnorderedChildCommands<R>),
     ) {
-        self.unordered_children_with_node_and_context(|_n, c, cc| f(c, cc))
+        self.unordered_children_with_node_and_context(|_n, c, cc| f(c, cc));
     }
 }

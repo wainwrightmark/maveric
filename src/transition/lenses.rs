@@ -6,7 +6,7 @@ use super::speed::{AngularSpeed, LinearSpeed};
 #[macro_export]
 macro_rules! define_lens {
     ($L:ident, $O:ident, $V:ident, $p:ident) => {
-        #[derive(Debug, Clone, PartialEq)]
+        #[derive(Debug, Clone, PartialEq, Eq)]
         pub struct $L;
 
         impl $crate::transition::prelude::Lens for $L {
@@ -166,7 +166,9 @@ impl SetValueLens for TransformRotationZLens {
     }
 }
 
-pub fn transform_speed(
+
+#[must_use]
+pub const fn transform_speed(
     translation_units_per_second: f32,
     radians_per_second: f32,
     scale_units_per_second: f32,

@@ -10,12 +10,15 @@ use super::speed::{AngularSpeed, LinearSpeed, ScalarSpeed, Speed};
 pub trait Tweenable: Debug + Clone + Send + Sync + PartialEq + 'static {
     type Speed: Speed;
 
+    /// # Errors 
+    /// If speed is zero
     fn duration_to(
         &self,
         rhs: &Self,
         speed: &Self::Speed,
     ) -> Result<Duration, TryFromFloatSecsError>;
 
+    #[must_use]
     fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, delta_seconds: &f32) -> Self;
 }
 
@@ -27,7 +30,7 @@ impl Tweenable for f32 {
         rhs: &Self,
         speed: &Self::Speed,
     ) -> Result<Duration, TryFromFloatSecsError> {
-        if self == rhs {
+        if (self - rhs).abs() < Self::EPSILON {
             return Ok(Duration::ZERO);
         }
 
@@ -37,7 +40,7 @@ impl Tweenable for f32 {
     fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, elapsed_seconds: &f32) -> Self {
         let diff = rhs - *self;
 
-        self + (diff.abs().min(speed.amount_per_second * elapsed_seconds) * diff.signum())
+        diff.abs().min(speed.amount_per_second * elapsed_seconds).mul_add(diff.signum(), *self)
     }
 }
 
@@ -148,7 +151,7 @@ impl Tweenable for Val {
             | (Val::Vw(l), Val::Vw(r))
             | (Val::Vh(l), Val::Vh(r))
             | (Val::VMin(l), Val::VMin(r))
-            | (Val::VMax(l), Val::VMax(r)) => <f32 as Tweenable>::duration_to(&l, r, speed),
+            | (Val::VMax(l), Val::VMax(r)) => <f32 as Tweenable>::duration_to(l, r, speed),
             _ => Ok(Duration::ZERO),
         }
     }
@@ -156,34 +159,34 @@ impl Tweenable for Val {
     fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, delta_seconds: &f32) -> Self {
         match (self, rhs) {
             (Val::Px(l), Val::Px(r)) => Val::Px(<f32 as Tweenable>::transition_towards(
-                &l,
+                l,
                 r,
                 speed,
                 delta_seconds,
             )),
             (Val::Percent(l), Val::Percent(r)) => Val::Percent(
-                <f32 as Tweenable>::transition_towards(&l, r, speed, delta_seconds),
+                <f32 as Tweenable>::transition_towards(l, r, speed, delta_seconds),
             ),
             (Val::Vw(l), Val::Vw(r)) => Val::Vw(<f32 as Tweenable>::transition_towards(
-                &l,
+                l,
                 r,
                 speed,
                 delta_seconds,
             )),
             (Val::Vh(l), Val::Vh(r)) => Val::Vh(<f32 as Tweenable>::transition_towards(
-                &l,
+                l,
                 r,
                 speed,
                 delta_seconds,
             )),
             (Val::VMin(l), Val::VMin(r)) => Val::VMin(<f32 as Tweenable>::transition_towards(
-                &l,
+                l,
                 r,
                 speed,
                 delta_seconds,
             )),
             (Val::VMax(l), Val::VMax(r)) => Val::VMax(<f32 as Tweenable>::transition_towards(
-                &l,
+                l,
                 r,
                 speed,
                 delta_seconds,
@@ -371,7 +374,7 @@ impl Tweenable for Color {
                 hue: hue.transition_towards(hue2, speed, delta_seconds),
                 alpha: alpha.transition_towards(alpha2, speed, delta_seconds),
             },
-            _ => rhs.clone(),
+            _ => *rhs,
         }
     }
 }
@@ -414,7 +417,6 @@ macro_rules! impl_tweenable {
     };
 }
 
-impl_tweenable!();
 impl_tweenable!((T0, t0, r0, s0));
 impl_tweenable!((T0, t0, r0, s0), (T1, t1, r1, s1));
 impl_tweenable!((T0, t0, r0, s0), (T1, t1, r1, s1), (T2, t2, r2, s2));

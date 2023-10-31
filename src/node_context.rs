@@ -69,7 +69,7 @@ impl_nc!(
     (T7, t7)
 );
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct NoContext;
 
 impl NodeContext for NoContext {
@@ -79,22 +79,3 @@ impl NodeContext for NoContext {
         false
     }
 }
-
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub struct NoBundleContext;
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub struct NoChildrenContext;
-
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub struct SameContext;
-
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub struct DifferentContexts;
-
-pub trait ContextType {}
-
-impl ContextType for NoContext {}
-impl ContextType for NoBundleContext {}
-impl ContextType for NoChildrenContext {}
-impl ContextType for SameContext {}
-impl ContextType for DifferentContexts {}

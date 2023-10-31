@@ -24,7 +24,7 @@ pub trait SetValueLens: Lens {
 impl<L: GetMutLens> SetValueLens for L {
     fn try_set(object: &mut <Self as Lens>::Object, value: <Self as Lens>::Value) {
         if let Some(o) = L::try_get_mut(object) {
-            *o = value
+            *o = value;
         }
     }
 }
