@@ -22,7 +22,7 @@ impl CanRegisterMaveric for App {
             self.add_plugins(ScheduleForRemovalPlugin);
         }
 
-        self.add_systems(First, sync_state::<R>);
+        self.add_systems(First, sync_state::<R>.run_if(should_run::<R>));
 
         self
     }
@@ -40,6 +40,12 @@ fn handle_scheduled_for_removal(
             commands.entity(entity).despawn_recursive();
         }
     }
+}
+
+fn should_run<R: MavericRoot>(param: StaticSystemParam<R::ContextParam<'_>>)-> bool{
+    let context = R::get_context(param);
+    let changed = <R::Context as NodeContext>::has_changed(&context);
+    changed
 }
 
 #[allow(clippy::needless_pass_by_value)]

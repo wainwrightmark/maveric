@@ -1,9 +1,9 @@
-use bevy::ecs::system::{StaticSystemParam, SystemParam};
+use bevy::ecs::system::{StaticSystemParam, ReadOnlySystemParam};
 
 use crate::prelude::*;
 
 pub trait MavericRoot: MavericRootChildren {
-    type ContextParam<'c>: SystemParam;
+    type ContextParam<'c>: ReadOnlySystemParam;
     fn get_context<'a, 'c, 'w: 'c, 's>(
         param: StaticSystemParam<'w, 's, Self::ContextParam<'a>>,
     ) -> <Self::Context as NodeContext>::Wrapper<'c>;
