@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use maveric::{impl_maveric_root, prelude::*};
+use maveric::{impl_maveric_root, prelude::*, widgets::text2d_node::Text2DNode};
 use strum::{Display, EnumIs, EnumIter, IntoEnumIterator, IntoStaticStr};
 
 use std::time::Duration;
@@ -111,23 +111,21 @@ impl MavericNode for NumberNode {
         commands
             .ignore_context()
             .insert_with_node(|a| GraphNode(a.0))
-            .ignore_node()
-            .insert(NodeBundle {
-                style: Style {
-                    position_type: PositionType::Absolute,
-                    width: Val::Px(NODE_SIZE),
-                    height: Val::Px(NODE_SIZE),
-                    border: UiRect::all(Val::Px(NODE_BORDER)),
-                    left: Val::Percent(50.),
-                    top: Val::Percent(50.),
-                    align_items: AlignItems::Center,
-                    justify_items: JustifyItems::Center,
-                    align_content: AlignContent::Center,
-                    ..Default::default()
-                },
-                background_color: BackgroundColor(Color::WHITE),
-                border_color: BorderColor(Color::GRAY),
-                ..Default::default()
+            .advanced(|a, c| {
+                if a.event != SetEvent::Created {
+                    return;
+                }
+
+                let x = (a.node.0 % 2) as f32 - 0.5;
+                let y = (a.node.0 % 3) as f32 - 1.0;
+                // we vary the starting position slightly so let the graph have something to work from
+
+                let translation = Vec3::new(x, y, 0.0);
+
+                c.insert((
+                    TransformBundle::from_transform(Transform::from_translation(translation)),
+                    VisibilityBundle::default(),
+                ))
             });
     }
 
@@ -135,13 +133,16 @@ impl MavericNode for NumberNode {
         commands.unordered_children_with_node_and_context(|args, context, commands| {
             commands.add_child(
                 0,
-                TextNode {
-                    text: format!(" {} ", args.0),
-                    font_size: TEXT_FONT_SIZE,
-                    color: BUTTON_TEXT_COLOR,
-                    font: FONT_PATH,
-                    alignment: TextAlignment::Center,
-                    linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
+                Text2DNode {
+                    text: TextNode {
+                        text: format!(" {} ", args.0),
+                        font_size: TEXT_FONT_SIZE,
+                        color: BUTTON_TEXT_COLOR,
+                        font: FONT_PATH,
+                        alignment: TextAlignment::Center,
+                        linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
+                    },
+                    transform: Default::default(),
                 },
                 context,
             );
@@ -154,14 +155,14 @@ pub struct GraphState {
     number: u32,
 }
 
-fn organize_graph(time: Res<Time>, mut nodes: Query<(&mut Style, &GraphNode)>) {
+fn organize_graph(time: Res<Time>, mut nodes: Query<(&mut Transform, &GraphNode)>) {
     const ATTRACTION: f32 = 0.01;
-    const REPULSION: f32 = 10.0;
-    const MAX_REPULSION: f32 = 100.0;
+    const REPULSION: f32 = 200.0;
+    const MAX_REPULSION: f32 = 500.0;
 
     let mut combinations = nodes.iter_combinations_mut();
     while let Some([mut left, mut right]) = combinations.fetch_next() {
-        let difference = get_position(left.0.as_ref()) - get_position(right.0.as_ref());
+        let difference = left.0.translation.truncate() - right.0.translation.truncate();
         let attraction =
             ATTRACTION * attraction(left.1 .0, right.1 .0) * (difference).length_squared();
         let repulsion = REPULSION * difference.length_recip().min(MAX_REPULSION);
@@ -179,23 +180,8 @@ fn organize_graph(time: Res<Time>, mut nodes: Query<(&mut Style, &GraphNode)>) {
     }
 }
 
-fn update_position(style: &mut Style, force: Vec2) {
-    let p = get_position(style) + force;
-    style.left = Val::Percent(p.x);
-    style.top = Val::Percent(p.y);
-}
-
-fn get_position(style: &Style) -> Vec2 {
-    let x = match style.left {
-        Val::Percent(percent) => percent,
-        _ => 50.0,
-    };
-
-    let y = match style.top {
-        Val::Percent(percent) => percent,
-        _ => 50.0,
-    };
-    Vec2 { x, y }
+fn update_position(transform: &mut Transform, force: Vec2) {
+    transform.translation += force.extend(0.0);
 }
 
 fn attraction(left: u32, right: u32) -> f32 {
