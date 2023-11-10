@@ -1,4 +1,4 @@
-use bevy::{ecs::system::EntityCommands, utils::tracing::Value};
+use bevy::ecs::system::EntityCommands;
 
 use crate::prelude::*;
 
@@ -137,6 +137,12 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq + IntoBundle>
         self
     }
 
+
+}
+
+impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: Clone + PartialEq>
+    SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, NoContext>
+{
     /// Animate a property based on the node value
     /// You may have call `ignore_context` before calling this
     #[allow(clippy::return_self_not_must_use)]
@@ -147,7 +153,6 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq + IntoBundle>
     where
         L::Value: Tweenable + Clone,
         L::Object: Clone + Component,
-        N: Clone,
     {
         self.advanced(|args, commands| {
             if !args.is_hot() {
