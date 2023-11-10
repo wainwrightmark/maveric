@@ -122,7 +122,28 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
         self
     }
 
+    /// Animate a property based on the node value
+    /// You may have call `ignore_context` before calling this
+    #[allow(clippy::return_self_not_must_use)]
+    pub fn animate<L: Lens + GetValueLens>(
+        self,
+        get_value: impl FnOnce(&'n N, &'c1 C::Wrapper<'c2>) -> L::Value,
+        speed: Option<<L::Value as Tweenable>::Speed>,
+    ) -> Self
+    where
+        L::Value: Tweenable + Clone,
+        L::Object: Clone + Component,
+    {
+        self.advanced(|args, commands| {
+            if !args.is_hot() {
+                return;
+            }
 
+            let value = get_value(args.node, args.context);
+
+            commands.transition_value::<L>(value.clone(), value, speed);
+        })
+    }
 }
 
 impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq + IntoBundle>
@@ -136,8 +157,6 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq + IntoBundle>
 
         self
     }
-
-
 }
 
 impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: Clone + PartialEq>
@@ -146,7 +165,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: Clone + PartialEq>
     /// Animate a property based on the node value
     /// You may have call `ignore_context` before calling this
     #[allow(clippy::return_self_not_must_use)]
-    pub fn animate_on_node_value<L: Lens<Value = N> + GetValueLens>(
+    pub fn animate_on_node<L: Lens<Value = N> + GetValueLens>(
         self,
         speed: Option<<L::Value as Tweenable>::Speed>,
     ) -> Self
