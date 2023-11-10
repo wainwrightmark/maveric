@@ -1,4 +1,4 @@
-use bevy::ecs::system::EntityCommands;
+use bevy::{ecs::system::EntityCommands, utils::tracing::Value};
 
 use crate::prelude::*;
 
@@ -54,13 +54,15 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
         f(clone);
     }
 
-    #[must_use] pub fn ignore_node(
+    #[must_use]
+    pub fn ignore_node(
         self,
     ) -> SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, (), C> {
         self.map_args(|_| &())
     }
 
-    #[must_use] pub fn ignore_context(
+    #[must_use]
+    pub fn ignore_context(
         self,
     ) -> SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, NoContext> {
         self.map_context(|_| &())
@@ -110,15 +112,17 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
 
     /// Gives you advanced access to the commands.
     /// You are responsible for checking if anything has changed.
-    #[allow(clippy::return_self_not_must_use)] pub fn advanced(
+    #[allow(clippy::return_self_not_must_use)]
+    pub fn advanced(
         self,
-
         f: impl FnOnce(&NodeArgs<'n, 'p, 'c1, 'c2, N, C>, &mut ComponentCommands),
     ) -> Self {
         let mut occ = ComponentCommands::new(self.ec, self.world, self.args.event);
         f(&self.args, &mut occ);
         self
     }
+
+
 }
 
 impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq + IntoBundle>
@@ -131,6 +135,27 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq + IntoBundle>
         }
 
         self
+    }
+
+    /// Animate a property based on the node value
+    /// You may have call `ignore_context` before calling this
+    #[allow(clippy::return_self_not_must_use)]
+    pub fn animate_on_node_value<L: Lens<Value = N> + GetValueLens>(
+        self,
+        speed: Option<<L::Value as Tweenable>::Speed>,
+    ) -> Self
+    where
+        L::Value: Tweenable + Clone,
+        L::Object: Clone + Component,
+        N: Clone,
+    {
+        self.advanced(|args, commands| {
+            if !args.is_hot() {
+                return;
+            }
+
+            commands.transition_value::<L>(args.node.clone(), args.node.clone(), speed);
+        })
     }
 }
 
