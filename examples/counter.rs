@@ -27,13 +27,13 @@ pub struct Marker;
 pub struct Root;
 
 impl MavericRootChildren for Root {
-    type Context = NC2<CounterState, AssetServer>;
+    type Context = CounterState;
 
     fn set_children<'r>(
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ChildCommands,
     ) {
-        let text = context.0.number.to_string();
+        let text = context.number.to_string();
         commands.add_child(
             0,
             ButtonNode {
@@ -51,7 +51,7 @@ impl MavericRootChildren for Root {
                     linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
                 },),
             },
-            &context.1,
+            &(),
         )
     }
 }

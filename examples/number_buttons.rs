@@ -83,13 +83,13 @@ pub struct Root;
 impl_maveric_root!(Root);
 
 impl MavericRootChildren for Root {
-    type Context = NC2<UIState, AssetServer>;
+    type Context = UIState;
 
     fn set_children(
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
-        commands.add_child(0, CommandGrid, &context.1);
+        commands.add_child(0, CommandGrid, &());
         commands.add_child(1, DynamicGrid, context);
     }
 }
@@ -98,7 +98,7 @@ impl MavericRootChildren for Root {
 pub struct CommandGrid;
 
 impl MavericNode for CommandGrid {
-    type Context = AssetServer;
+    type Context = NoContext;
 
     fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
         commands.ignore_node().ignore_context().insert(NodeBundle {
@@ -147,7 +147,7 @@ impl MavericNode for CommandGrid {
 pub struct DynamicGrid;
 
 impl MavericNode for DynamicGrid {
-    type Context = NC2<UIState, AssetServer>;
+    type Context = UIState;
 
     fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
         commands.ignore_node().ignore_context().insert(NodeBundle {
@@ -169,7 +169,7 @@ impl MavericNode for DynamicGrid {
         commands
             .ignore_node()
             .ordered_children_with_context(|context, commands| {
-                for number in context.0.dynamic_buttons.iter().cloned() {
+                for number in context.dynamic_buttons.iter().cloned() {
                     let node = ButtonNode {
                         style: ButtonStyle,
                         visibility: Visibility::Visible,
@@ -195,7 +195,7 @@ impl MavericNode for DynamicGrid {
                             Duration::from_secs_f32(2.0),
                         );
 
-                    commands.add_child(number, node, &context.1);
+                    commands.add_child(number, node, &());
                 }
             })
     }

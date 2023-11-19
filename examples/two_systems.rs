@@ -28,13 +28,13 @@ pub struct Marker;
 pub struct Root;
 
 impl MavericRootChildren for Root {
-    type Context = NC2<CounterState, AssetServer>;
+    type Context = CounterState;
 
     fn set_children<'r>(
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ChildCommands,
     ) {
-        let text = context.0.number.to_string();
+        let text = context.number.to_string();
         commands.add_child(
             0,
             ButtonNode {
@@ -52,7 +52,7 @@ impl MavericRootChildren for Root {
                     linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
                 },),
             },
-            &context.1,
+            &(),
         )
     }
 }
@@ -83,13 +83,13 @@ fn button_system(
 pub struct Root2;
 
 impl MavericRootChildren for Root2 {
-    type Context = NC2<CounterState, AssetServer>;
+    type Context = CounterState;
 
     fn set_children(
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
         commands: &mut impl ChildCommands,
     ) {
-        let path = match context.0.number % 4 {
+        let path = match context.number % 4 {
             0 => r#"images\MedalsBlack.png"#,
             1 => r#"images\MedalsBronze.png"#,
             2 => r#"images\MedalsSilver.png"#,
@@ -110,7 +110,7 @@ impl MavericRootChildren for Root2 {
                     background_color: Color::WHITE,
                 },),
             },
-            &context.1,
+            &(),
         );
     }
 }

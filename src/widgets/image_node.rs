@@ -11,7 +11,7 @@ pub struct ImageNode<S: IntoBundle<B = Style>> {
 }
 
 impl<S: IntoBundle<B = Style>> MavericNode for ImageNode<S> {
-    type Context = AssetServer;
+    type Context = NoContext;
 
     fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
         commands.scope(|commands| {
@@ -24,13 +24,16 @@ impl<S: IntoBundle<B = Style>> MavericNode for ImageNode<S> {
         commands.scope(|commands| {
             commands
                 .map_args(|x| &x.path)
-                .insert_with_node_and_context(|path, server| {
+                .advanced(|args, commands| {
+                    let path = args.node;
+                    let server: &AssetServer = commands.get_res_untracked().expect("Could not get asset server");
                     let texture = server.load(*path);
-                    UiImage {
+                    let bundle = UiImage {
                         texture,
                         flip_x: false,
                         flip_y: false,
-                    }
+                    };
+                    commands.insert(bundle);
                 });
         });
 

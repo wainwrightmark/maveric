@@ -37,15 +37,15 @@ pub struct Root;
 
 
 impl MavericRootChildren for Root {
-    type Context = NC2<GraphState, AssetServer>;
+    type Context = GraphState;
 
     fn set_children<'r>(
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ChildCommands,
     ) {
-        commands.add_child("Buttons", Buttons, &context.1);
+        commands.add_child("Buttons", Buttons, &());
 
-        for i in get_factors(context.0.number) {
+        for i in get_factors(context.number) {
             commands.add_child(
                 i,
                 NumberNode(i).with_transition_in_out::<BackgroundColorLens>(
@@ -55,7 +55,7 @@ impl MavericRootChildren for Root {
                     Duration::from_secs_f32(0.5),
                     Duration::from_secs_f32(2.0),
                 ),
-                &context.1,
+                &(),
             )
         }
     }
@@ -66,7 +66,7 @@ impl_maveric_root!(Root);
 pub struct Buttons;
 
 impl MavericNode for Buttons{
-    type Context = AssetServer;
+    type Context = NoContext;
 
     fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
         commands.ignore_context().ignore_node().insert(NodeBundle::default());
@@ -129,7 +129,7 @@ struct NumberNode(u32);
 struct GraphNode(u32);
 
 impl MavericNode for NumberNode {
-    type Context = AssetServer;
+    type Context = NoContext;
 
     fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
         commands

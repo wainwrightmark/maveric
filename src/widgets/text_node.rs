@@ -13,7 +13,7 @@ pub struct TextNode<T: Into<String> + PartialEq + Clone + Send + Sync + 'static>
 
 
 impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode for TextNode<T> {
-    type Context = AssetServer;
+    type Context = NoContext;
 
     fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
         commands.scope(|commands| {
@@ -23,20 +23,22 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode fo
                 .insert(TextBundle::default());
         });
 
-        commands.insert_with_node_and_context(|args, server| {
-            let font = server.load(args.font);
+        commands.advanced(|args, commands| {
+            let node = args.node;
+            let server: &AssetServer = commands.get_res_untracked().expect("Could not get asset server");
+            let font = server.load(node.font);
             let mut bundle = Text::from_section(
-                args.text.clone(),
+                node.text.clone(),
                 TextStyle {
                     font,
-                    font_size: args.font_size,
-                    color: args.color,
+                    font_size: node.font_size,
+                    color: node.color,
                 },
             )
-            .with_alignment(args.alignment);
+            .with_alignment(node.alignment);
 
-            bundle.linebreak_behavior = args.linebreak_behavior;
-            bundle
+            bundle.linebreak_behavior = node.linebreak_behavior;
+            commands.insert(bundle);
         });
     }
 

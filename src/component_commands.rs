@@ -20,7 +20,8 @@ impl<'c, 'w, 's, 'a, 'world> ComponentCommands<'c, 'w, 's, 'a, 'world> {
         }
     }
 
-    #[must_use] pub fn get<T: Component>(&self) -> Option<&T> {
+    #[must_use]
+    pub fn get<T: Component>(&self) -> Option<&T> {
         if self.set_event == SetEvent::Created {
             None
         } else {
@@ -37,5 +38,11 @@ impl<'c, 'w, 's, 'a, 'world> ComponentCommands<'c, 'w, 's, 'a, 'world> {
             return;
         }
         self.ec.remove::<T>();
+    }
+
+    /// Gets a resource.
+    /// This resource usage is not tracked, meaning changes to this resource will not result in recalculating components
+    pub fn get_res_untracked<R: Resource>(&self) -> Option<&R> {
+        self.world.get_resource()
     }
 }
