@@ -14,7 +14,9 @@ const BOXES_PER_ROW: usize = 5;
 fn main() {
     let mut app = App::new();
 
-    app.add_plugins(DefaultPlugins)
+    app
+    .insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
+    .add_plugins(DefaultPlugins)
         .register_maveric::<Root>()
         .init_resource::<UIState>()
         .add_systems(Startup, setup)
@@ -80,6 +82,18 @@ pub struct Root;
 
 impl_maveric_root!(Root);
 
+impl MavericRootChildren for Root {
+    type Context = NC2<UIState, AssetServer>;
+
+    fn set_children(
+        context: &<Self::Context as NodeContext>::Wrapper<'_>,
+        commands: &mut impl ChildCommands,
+    ) {
+        commands.add_child(0, CommandGrid, &context.1);
+        commands.add_child(1, DynamicGrid, context);
+    }
+}
+
 #[derive(Eq, PartialEq, Debug, Default)]
 pub struct CommandGrid;
 
@@ -89,6 +103,7 @@ impl MavericNode for CommandGrid {
     fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
         commands.ignore_node().ignore_context().insert(NodeBundle {
             style: Style {
+                height: Val::Percent(10.0),
                 width: Val::Percent(100.0),
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
@@ -137,6 +152,8 @@ impl MavericNode for DynamicGrid {
     fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
         commands.ignore_node().ignore_context().insert(NodeBundle {
             style: Style {
+                top: Val::Percent(10.0),
+                height: Val::Percent(90.0),
                 width: Val::Percent(100.0),
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
@@ -184,17 +201,7 @@ impl MavericNode for DynamicGrid {
     }
 }
 
-impl MavericRootChildren for Root {
-    type Context = NC2<UIState, AssetServer>;
 
-    fn set_children(
-        context: &<Self::Context as NodeContext>::Wrapper<'_>,
-        commands: &mut impl ChildCommands,
-    ) {
-        commands.add_child(0, CommandGrid, &context.1);
-        commands.add_child(1, DynamicGrid, context);
-    }
-}
 
 const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
 const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);

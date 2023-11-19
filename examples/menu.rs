@@ -9,7 +9,10 @@ use strum::{Display, EnumIs};
 fn main() {
     let mut app = App::new();
 
-    app.add_plugins(DefaultPlugins)
+    app
+    .insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
+
+    .add_plugins(DefaultPlugins)
         .init_resource::<MenuState>()
         .add_systems(Startup, setup)
         .add_systems(Update, button_system);

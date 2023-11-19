@@ -7,7 +7,9 @@ use std::time::Duration;
 fn main() {
     let mut app = App::new();
 
-    app.add_plugins(DefaultPlugins)
+    app
+    .insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
+    .add_plugins(DefaultPlugins)
         .init_resource::<GraphState>()
         .register_transition::<BackgroundColorLens>()
         .add_systems(Startup, setup)
@@ -31,6 +33,9 @@ pub enum ButtonMarker {
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Root;
 
+
+
+
 impl MavericRootChildren for Root {
     type Context = NC2<GraphState, AssetServer>;
 
@@ -38,28 +43,7 @@ impl MavericRootChildren for Root {
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ChildCommands,
     ) {
-        for button_marker in ButtonMarker::iter() {
-            let text: &'static str = button_marker.into();
-            commands.add_child(
-                text,
-                ButtonNode {
-                    style: ButtonStyle,
-                    background_color: TEXT_BUTTON_BACKGROUND,
-                    border_color: BUTTON_BORDER,
-                    visibility: Visibility::Visible,
-                    marker: button_marker,
-                    children: (TextNode {
-                        text,
-                        font_size: BUTTON_FONT_SIZE,
-                        color: BUTTON_TEXT_COLOR,
-                        font: FONT_PATH,
-                        alignment: TextAlignment::Center,
-                        linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
-                    },),
-                },
-                &context.1,
-            )
-        }
+        commands.add_child("Buttons", Buttons, &context.1);
 
         for i in get_factors(context.0.number) {
             commands.add_child(
@@ -77,6 +61,46 @@ impl MavericRootChildren for Root {
     }
 }
 impl_maveric_root!(Root);
+
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct Buttons;
+
+impl MavericNode for Buttons{
+    type Context = AssetServer;
+
+    fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
+        commands.ignore_context().ignore_node().insert(NodeBundle::default());
+    }
+
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
+
+        commands.ignore_node().unordered_children_with_context(|context, commands|{
+            for button_marker in ButtonMarker::iter() {
+                let text: &'static str = button_marker.into();
+                commands.add_child(
+                    text,
+                    ButtonNode {
+                        style: ButtonStyle,
+                        background_color: TEXT_BUTTON_BACKGROUND,
+                        border_color: BUTTON_BORDER,
+                        visibility: Visibility::Visible,
+                        marker: button_marker,
+                        children: (TextNode {
+                            text,
+                            font_size: BUTTON_FONT_SIZE,
+                            color: BUTTON_TEXT_COLOR,
+                            font: FONT_PATH,
+                            alignment: TextAlignment::Center,
+                            linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
+                        },),
+                    },
+                    &context,
+                )
+            }
+        });
+
+    }
+}
 
 fn get_factors(num: u32) -> Vec<u32> {
     let mut vec = vec![];

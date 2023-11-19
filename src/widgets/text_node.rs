@@ -1,8 +1,6 @@
 pub use crate::prelude::*;
 pub use bevy::prelude::*;
 
-use super::get_or_load_asset;
-
 #[derive(PartialEq, Debug, Clone)]
 pub struct TextNode<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> {
     pub text: T,
@@ -11,7 +9,8 @@ pub struct TextNode<T: Into<String> + PartialEq + Clone + Send + Sync + 'static>
     pub color: Color,
     pub alignment: TextAlignment,
     pub linebreak_behavior: bevy::text::BreakLineOn,
-}
+} // TODO style
+
 
 impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode for TextNode<T> {
     type Context = AssetServer;
@@ -25,7 +24,7 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode fo
         });
 
         commands.insert_with_node_and_context(|args, server| {
-            let font = get_or_load_asset(args.font, server);
+            let font = server.load(args.font);
             let mut bundle = Text::from_section(
                 args.text.clone(),
                 TextStyle {

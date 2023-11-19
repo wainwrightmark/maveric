@@ -45,7 +45,7 @@ fn step_transition<L: Lens + GetValueLens + SetValueLens>(
             }
         };
 
-        // info!(
+        // println!(
         //     "Transition: {lens:?} {delta_seconds:?}",
         //     lens = std::any::type_name::<L>()
         // );

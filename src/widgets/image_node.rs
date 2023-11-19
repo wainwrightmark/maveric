@@ -1,7 +1,7 @@
 pub use crate::prelude::*;
 pub use bevy::prelude::*;
 
-use super::get_or_load_asset;
+
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct ImageNode<S: IntoBundle<B = Style>> {
@@ -25,7 +25,7 @@ impl<S: IntoBundle<B = Style>> MavericNode for ImageNode<S> {
             commands
                 .map_args(|x| &x.path)
                 .insert_with_node_and_context(|path, server| {
-                    let texture = get_or_load_asset::<Image>(path, server);
+                    let texture = server.load(*path);
                     UiImage {
                         texture,
                         flip_x: false,

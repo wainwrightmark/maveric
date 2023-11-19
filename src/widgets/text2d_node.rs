@@ -1,5 +1,4 @@
 pub use crate::prelude::*;
-use bevy::asset::Asset;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Text2DNode<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> {
@@ -23,7 +22,7 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode fo
             commands
                 .map_args(|x| &x.text)
                 .insert_with_node_and_context(|args, server| {
-                    let font = get_or_load_asset(args.font, server);
+                    let font = server.load(args.font);
                     let mut bundle = Text::from_section(
                         args.text.clone(),
                         TextStyle {
@@ -50,10 +49,3 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode fo
     fn set_children<R: MavericRoot>(_commands: SetChildrenCommands<Self, Self::Context, R>) {}
 }
 
-pub(crate) fn get_or_load_asset<T: Asset>(path: &str, server: &AssetServer) -> Handle<T> {
-    let asset: Handle<T> = match server.get_load_state(path) {
-        bevy::asset::LoadState::Loaded => server.get_handle(path),
-        _ => server.load(path),
-    };
-    asset
-}

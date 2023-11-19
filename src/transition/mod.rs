@@ -63,7 +63,7 @@ mod tests {
     #[test]
     pub fn test_transition_transform() {
         let mut app = App::new();
-        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_secs(1)));
+        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(100)));
         app.add_plugins(TimePlugin);
         app.register_transition::<TransformTranslationLens>();
 
@@ -72,7 +72,7 @@ mod tests {
                 Transform::default(),
                 Transition::new(TransitionStep::<TransformTranslationLens>::new_arc(
                     Vec3::X * 2.0,
-                    Some(LinearSpeed::new(1.0)),
+                    Some(LinearSpeed::new(10.0)),
                     NextStep::None,
                 )),
             ));
@@ -96,7 +96,7 @@ mod tests {
     #[test]
     pub fn test_transition_transform_two_step() {
         let mut app = App::new();
-        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_secs(1)));
+        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(100)));
         app.add_plugins(TimePlugin);
         app.register_transition::<TransformTranslationLens>();
 
@@ -105,13 +105,13 @@ mod tests {
                 Transform::default(),
                 Transition::new(TransitionStep::<TransformTranslationLens>::new_arc(
                     Vec3::X * 2.0,
-                    Some(LinearSpeed::new(1.0)),
+                    Some(LinearSpeed::new(10.0)),
                     NextStep::Step(TransitionStep::<TransformTranslationLens>::new_arc(
                         Vec3::default(),
                         None,
                         NextStep::Step(TransitionStep::<TransformTranslationLens>::new_arc(
                             Vec3::Y * 4.0,
-                            Some(LinearSpeed::new(2.0)),
+                            Some(LinearSpeed::new(20.0)),
                             NextStep::None,
                         )),
                     )),
@@ -138,7 +138,7 @@ mod tests {
     #[test]
     pub fn test_transition_cyclic() {
         let mut app = App::new();
-        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_secs(1)));
+        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(100)));
         app.add_plugins(TimePlugin);
         app.register_transition::<TransformTranslationLens>();
 
@@ -147,8 +147,8 @@ mod tests {
                 Transform::default(),
                 Transition::new(TransitionStep::<TransformTranslationLens>::new_cycle(
                     [
-                        (Vec3::X * 2.0, LinearSpeed::new(1.0)),
-                        (Vec3::X * -2.0, LinearSpeed::new(2.0)),
+                        (Vec3::X * 2.0, LinearSpeed::new(10.0)),
+                        (Vec3::X * -2.0, LinearSpeed::new(20.0)),
                     ]
                     .into_iter(),
                 )),
@@ -215,8 +215,8 @@ mod tests {
                             Vec3::default(),
                             Vec3::X * 2.0,
                             Vec3::X * -2.0,
-                            Duration::from_secs(2),
-                            Duration::from_secs(4),
+                            Duration::from_millis(200),
+                            Duration::from_millis(400),
                         );
 
                     commands.add_child(0, child, &());
@@ -228,7 +228,7 @@ mod tests {
 
         let mut app = App::new();
         app.insert_resource(ShouldHaveNodeResource(true));
-        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_secs(1)));
+        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(100)));
         app.add_plugins(TimePlugin);
         app.register_transition::<TransformTranslationLens>();
         app.register_maveric::<MyRoot>();
@@ -256,6 +256,8 @@ mod tests {
             ],
             "transition outward",
         );
+
+        app.update();
 
         assert_sequence::<Transform, 0>(&mut app, &[[], []], "after deleted");
     }
