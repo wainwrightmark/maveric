@@ -26,6 +26,7 @@ pub mod set_children_commands;
 pub mod set_components_commands;
 pub mod set_event;
 pub mod transition;
+pub mod with_bundle;
 #[cfg(any(feature = "widgets", test))]
 pub mod widgets;
 
@@ -46,6 +47,7 @@ pub mod prelude {
     pub use crate::set_components_commands::*;
     pub use crate::set_event::*;
     pub use crate::transition::prelude::*;
+    pub use crate::with_bundle;
 
     #[cfg(any(feature = "widgets", test))]
     pub use crate::widgets::prelude::*;
