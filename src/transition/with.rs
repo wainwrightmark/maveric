@@ -9,6 +9,7 @@ use crate::transition::prelude::*;
 use super::speed::calculate_speed;
 
 pub trait CanHaveTransition: MavericNode + Sized {
+    #[must_use]
     fn with_transition_in<L: Lens + GetValueLens>(
         self,
         initial_value: L::Value,
@@ -25,6 +26,7 @@ pub trait CanHaveTransition: MavericNode + Sized {
         self.with_transition(initial_value, update_transition, ())
     }
 
+    #[must_use]
     fn with_transition_in_out<L: Lens + GetValueLens>(
         self,
         initial_value: L::Value,
@@ -47,6 +49,7 @@ pub trait CanHaveTransition: MavericNode + Sized {
         )
     }
 
+    #[must_use]
     fn with_transition_to<L: Lens + GetValueLens>(
         self,
         destination: L::Value,
@@ -56,12 +59,15 @@ pub trait CanHaveTransition: MavericNode + Sized {
         L::Value: Tweenable,
         L::Object: Clone + Component,
     {
+        //todo
+        //this should work differently - take a function that reads the current value (before other components are added) and uses that to calculate the initial value
         let update_transition =
             TransitionStep::new_arc(destination.clone(), Some(speed), NextStep::None);
 
         self.with_transition(destination, update_transition, ())
     }
 
+    #[must_use]
     fn with_transition<L: Lens + GetValueLens, P: DeletionPathMaker<L>>(
         self,
         initial_value: L::Value,
