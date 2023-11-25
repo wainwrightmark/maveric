@@ -1,10 +1,14 @@
+use bevy::{sprite::Anchor, text::TextLayoutInfo};
+
 pub use crate::prelude::*;
 
+
+
+/// A text node in 2d space.
+/// Note that you will need to attach a transform as well
 #[derive(PartialEq, Debug, Clone)]
 pub struct Text2DNode<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> {
-    pub text: TextNode<T>, //TODO refactor,
-    /// The transform of the text.
-    pub transform: Transform,
+    pub text: TextNode<T>,
 }
 
 impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode for Text2DNode<T> {
@@ -17,6 +21,13 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode fo
                 .ignore_context()
                 .insert(Text2dBundle::default());
         });
+
+        commands.insert_static_bundle((
+            Anchor::default(),
+            GlobalTransform::default(),
+            VisibilityBundle::default(),
+            TextLayoutInfo::default()
+        ));
 
         commands.scope(|commands| {
             commands
@@ -41,11 +52,7 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode fo
                 .finish()
         });
 
-        commands
-            .map_node(|x| &x.transform)
-            .ignore_context()
-            .insert_with_node(|args| args.clone())
-            .finish();
+
     }
 
     fn set_children<R: MavericRoot>(_commands: SetChildrenCommands<Self, Self::Context, R>) {}

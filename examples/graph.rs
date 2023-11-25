@@ -166,8 +166,8 @@ impl MavericNode for NumberNode {
                         alignment: TextAlignment::Center,
                         linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
                     },
-                    transform: Default::default(),
-                },
+
+                } ,
                 context,
             );
         });
