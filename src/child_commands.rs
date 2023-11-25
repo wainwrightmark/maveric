@@ -445,8 +445,12 @@ mod tests {
     #[derive(Debug, Clone, PartialEq, Resource, Default)]
     pub struct TreeState(Vec<u32>);
 
+    impl MavericContext for TreeState{}
+
     #[derive(Debug, Clone, PartialEq, Resource, Default)]
     pub struct LingerState(HashSet<u32>);
+
+    impl MavericContext for LingerState{}
 
     #[derive(Debug, Clone, PartialEq, Default)]
     struct Root;
@@ -454,7 +458,7 @@ mod tests {
     impl_maveric_root!(Root);
 
     impl MavericRootChildren for Root {
-        type Context = NC2<TreeState, LingerState>;
+        type Context = (TreeState, LingerState);
 
         fn set_children(
             context: &<Self::Context as NodeContext>::Wrapper<'_>,
@@ -468,7 +472,7 @@ mod tests {
     struct Branch;
 
     impl MavericNode for Branch {
-        type Context = NC2<TreeState, LingerState>;
+        type Context = (TreeState, LingerState);
 
         fn set_components(_commands: SetComponentCommands<Self, Self::Context>) {}
 
@@ -491,7 +495,7 @@ mod tests {
     }
 
     impl MavericNode for Leaf {
-        type Context = NoContext;
+        type Context = ();
 
         fn on_deleted<'r>(&self, _commands: &mut ComponentCommands) -> DeletionPolicy {
             if self.linger {

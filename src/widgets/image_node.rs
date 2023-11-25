@@ -11,7 +11,7 @@ pub struct ImageNode<S: IntoBundle<B = Style>> {
 }
 
 impl<S: IntoBundle<B = Style>> MavericNode for ImageNode<S> {
-    type Context = NoContext;
+    type Context = ();
 
     fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
         commands.insert_static_bundle(ImageBundle::default());

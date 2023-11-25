@@ -64,6 +64,8 @@ pub struct CounterState {
     number: usize,
 }
 
+impl MavericContext for CounterState{}
+
 fn button_system(
     mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<Button>)>,
     mut state: ResMut<CounterState>,

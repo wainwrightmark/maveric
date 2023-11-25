@@ -33,6 +33,10 @@ pub struct UIState {
     pub dynamic_buttons: Vec<u32>,
 }
 
+impl MavericContext for UIState{
+
+}
+
 impl UIState {
     pub fn remove_or_readd(&mut self, next_number: u32) {
         match self.dynamic_buttons.binary_search(&next_number) {
@@ -98,7 +102,7 @@ impl MavericRootChildren for Root {
 pub struct CommandGrid;
 
 impl MavericNode for CommandGrid {
-    type Context = NoContext;
+    type Context = ();
 
     fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
         commands.ignore_node().ignore_context().insert(NodeBundle {

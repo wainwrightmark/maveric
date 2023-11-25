@@ -70,13 +70,15 @@ pub enum MenuState {
     ShowLevelsPage(u32),
 }
 
+impl MavericContext for MenuState{}
+
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct MenuRoot;
 
 impl_maveric_root!(MenuRoot);
 
 impl MavericRootChildren for MenuRoot {
-    type Context = NC2<MenuState, AssetServer>;
+    type Context = MenuState;
 
     fn set_children(
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
@@ -92,7 +94,7 @@ impl MavericRootChildren for MenuRoot {
             })
         }
 
-        let carousel = match context.0.as_ref() {
+        let carousel = match context.as_ref() {
             MenuState::Closed => {
                 commands.add_child("open_icon", menu_button_node(), &());
                 return;
@@ -107,7 +109,7 @@ impl MavericRootChildren for MenuRoot {
     }
 }
 
-fn menu_button_node() -> impl MavericNode<Context = NoContext> {
+fn menu_button_node() -> impl MavericNode<Context = ()> {
     ButtonNode {
         style: OpenMenuButtonStyle,
         visibility: Visibility::Visible,
@@ -125,7 +127,7 @@ fn menu_button_node() -> impl MavericNode<Context = NoContext> {
     }
 }
 
-fn icon_button_node(button_action: ButtonAction) -> impl MavericNode<Context = NoContext> {
+fn icon_button_node(button_action: ButtonAction) -> impl MavericNode<Context = ()> {
     ButtonNode {
         style: IconNodeStyle,
         visibility: Visibility::Visible,
@@ -143,7 +145,7 @@ fn icon_button_node(button_action: ButtonAction) -> impl MavericNode<Context = N
     }
 }
 
-fn text_button_node(button_action: ButtonAction) -> impl MavericNode<Context = NoContext> {
+fn text_button_node(button_action: ButtonAction) -> impl MavericNode<Context = ()> {
     ButtonNode {
         style: TextButtonStyle,
         visibility: Visibility::Visible,
@@ -164,7 +166,7 @@ fn text_button_node(button_action: ButtonAction) -> impl MavericNode<Context = N
 fn text_and_image_button_node(
     button_action: ButtonAction,
     image_path: &'static str,
-) -> impl MavericNode<Context = NoContext> {
+) -> impl MavericNode<Context = ()> {
     ButtonNode {
         style: TextButtonStyle,
         visibility: Visibility::Visible,
@@ -196,7 +198,7 @@ pub enum MainOrLevelMenu {
 }
 
 impl MavericNode for MainOrLevelMenu {
-    type Context = NC2<MenuState, AssetServer>;
+    type Context = MenuState;
 
     fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
         commands.ignore_node().ignore_context().insert(NodeBundle {
@@ -264,7 +266,7 @@ impl MavericNode for MainOrLevelMenu {
 pub struct LevelMenuArrows(u32);
 
 impl MavericNode for LevelMenuArrows {
-    type Context = NoContext;
+    type Context = ();
 
     fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
         commands.ignore_node().ignore_context().insert(NodeBundle {

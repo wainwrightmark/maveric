@@ -108,6 +108,8 @@ pub struct TreeState {
     red_leaf_count: u32,
 }
 
+impl MavericContext for TreeState{}
+
 #[derive(Debug, Clone, PartialEq, Default)]
 struct Root;
 

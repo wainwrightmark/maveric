@@ -151,6 +151,8 @@ mod tests {
         red_leaf_count: u32,
     }
 
+    impl MavericContext for TreeState{}
+
     #[derive(Debug, Clone, PartialEq, Default)]
     struct Root;
 
@@ -201,7 +203,7 @@ mod tests {
     }
 
     impl MavericNode for Leaf {
-        type Context = NoContext;
+        type Context = ();
 
         fn set_components(_commands: SetComponentCommands<Self, Self::Context>) {}
 

@@ -13,7 +13,7 @@ pub struct TextNode<T: Into<String> + PartialEq + Clone + Send + Sync + 'static>
 
 
 impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode for TextNode<T> {
-    type Context = NoContext;
+    type Context = ();
 
     fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
         commands.insert_static_bundle(TextBundle::default());

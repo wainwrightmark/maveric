@@ -17,7 +17,7 @@ pub struct Text2DNode<T: Into<String> + PartialEq + Clone + Send + Sync + 'stati
 }
 
 impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode for Text2DNode<T> {
-    type Context = NoContext;
+    type Context = ();
 
     fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
         commands.scope(|commands| {

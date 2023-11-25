@@ -200,6 +200,8 @@ mod tests {
         #[derive(Debug, Resource)]
         struct ShouldHaveNodeResource(bool);
 
+        impl MavericContext for ShouldHaveNodeResource{}
+
         struct MyRoot;
 
         impl MavericRootChildren for MyRoot {

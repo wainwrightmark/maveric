@@ -42,14 +42,18 @@ fn update_state(app: &mut App, new_state: TreeState) {
 #[derive(Debug, Clone, PartialEq, Resource, Default)]
 pub struct TreeState(Vec<u32>);
 
+impl MavericContext for TreeState{}
+
 #[derive(Debug, Clone, PartialEq, Resource, Default)]
 pub struct LingerState(bool);
+
+impl MavericContext for LingerState{}
 
 #[derive(Debug, Clone, PartialEq, Default)]
 struct Root;
 
 impl MavericRootChildren for Root {
-    type Context = NC2<TreeState, LingerState>;
+    type Context = (TreeState, LingerState);
 
     fn set_children(
         context: &<Self::Context as NodeContext>::Wrapper<'_>,
@@ -65,7 +69,7 @@ impl_maveric_root!(Root);
 struct Branch;
 
 impl MavericNode for Branch {
-    type Context = NC2<TreeState, LingerState>;
+    type Context = (TreeState, LingerState);
 
     fn set_components(_commands: SetComponentCommands<Self, Self::Context>) {}
 
@@ -88,7 +92,7 @@ struct Leaf {
 }
 
 impl MavericNode for Leaf {
-    type Context = NoContext;
+    type Context = ();
 
     fn set_components(_commands: SetComponentCommands<Self, Self::Context>) {}
 

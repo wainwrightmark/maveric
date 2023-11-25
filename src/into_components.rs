@@ -16,7 +16,7 @@ impl<T: Bundle + PartialEq + Clone> IntoBundle for T {
 }
 
 impl<T: IntoBundle> MavericNode for T {
-    type Context = NoContext;
+    type Context = ();
 
     fn set_components(data: SetComponentCommands<Self, Self::Context>) {
         data.ignore_context()

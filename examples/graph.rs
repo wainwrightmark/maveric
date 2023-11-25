@@ -62,7 +62,7 @@ impl_maveric_root!(Root);
 pub struct Buttons;
 
 impl MavericNode for Buttons {
-    type Context = NoContext;
+    type Context = ();
 
     fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
         commands
@@ -128,7 +128,7 @@ struct NumberNode(u32);
 struct GraphNode(u32);
 
 impl MavericNode for NumberNode {
-    type Context = NoContext;
+    type Context = ();
 
     fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
         commands
@@ -174,6 +174,8 @@ impl MavericNode for NumberNode {
 pub struct GraphState {
     number: u32,
 }
+
+impl MavericContext for GraphState{}
 
 fn organize_graph(time: Res<Time>, mut nodes: Query<(&mut Transform, &GraphNode)>) {
     const ATTRACTION: f32 = 0.01;
