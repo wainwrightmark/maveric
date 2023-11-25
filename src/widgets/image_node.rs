@@ -14,16 +14,11 @@ impl<S: IntoBundle<B = Style>> MavericNode for ImageNode<S> {
     type Context = NoContext;
 
     fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
-        commands.scope(|commands| {
-            commands
-                .ignore_node()
-                .ignore_context()
-                .insert(ImageBundle::default());
-        });
+        commands.insert_static_bundle(ImageBundle::default());
 
         commands.scope(|commands| {
             commands
-                .map_args(|x| &x.path)
+                .map_node(|x| &x.path)
                 .advanced(|args, commands| {
                     let path = args.node;
                     let server: &AssetServer = commands.get_res_untracked().expect("Could not get asset server");
@@ -37,15 +32,11 @@ impl<S: IntoBundle<B = Style>> MavericNode for ImageNode<S> {
                 });
         });
 
-        commands.scope(|commands| {
-            commands
-                .ignore_context()
-                .map_args(|x| &x.style)
-                .insert_bundle().finish();
-        });
+        commands.node_to_bundle(|x| &x.style);
+
         commands
             .ignore_context()
-            .map_args(|x| &x.background_color)
+            .map_node(|x| &x.background_color)
             .insert_with_node(|color| BackgroundColor(*color));
     }
 

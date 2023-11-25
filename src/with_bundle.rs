@@ -11,11 +11,11 @@ impl<N: MavericNode, B: IntoBundle + PartialEq> MavericNode for WithBundle<N, B>
 
     fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
         commands.scope(|commands|{
-            let commands = commands.map_args(|x|&x.node);
+            let commands = commands.map_node(|x|&x.node);
             N::set_components(commands)
         });
 
-        commands.ignore_context().map_args(|x|&x.bundle).insert_bundle().finish()
+        commands.ignore_context().map_node(|x|&x.bundle).insert_bundle().finish()
     }
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {

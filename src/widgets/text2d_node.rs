@@ -20,7 +20,7 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode fo
 
         commands.scope(|commands| {
             commands
-                .map_args(|x| &x.text)
+                .map_node(|x| &x.text)
                 .advanced(|args, commands| {
                     let node = args.node;
                     let server: &AssetServer = commands.get_res_untracked().expect("Could not get asset server");
@@ -42,7 +42,7 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode fo
         });
 
         commands
-            .map_args(|x| &x.transform)
+            .map_node(|x| &x.transform)
             .ignore_context()
             .insert_with_node(|args| args.clone())
             .finish();

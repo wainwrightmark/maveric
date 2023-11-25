@@ -16,12 +16,7 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode fo
     type Context = NoContext;
 
     fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
-        commands.scope(|commands| {
-            commands
-                .ignore_node()
-                .ignore_context()
-                .insert(TextBundle::default());
-        });
+        commands.insert_static_bundle(TextBundle::default());
 
         commands.advanced(|args, commands| {
             let node = args.node;

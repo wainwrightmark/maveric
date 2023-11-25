@@ -125,10 +125,10 @@ where
     type Context = N::Context;
 
     fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
-        commands.scope(|commands| N::set_components(commands.map_args(|x| &x.node)));
+        commands.scope(|commands| N::set_components(commands.map_node(|x| &x.node)));
 
         commands
-            .map_args(|x| &x.transition)
+            .map_node(|x| &x.transition)
             .ignore_context()
             .advanced(|args, commands| {
                 let (initial_value, update_transition) = args.node;

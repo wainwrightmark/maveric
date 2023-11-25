@@ -58,7 +58,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
     pub fn ignore_node(
         self,
     ) -> SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, (), C> {
-        self.map_args(|_| &())
+        self.map_node(|_| &())
     }
 
     #[must_use]
@@ -68,7 +68,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
         self.map_context(|_| &())
     }
 
-    pub fn map_args<N2: PartialEq>(
+    pub fn map_node<N2: PartialEq>(
         self,
         map: impl Fn(&N) -> &N2,
     ) -> SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N2, C> {
@@ -91,11 +91,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
             ec: self.ec,
         }
     }
-}
 
-impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
-    SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N, C>
-{
     pub const fn finish(self) {}
 
     #[allow(clippy::return_self_not_must_use)]
@@ -108,6 +104,16 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
         } else {
             self
         }
+    }
+
+    pub fn insert_static_bundle<B : Bundle>(&mut self, bundle: B){
+        self.scope(|c|c.ignore_context().ignore_node().insert(bundle).finish());
+    }
+
+
+    #[allow(clippy::return_self_not_must_use)]
+    pub fn node_to_bundle<B: IntoBundle>(&mut self, map: impl Fn(&N) -> &B){
+        self.scope(|c|c.ignore_context() .map_node(map).insert_bundle().finish());
     }
 
     /// Gives you advanced access to the commands.
