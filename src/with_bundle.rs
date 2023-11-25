@@ -23,3 +23,13 @@ impl<N: MavericNode, B: IntoBundle + PartialEq> MavericNode for WithBundle<N, B>
     }
 }
 
+
+pub trait CanWithBundle : MavericNode {
+    fn with_bundle<B: IntoBundle + PartialEq>(self, bundle: B)-> WithBundle<Self, B>{
+        WithBundle { node: self, bundle }
+    }
+}
+
+impl<T: MavericNode> CanWithBundle for T{
+
+}
