@@ -8,7 +8,12 @@ pub use crate::prelude::*;
 /// Note that you will need to attach a transform as well
 #[derive(PartialEq, Debug, Clone)]
 pub struct Text2DNode<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> {
-    pub text: TextNode<T>,
+    pub text: T,
+    pub font: &'static str,
+    pub font_size: f32,
+    pub color: Color,
+    pub alignment: TextAlignment,
+    pub linebreak_behavior: bevy::text::BreakLineOn,
 }
 
 impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode for Text2DNode<T> {
@@ -31,7 +36,6 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode fo
 
         commands.scope(|commands| {
             commands
-                .map_node(|x| &x.text)
                 .advanced(|args, commands| {
                     let node = args.node;
                     let server: &AssetServer = commands.get_res_untracked().expect("Could not get asset server");
