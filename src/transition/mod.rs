@@ -31,13 +31,9 @@ pub mod prelude {
 mod tests {
     #![allow(clippy::nursery)]
     use std::{fmt::Debug, time::Duration};
-
     use bevy::{prelude::*, time::TimePlugin, time::TimeUpdateStrategy};
-
-    use crate::{
-        impl_maveric_root, transition::prelude::*, transition::speed::*, widgets::prelude::*,
-    };
-
+    use crate as maveric;
+    use crate::{transition::prelude::*, transition::speed::*, widgets::prelude::*};
     use super::speed::calculate_speed;
 
     #[test]
@@ -63,7 +59,9 @@ mod tests {
     #[test]
     pub fn test_transition_transform() {
         let mut app = App::new();
-        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(100)));
+        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(
+            100,
+        )));
         app.add_plugins(TimePlugin);
         app.register_transition::<TransformTranslationLens>();
 
@@ -96,7 +94,9 @@ mod tests {
     #[test]
     pub fn test_transition_transform_two_step() {
         let mut app = App::new();
-        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(100)));
+        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(
+            100,
+        )));
         app.add_plugins(TimePlugin);
         app.register_transition::<TransformTranslationLens>();
 
@@ -138,7 +138,9 @@ mod tests {
     #[test]
     pub fn test_transition_cyclic() {
         let mut app = App::new();
-        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(100)));
+        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(
+            100,
+        )));
         app.add_plugins(TimePlugin);
         app.register_transition::<TransformTranslationLens>();
 
@@ -200,8 +202,9 @@ mod tests {
         #[derive(Debug, Resource)]
         struct ShouldHaveNodeResource(bool);
 
-        impl MavericContext for ShouldHaveNodeResource{}
+        impl MavericContext for ShouldHaveNodeResource {}
 
+        #[derive(MavericRoot)]
         struct MyRoot;
 
         impl MavericRootChildren for MyRoot {
@@ -226,11 +229,11 @@ mod tests {
             }
         }
 
-        impl_maveric_root!(MyRoot);
-
         let mut app = App::new();
         app.insert_resource(ShouldHaveNodeResource(true));
-        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(100)));
+        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(
+            100,
+        )));
         app.add_plugins(TimePlugin);
         app.register_transition::<TransformTranslationLens>();
         app.register_maveric::<MyRoot>();

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use maveric::transition::prelude::*;
-use maveric::{impl_maveric_root, prelude::*};
+use maveric::prelude::*;
 
 use std::string::ToString;
 use std::time::Duration;
@@ -72,10 +72,9 @@ pub enum MenuState {
 
 impl MavericContext for MenuState{}
 
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Default, MavericRoot)]
 pub struct MenuRoot;
 
-impl_maveric_root!(MenuRoot);
 
 impl MavericRootChildren for MenuRoot {
     type Context = MenuState;

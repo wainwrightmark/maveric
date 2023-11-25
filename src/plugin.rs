@@ -77,6 +77,8 @@ fn sync_state<R: MavericRoot>(
 mod tests {
     use crate::prelude::*;
     use bevy::time::TimePlugin;
+    use maveric_macro::MavericRoot;
+    use crate as maveric;
     #[test]
     pub fn test_plugin() {
         let mut app = App::new();
@@ -153,10 +155,8 @@ mod tests {
 
     impl MavericContext for TreeState{}
 
-    #[derive(Debug, Clone, PartialEq, Default)]
+    #[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
     struct Root;
-
-    impl_maveric_root!(Root);
 
     impl MavericRootChildren for Root {
         type Context = TreeState;

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use maveric::transition::prelude::*;
-use maveric::{impl_maveric_root, prelude::*};
+use maveric::prelude::*;
 use std::f32::consts;
 use std::string::ToString;
 use std::time::Duration;
@@ -81,10 +81,8 @@ pub enum Command {
 #[derive(Debug, Eq, PartialEq, Component, Hash, Clone, Copy)]
 pub struct DynamicButtonComponent(u32);
 
-#[derive(Eq, PartialEq, Debug, Default)]
+#[derive(Eq, PartialEq, Debug, Default, MavericRoot)]
 pub struct Root;
-
-impl_maveric_root!(Root);
 
 impl MavericRootChildren for Root {
     type Context = UIState;

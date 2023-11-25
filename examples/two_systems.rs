@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use maveric::{impl_maveric_root, prelude::*};
+use maveric:: prelude::*;
 
 use std::string::ToString;
 
@@ -24,7 +24,7 @@ fn setup(mut commands: Commands) {
 #[derive(Debug, Clone, PartialEq, Default, Component)]
 pub struct Marker;
 
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
 pub struct Root;
 
 impl MavericRootChildren for Root {
@@ -57,7 +57,7 @@ impl MavericRootChildren for Root {
     }
 }
 
-impl_maveric_root!(Root);
+
 
 #[derive(Debug, Clone, PartialEq, Resource, Default)]
 pub struct CounterState {
@@ -81,7 +81,7 @@ fn button_system(
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
 pub struct Root2;
 
 impl MavericRootChildren for Root2 {
@@ -116,8 +116,6 @@ impl MavericRootChildren for Root2 {
         );
     }
 }
-
-impl_maveric_root!(Root2);
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct ImageStyle;

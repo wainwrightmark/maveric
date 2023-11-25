@@ -57,5 +57,6 @@ pub mod prelude {
     pub(crate) use crate::helpers::*;
     pub(crate) use crate::root_commands::*;
 
-    pub use crate::impl_maveric_root;
+    #[cfg(any(feature = "derive", test))]
+    pub use maveric_macro::{MavericContext, MavericRoot};
 }

@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use maveric::{impl_maveric_root, prelude::*, widgets::text2d_node::Text2DNode};
+use maveric::{prelude::*, widgets::text2d_node::Text2DNode};
 use strum::{Display, EnumIs, EnumIter, IntoEnumIterator, IntoStaticStr};
 
 use std::time::Duration;
@@ -29,7 +29,7 @@ pub enum ButtonMarker {
     Reset,
 }
 
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
 pub struct Root;
 
 impl MavericRootChildren for Root {
@@ -56,7 +56,6 @@ impl MavericRootChildren for Root {
         }
     }
 }
-impl_maveric_root!(Root);
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Buttons;

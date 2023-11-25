@@ -1,6 +1,7 @@
 use bevy::{prelude::*, time::TimePlugin};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use maveric::prelude::*;
+use maveric_macro::{MavericContext, MavericRoot};
 
 criterion_group!(
     benches,
@@ -110,7 +111,7 @@ pub struct TreeState {
 
 impl MavericContext for TreeState{}
 
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
 struct Root;
 
 impl MavericRootChildren for Root {
@@ -126,7 +127,6 @@ impl MavericRootChildren for Root {
     }
 }
 
-impl_maveric_root!(Root);
 
 #[derive(Debug, Clone, PartialEq, Default)]
 struct Branch;

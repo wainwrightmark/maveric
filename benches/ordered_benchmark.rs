@@ -1,6 +1,7 @@
 use bevy::{prelude::*, time::TimePlugin};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use maveric::prelude::*;
+use maveric_macro::{MavericContext, MavericRoot};
 
 fn reverse_leaves_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("reverse_leaves");
@@ -39,17 +40,13 @@ fn update_state(app: &mut App, new_state: TreeState) {
     let mut state = app.world.resource_mut::<TreeState>();
     *state = new_state;
 }
-#[derive(Debug, Clone, PartialEq, Resource, Default)]
+#[derive(Debug, Clone, PartialEq, Resource, Default, MavericContext)]
 pub struct TreeState(Vec<u32>);
 
-impl MavericContext for TreeState{}
-
-#[derive(Debug, Clone, PartialEq, Resource, Default)]
+#[derive(Debug, Clone, PartialEq, Resource, Default, MavericContext)]
 pub struct LingerState(bool);
 
-impl MavericContext for LingerState{}
-
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
 struct Root;
 
 impl MavericRootChildren for Root {
@@ -63,7 +60,7 @@ impl MavericRootChildren for Root {
     }
 }
 
-impl_maveric_root!(Root);
+
 
 #[derive(Debug, Clone, PartialEq, Default)]
 struct Branch;

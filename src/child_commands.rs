@@ -303,9 +303,10 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot>
 
 #[cfg(test)]
 mod tests {
-
-    use crate::{impl_maveric_root, prelude::*};
+    use crate::prelude::*;
     use bevy::{time::TimePlugin, utils::HashSet};
+    use crate as maveric;
+
     #[test]
     pub fn test_ordering() {
         let mut app = App::new();
@@ -452,10 +453,8 @@ mod tests {
 
     impl MavericContext for LingerState{}
 
-    #[derive(Debug, Clone, PartialEq, Default)]
+    #[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
     struct Root;
-
-    impl_maveric_root!(Root);
 
     impl MavericRootChildren for Root {
         type Context = (TreeState, LingerState);
