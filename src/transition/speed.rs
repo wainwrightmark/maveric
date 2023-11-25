@@ -33,6 +33,12 @@ impl Speed for ScalarSpeed {
     }
 }
 
+impl From<f32> for ScalarSpeed{
+    fn from(value: f32) -> Self {
+        Self { amount_per_second: value }
+    }
+}
+
 impl ScalarSpeed {
     #[must_use] pub const fn new(amount_per_second: f32) -> Self {
         Self { amount_per_second }
@@ -63,6 +69,12 @@ impl Speed for LinearSpeed {
     }
 }
 
+impl From<f32> for LinearSpeed{
+    fn from(value: f32) -> Self {
+        Self { units_per_second: value }
+    }
+}
+
 impl LinearSpeed {
     #[must_use] pub const fn new(units_per_second: f32) -> Self {
         Self { units_per_second }
@@ -90,6 +102,12 @@ impl Speed for AngularSpeed {
         Self {
             radians_per_second: self.radians_per_second * rhs,
         }
+    }
+}
+
+impl From<f32> for AngularSpeed{
+    fn from(value: f32) -> Self {
+        Self { radians_per_second: value }
     }
 }
 
