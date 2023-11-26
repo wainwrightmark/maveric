@@ -14,19 +14,19 @@ macro_rules! define_lens {
             type Value = $V;
         }
 
-        impl GetRefLens for $L {
+        impl $crate::transition::prelude::GetRefLens for $L {
             fn try_get_ref(object: &Self::Object) -> Option<&Self::Value> {
                 Some(&object.$p)
             }
         }
 
-        impl GetValueLens for $L {
+        impl $crate::transition::prelude::GetValueLens for $L {
             fn try_get_value(object: &Self::Object) -> Option<Self::Value> {
                 Some(object.$p)
             }
         }
 
-        impl GetMutLens for $L {
+        impl $crate::transition::prelude::GetMutLens for $L {
             fn try_get_mut(object: &mut Self::Object) -> Option<&mut Self::Value> {
                 Some(&mut object.$p)
             }
