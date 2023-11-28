@@ -147,6 +147,7 @@ where
                     }
                     SetEvent::Updated => {
                         if args.is_hot() {
+                            let mut transition =
                             if let Some(previous_path) = commands.get::<Transition<L>>() {
                                 if previous_path.starts_with(update_transition) {
                                     //info!("Same path found - no change");
@@ -158,7 +159,16 @@ where
                             } else {
                                 //info!("No path found");
                                 Some(Transition::new(update_transition.clone()))
+                            };
+
+                            if let Some(t) = transition.as_mut(){
+                                if let Some(current_value)  = commands.get::<L::Object>().and_then(L::try_get_value){
+                                    t.step = TransitionStep::new_arc(current_value, None, NextStep::Step(t.step.clone()));
+                                }
                             }
+
+
+                            transition
                         } else {
                             None
                         }
