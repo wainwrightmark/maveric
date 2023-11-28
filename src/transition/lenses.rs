@@ -1,7 +1,8 @@
-use crate::transition::prelude::*;
-use bevy::prelude::*;
+use std::marker::PhantomData;
 
 use super::speed::{AngularSpeed, LinearSpeed};
+use crate::transition::prelude::*;
+use bevy::prelude::*;
 
 #[macro_export]
 macro_rules! define_lens {
@@ -166,7 +167,6 @@ impl SetValueLens for TransformRotationZLens {
     }
 }
 
-
 #[must_use]
 pub const fn transform_speed(
     translation_units_per_second: f32,
@@ -178,6 +178,57 @@ pub const fn transform_speed(
         AngularSpeed::new(radians_per_second),
         LinearSpeed::new(scale_units_per_second),
     )
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct ElementAtLens<
+    const INDEX: usize,
+    const ARRAY_LEN: usize,
+    Element: PartialEq + Clone + Copy + std::fmt::Debug + Send + Sync + 'static,
+>(PhantomData<Element>);
+
+impl<
+        const INDEX: usize,
+        const ARRAY_LEN: usize,
+        Element: PartialEq + Clone + Copy + std::fmt::Debug + Send + Sync + 'static,
+    > GetRefLens for ElementAtLens<INDEX, ARRAY_LEN, Element>
+{
+    fn try_get_ref(object: &Self::Object) -> Option<&Self::Value> {
+        object.get(INDEX)
+    }
+}
+
+impl<
+        const INDEX: usize,
+        const ARRAY_LEN: usize,
+        Element: PartialEq + Clone + Copy + std::fmt::Debug + Send + Sync + 'static,
+    > GetMutLens for ElementAtLens<INDEX, ARRAY_LEN, Element>
+{
+    fn try_get_mut(object: &mut Self::Object) -> Option<&mut Self::Value> {
+        object.get_mut(INDEX)
+    }
+}
+
+impl<
+        const INDEX: usize,
+        const ARRAY_LEN: usize,
+        Element: PartialEq + Clone + Copy + std::fmt::Debug + Send + Sync + 'static,
+    > GetValueLens for ElementAtLens<INDEX, ARRAY_LEN, Element>
+{
+    fn try_get_value(object: &<Self as Lens>::Object) -> Option<<Self as Lens>::Value> {
+        object.get(INDEX).map(|x| *x)
+    }
+}
+
+impl<
+        const INDEX: usize,
+        const ARRAY_LEN: usize,
+        Element: PartialEq + Clone + Copy + std::fmt::Debug + Send + Sync + 'static,
+    > Lens for ElementAtLens<INDEX, ARRAY_LEN, Element>
+{
+    type Object = [Element; ARRAY_LEN];
+
+    type Value = Element;
 }
 
 #[cfg(test)]
@@ -203,5 +254,20 @@ pub mod tests {
 
         assert_eq!(QuatXLens::try_get_value(&quat), Some(1.0000001));
         assert_eq!(QuatYLens::try_get_value(&quat), Some(3.0));
+    }
+
+    #[test]
+    pub fn test_element_at_lens() {
+        type L0 = ElementAtLens::<0,2, f64>;
+        type L1 = ElementAtLens::<1,2, f64>;
+        let mut array = [0.0,1.0];
+
+        assert_eq!(L0::try_get_value(&array), Some(0.0));
+        assert_eq!(L1::try_get_value(&array), Some(1.0));
+
+        L1::try_set(&mut array, 2.0);
+
+        assert_eq!(L0::try_get_value(&array), Some(0.0)); //value should not have changed
+        assert_eq!(L1::try_get_value(&array), Some(2.0));
     }
 }
