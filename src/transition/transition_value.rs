@@ -6,7 +6,6 @@ impl<'c, 'w, 's, 'a, 'world> ComponentCommands<'c, 'w, 's, 'a, 'world> {
     /// Inserts a transition to a particular
     pub fn transition_value<L: Lens + GetValueLens>(
         &mut self,
-        default_initial_value: L::Value,
         destination: L::Value,
         speed: Option<<L::Value as Tweenable>::Speed>,
     ) -> L::Value
@@ -15,12 +14,7 @@ impl<'c, 'w, 's, 'a, 'world> ComponentCommands<'c, 'w, 's, 'a, 'world> {
         L::Object: Clone + Component,
     {
         let Some(current_value) = self.get::<L::Object>().and_then(L::try_get_value) else {
-            self.insert(Transition::<L>::new(TransitionStep::new_arc(
-                default_initial_value.clone(),
-                None,
-                NextStep::None,
-            )));
-            return default_initial_value;
+            return destination;
         };
 
         if let Some(previous_path) = self.get::<Transition<L>>() {

@@ -106,14 +106,13 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
         }
     }
 
-    pub fn insert_static_bundle<B : Bundle>(&mut self, bundle: B){
-        self.scope(|c|c.ignore_context().ignore_node().insert(bundle).finish());
+    pub fn insert_static_bundle<B: Bundle>(&mut self, bundle: B) {
+        self.scope(|c| c.ignore_context().ignore_node().insert(bundle).finish());
     }
 
-
     #[allow(clippy::return_self_not_must_use)]
-    pub fn node_to_bundle<B: IntoBundle>(&mut self, map: impl Fn(&N) -> &B){
-        self.scope(|c|c.ignore_context() .map_node(map).insert_bundle().finish());
+    pub fn node_to_bundle<B: IntoBundle>(&mut self, map: impl Fn(&N) -> &B) {
+        self.scope(|c| c.ignore_context().map_node(map).insert_bundle().finish());
     }
 
     /// Gives you advanced access to the commands.
@@ -147,7 +146,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
 
             let value = get_value(args.node, args.context);
 
-            commands.transition_value::<L>(value.clone(), value, speed);
+            commands.transition_value::<L>(value, speed);
         })
     }
 }
@@ -184,7 +183,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: Clone + PartialEq>
                 return;
             }
 
-            commands.transition_value::<L>(args.node.clone(), args.node.clone(), speed);
+            commands.transition_value::<L>(args.node.clone(), speed);
         })
     }
 }
