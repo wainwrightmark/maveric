@@ -33,7 +33,8 @@ impl<R: MavericRootChildren> MavericChildComponent<R> {
     }
 }
 
+/// a Component that will be deleted when the timer runs out
 #[derive(Debug, Component)]
-pub(crate) struct ScheduledForDeletion {
+pub struct ScheduledForDeletion {
     pub timer: Timer,
 }

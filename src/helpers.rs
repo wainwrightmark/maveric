@@ -51,7 +51,9 @@ pub(crate) fn delete_recursive<R: MavericRootChildren>(
 
     let dp: DeletionPolicy = world
         .get::<MavericChildComponent<R>>(entity)
-        .map_or(DeletionPolicy::DeleteImmediately, |ac| ac.deleter.on_deleted(entity, &mut cc, world));
+        .map_or(DeletionPolicy::DeleteImmediately, |ac| {
+            ac.deleter.on_deleted(entity, &mut cc, world)
+        });
 
     match dp {
         DeletionPolicy::DeleteImmediately => {
@@ -113,6 +115,10 @@ pub(crate) fn update_recursive<R: MavericRoot, N: MavericNode>(
     let node_changed = previous.map_or(true, |p| !p.eq(&node));
 
     if node_changed {
+        if let Some(previous) = previous {
+
+            node.on_changed(previous, context, world, &mut ec);
+        }
         ec.insert(MavericNodeComponent::<N> { node });
     }
 }

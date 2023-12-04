@@ -36,6 +36,7 @@ pub mod prelude {
     pub use crate::child_key::*;
     pub use crate::child_tuple::*;
     pub use crate::component_commands::*;
+    pub use crate::components::*;
     pub use crate::deleter::*;
     pub use crate::into_components::*;
     pub use crate::node::*;
@@ -53,7 +54,6 @@ pub mod prelude {
     pub use crate::widgets::prelude::*;
 
     pub(crate) use crate::allocator::*;
-    pub(crate) use crate::components::*;
     pub(crate) use crate::helpers::*;
     pub(crate) use crate::root_commands::*;
 

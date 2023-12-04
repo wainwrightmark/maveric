@@ -17,19 +17,3 @@ pub trait MavericRootChildren: Send + Sync + 'static {
         commands: &mut impl ChildCommands,
     );
 }
-
-// /// Implement `Root` for a node. The node must implement `RootChildren`
-// #[macro_export]
-// macro_rules! impl_maveric_root {
-//     ($node: ident) => {
-//         impl $crate::prelude::MavericRoot for $node {
-//             type ContextParam<'c> = <<Self as MavericRootChildren>::Context as $crate::prelude::NodeContext>::Wrapper<'c>;
-
-//             fn get_context<'a, 'c, 'w: 'c, 's>(
-//                 param: bevy::ecs::system::StaticSystemParam<'w, 's, Self::ContextParam<'a>>,
-//             ) -> <<Self as MavericRootChildren>::Context as $crate::prelude::NodeContext>::Wrapper<'c> {
-//                 param.into_inner()
-//             }
-//         }
-//     };
-// }
