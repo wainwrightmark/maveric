@@ -52,3 +52,7 @@ impl_nc_tuples!(A a, B b, C c, D d, E e);
 impl_nc_tuples!(A a, B b, C c, D d, E e, F f);
 impl_nc_tuples!(A a, B b, C c, D d, E e, F f, G g);
 impl_nc_tuples!(A a, B b, C c, D d, E e, F f, G g, H h);
+impl_nc_tuples!(A a, B b, C c, D d, E e, F f, G g, H h, I i);
+impl_nc_tuples!(A a, B b, C c, D d, E e, F f, G g, H h, I i, J j);
+impl_nc_tuples!(A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k);
+impl_nc_tuples!(A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l);
