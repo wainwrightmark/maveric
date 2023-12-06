@@ -3,7 +3,7 @@ use bevy::ecs::system::EntityCommands;
 pub use bevy::prelude::*;
 
 pub(crate) fn create_recursive<R: MavericRoot, N: MavericNode>(
-    mut ec: EntityCommands,
+    mut entity_commands: EntityCommands,
     node: N,
     context: &<N::Context as NodeContext>::Wrapper<'_>,
     key: ChildKey,
@@ -13,7 +13,7 @@ pub(crate) fn create_recursive<R: MavericRoot, N: MavericNode>(
     let component_commands = SetComponentCommands::<N, N::Context>::new(
         NodeArgs::new(context, SetEvent::Created, &node, None),
         world,
-        &mut ec,
+        &mut entity_commands,
     );
 
     N::set_components(component_commands);
@@ -21,17 +21,20 @@ pub(crate) fn create_recursive<R: MavericRoot, N: MavericNode>(
     let children_commands = SetChildrenCommands::<N, N::Context, R>::new(
         NodeArgs::new(context, SetEvent::Created, &node, None),
         world,
-        &mut ec,
+        &mut entity_commands,
         alloc,
     );
 
     N::set_children(children_commands);
-
+    node.on_created(context, world, &mut entity_commands);
     let node_component = MavericNodeComponent::new(node);
     let child_component = MavericChildComponent::<R>::new::<N>(key);
 
-    ec.insert((node_component, child_component));
-    ec.id()
+    entity_commands.insert((node_component, child_component));
+
+
+
+    entity_commands.id()
 }
 
 /// Recursively delete an entity. Returns the entity id if it is to linger.
