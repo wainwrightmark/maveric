@@ -116,8 +116,9 @@ pub(crate) fn update_recursive<R: MavericRoot, N: MavericNode>(
 
     if node_changed {
         if let Some(previous) = previous {
-
             node.on_changed(previous, context, world, &mut ec);
+        } else {
+            node.on_created(context, world, &mut ec);
         }
         ec.insert(MavericNodeComponent::<N> { node });
     }

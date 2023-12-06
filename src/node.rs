@@ -17,4 +17,8 @@ pub trait MavericNode: Send + Sync + Sized + PartialEq + 'static {
     fn on_changed(&self, _previous: &Self, _context: &<Self::Context as NodeContext>::Wrapper<'_>,  _world: &World, _entity_commands: &mut EntityCommands ){
 
     }
+
+    fn on_created(&self,_context: &<Self::Context as NodeContext>::Wrapper<'_>,  _world: &World, _entity_commands: &mut EntityCommands ){
+
+    }
 }
