@@ -124,6 +124,14 @@ where
 {
     type Context = N::Context;
 
+    fn on_created(&self,context: &<Self::Context as NodeContext>::Wrapper<'_>,  world: &World, entity_commands: &mut bevy::ecs::system::EntityCommands ) {
+        N::on_created(&self.node, context, world, entity_commands);
+    }
+
+    fn on_changed(&self, previous: &Self, context: &<Self::Context as NodeContext>::Wrapper<'_>,  world: &World, entity_commands: &mut bevy::ecs::system::EntityCommands ) {
+        N::on_changed(&self.node, &previous.node, context, world, entity_commands);
+    }
+
     fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
         commands.scope(|commands| N::set_components(commands.map_node(|x| &x.node)));
 

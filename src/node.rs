@@ -14,11 +14,11 @@ pub trait MavericNode: Send + Sync + Sized + PartialEq + 'static {
     }
 
     /// Do something when the node changes
-    fn on_changed(&self, _previous: &Self, _context: &<Self::Context as NodeContext>::Wrapper<'_>,  _world: &World, _entity_commands: &mut EntityCommands ){
+    fn on_changed(&self, previous: &Self, context: &<Self::Context as NodeContext>::Wrapper<'_>,  world: &World, entity_commands: &mut EntityCommands ){
 
     }
 
-    fn on_created(&self,_context: &<Self::Context as NodeContext>::Wrapper<'_>,  _world: &World, _entity_commands: &mut EntityCommands ){
+    fn on_created(&self,context: &<Self::Context as NodeContext>::Wrapper<'_>,  world: &World, entity_commands: &mut EntityCommands ){
 
     }
 }
