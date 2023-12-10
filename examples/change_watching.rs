@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use maveric::{prelude::*, helpers::ScheduledForDeletion};
 
-use std::string::ToString;
+use std::{string::ToString, time::Duration};
 
 fn main() {
     let mut app = App::new();
@@ -90,7 +90,7 @@ impl MavericNode for ChangeWatcher{
                     ..default()
                 },
                 ScheduledForDeletion{
-                    timer: Timer::from_seconds(2.0, TimerMode::Once)
+                    remaining: Duration::from_secs_f32(2.0)
                 },
                 Transition::<TransformScaleLens>::new(TransitionStep::new_arc(Vec3::ZERO, Some(0.5.into()), NextStep::None)),
                 Transition::<TransformTranslationLens>::new(TransitionStep::new_arc(Vec3{x: 0.0, y: 5000.0, z:0.0}, Some(500.0.into()), NextStep::None)),

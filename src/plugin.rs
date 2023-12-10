@@ -35,9 +35,10 @@ fn handle_scheduled_for_removal(
     mut query: Query<(Entity, &mut ScheduledForDeletion)>,
 ) {
     for (entity, mut schedule) in query.iter_mut() {
-        schedule.timer.tick(time.delta());
-        if schedule.timer.finished() {
-            commands.entity(entity).despawn_recursive();
+
+        match schedule.remaining.checked_sub(time.delta()){
+            Some(new_remaining) => schedule.remaining = new_remaining,
+            None => commands.entity(entity).despawn_recursive(),
         }
     }
 }

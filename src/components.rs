@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData, time::Duration};
 
 use bevy::prelude::*;
 
@@ -33,8 +33,3 @@ impl<R: MavericRootChildren> MavericChildComponent<R> {
     }
 }
 
-/// a Component that will be deleted when the timer runs out
-#[derive(Debug, Component)]
-pub struct ScheduledForDeletion {
-    pub timer: Timer,
-}

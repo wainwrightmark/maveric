@@ -29,6 +29,7 @@ pub mod transition;
 pub mod with_bundle;
 #[cfg(any(feature = "widgets", test))]
 pub mod widgets;
+pub mod scheduled_for_deletion;
 
 pub mod prelude {
     pub use crate::child_commands::*;
@@ -36,7 +37,7 @@ pub mod prelude {
     pub use crate::child_key::*;
     pub use crate::child_tuple::*;
     pub use crate::component_commands::*;
-    pub use crate::components::*;
+
     pub use crate::deleter::*;
     pub use crate::into_components::*;
     pub use crate::node::*;
@@ -47,12 +48,14 @@ pub mod prelude {
     pub use crate::set_children_commands::*;
     pub use crate::set_components_commands::*;
     pub use crate::set_event::*;
+    pub use crate::scheduled_for_deletion::*;
     pub use crate::transition::prelude::*;
     pub use crate::with_bundle;
 
     #[cfg(any(feature = "widgets", test))]
     pub use crate::widgets::prelude::*;
 
+    pub (crate) use crate::components::*;
     pub(crate) use crate::allocator::*;
     pub(crate) use crate::helpers::*;
     pub(crate) use crate::root_commands::*;

@@ -65,7 +65,7 @@ pub(crate) fn delete_recursive<R: MavericRootChildren>(
         }
         DeletionPolicy::Linger(duration) => {
             cc.insert(ScheduledForDeletion {
-                timer: Timer::new(duration, TimerMode::Once),
+                remaining: duration
             });
 
             Some(ec.id())
