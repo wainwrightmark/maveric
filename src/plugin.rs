@@ -3,14 +3,9 @@ use std::borrow::BorrowMut;
 use crate::prelude::*;
 use bevy::{ecs::system::StaticSystemParam, prelude::*};
 
-#[derive(Debug, Default)]
-struct ScheduleForRemovalPlugin;
 
-impl Plugin for ScheduleForRemovalPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Last, handle_scheduled_for_removal);
-    }
-}
+
+
 
 pub trait CanRegisterMaveric {
     fn register_maveric<R: MavericRoot>(&mut self) -> &mut Self;
@@ -18,32 +13,24 @@ pub trait CanRegisterMaveric {
 
 impl CanRegisterMaveric for App {
     fn register_maveric<R: MavericRoot>(&mut self) -> &mut Self {
-        if !self.is_plugin_added::<ScheduleForRemovalPlugin>() {
-            self.add_plugins(ScheduleForRemovalPlugin);
+        if !self.is_plugin_added::<ScheduleForDeletionPlugin>() {
+            self.add_plugins(ScheduleForDeletionPlugin);
+        }
+
+        if !self.is_plugin_added::<ScheduledChangePlugin>() {
+            self.add_plugins(ScheduledChangePlugin);
         }
 
         self.add_systems(First, sync_state::<R>.run_if(should_run::<R>));
-
         self
     }
 }
 
-#[allow(clippy::needless_pass_by_value)]
-fn handle_scheduled_for_removal(
-    mut commands: Commands,
-    time: Res<Time>,
-    mut query: Query<(Entity, &mut ScheduledForDeletion)>,
-) {
-    for (entity, mut schedule) in query.iter_mut() {
 
-        match schedule.remaining.checked_sub(time.delta()){
-            Some(new_remaining) => schedule.remaining = new_remaining,
-            None => commands.entity(entity).despawn_recursive(),
-        }
-    }
-}
 
-fn should_run<R: MavericRoot>(param: StaticSystemParam<R::ContextParam<'_>>)-> bool{
+
+
+fn should_run<R: MavericRoot>(param: StaticSystemParam<R::ContextParam<'_>>) -> bool {
     let context = R::get_context(param);
     let changed = <R::Context as NodeContext>::has_changed(&context);
     changed
@@ -76,10 +63,10 @@ fn sync_state<R: MavericRoot>(
 
 #[cfg(test)]
 mod tests {
+    use crate as maveric;
     use crate::prelude::*;
     use bevy::time::TimePlugin;
     use maveric_macro::MavericRoot;
-    use crate as maveric;
     #[test]
     pub fn test_plugin() {
         let mut app = App::new();
@@ -154,7 +141,7 @@ mod tests {
         red_leaf_count: u32,
     }
 
-    impl MavericContext for TreeState{}
+    impl MavericContext for TreeState {}
 
     #[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
     struct Root;

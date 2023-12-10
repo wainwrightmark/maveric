@@ -30,6 +30,7 @@ pub mod with_bundle;
 #[cfg(any(feature = "widgets", test))]
 pub mod widgets;
 pub mod scheduled_for_deletion;
+pub mod scheduled_change;
 
 pub mod prelude {
     pub use crate::child_commands::*;
@@ -49,6 +50,7 @@ pub mod prelude {
     pub use crate::set_components_commands::*;
     pub use crate::set_event::*;
     pub use crate::scheduled_for_deletion::*;
+    pub use crate::scheduled_change::*;
     pub use crate::transition::prelude::*;
     pub use crate::with_bundle;
 

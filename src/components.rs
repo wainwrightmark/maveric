@@ -1,8 +1,6 @@
-use std::{marker::PhantomData, time::Duration};
-
-use bevy::prelude::*;
-
 use crate::prelude::*;
+use bevy::prelude::*;
+use std::marker::PhantomData;
 
 #[derive(Debug, Default, Component)]
 pub(crate) struct MavericNodeComponent<N: MavericNode> {
@@ -32,4 +30,3 @@ impl<R: MavericRootChildren> MavericChildComponent<R> {
         }
     }
 }
-
