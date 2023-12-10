@@ -3,10 +3,6 @@ use std::borrow::BorrowMut;
 use crate::prelude::*;
 use bevy::{ecs::system::StaticSystemParam, prelude::*};
 
-
-
-
-
 pub trait CanRegisterMaveric {
     fn register_maveric<R: MavericRoot>(&mut self) -> &mut Self;
 }
@@ -21,14 +17,17 @@ impl CanRegisterMaveric for App {
             self.add_plugins(ScheduledChangePlugin);
         }
 
+        #[cfg(debug_assertions)]
+        {
+            if !self.is_plugin_added::<CheckTransitionsPlugin>() {
+                self.add_plugins(CheckTransitionsPlugin);
+            }
+        }
+
         self.add_systems(First, sync_state::<R>.run_if(should_run::<R>));
         self
     }
 }
-
-
-
-
 
 fn should_run<R: MavericRoot>(param: StaticSystemParam<R::ContextParam<'_>>) -> bool {
     let context = R::get_context(param);
