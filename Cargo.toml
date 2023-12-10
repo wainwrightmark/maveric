@@ -21,6 +21,7 @@ widgets = ["bevy_render", "bevy_ui"]
 bevy_render = ["bevy/bevy_render"]
 bevy_ui = ["bevy/bevy_ui"]
 derive = ["maveric-macro"]
+default = ["widgets", "derive"]
 
 [[example]]
 name = "menu"
