@@ -9,6 +9,7 @@ pub mod transition_value;
 pub mod tweenable;
 pub mod with;
 
+pub mod transition_builder;
 #[cfg(any(feature = "bevy_ui", test))]
 pub mod ui_lenses;
 
@@ -19,6 +20,7 @@ pub mod prelude {
     pub use crate::transition::next_step::*;
     pub use crate::transition::plugin::*;
     pub use crate::transition::step::*;
+    pub use crate::transition::transition_builder::*;
     pub use crate::transition::transition_value::*;
     pub use crate::transition::tweenable::*;
     pub use crate::transition::with::*;
@@ -30,11 +32,11 @@ pub mod prelude {
 #[cfg(test)]
 mod tests {
     #![allow(clippy::nursery)]
-    use std::{fmt::Debug, time::Duration};
-    use bevy::{prelude::*, time::TimePlugin, time::TimeUpdateStrategy};
+    use super::speed::calculate_speed;
     use crate as maveric;
     use crate::{transition::prelude::*, transition::speed::*, widgets::prelude::*};
-    use super::speed::calculate_speed;
+    use bevy::{prelude::*, time::TimePlugin, time::TimeUpdateStrategy};
+    use std::{fmt::Debug, time::Duration};
 
     #[test]
     pub fn test_calculate_speed() {
@@ -44,16 +46,21 @@ mod tests {
 
     #[test]
     pub fn test_transition() {
-        let transitioned =
-            <f32 as Tweenable>::transition_towards(&-10.0, &10.0, &ScalarSpeed::new(20.0), &0.5);
-        assert_eq!(transitioned, 0.0);
+        let mut value = -10.0;
+
+        let result = <f32 as Tweenable>::transition_towards(&mut value, &10.0, &20.0.into(), &0.5);
+        assert_eq!(result, None);
+        assert_eq!(value, 0.0);
     }
 
     #[test]
     pub fn test_complete_transition() {
-        let transitioned =
-            <f32 as Tweenable>::transition_towards(&-1.0, &1.0, &ScalarSpeed::new(20.0), &0.5);
-        assert_eq!(transitioned, 1.0);
+        let mut value = -1.0;
+        let result =
+            <f32 as Tweenable>::transition_towards(&mut value, &1.0, &ScalarSpeed::new(1.0), &3.0);
+
+        assert_eq!(result, Some(1.0));
+        assert_eq!(value, 1.0)
     }
 
     #[test]
@@ -68,11 +75,9 @@ mod tests {
         fn spawn(mut commands: Commands) {
             commands.spawn_empty().insert((
                 Transform::default(),
-                Transition::new(TransitionStep::<TransformTranslationLens>::new_arc(
-                    Vec3::X * 2.0,
-                    Some(LinearSpeed::new(10.0)),
-                    NextStep::None,
-                )),
+                TransitionBuilder::<TransformTranslationLens>::default()
+                    .then_tween(Vec3::X * 2.0, 10.0.into())
+                    .build(),
             ));
         }
 
@@ -91,8 +96,8 @@ mod tests {
         );
     }
 
-    #[test]
-    pub fn test_transition_transform_two_step() {
+     #[test]
+    pub fn test_transition_wait() {
         let mut app = App::new();
         app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(
             100,
@@ -103,19 +108,46 @@ mod tests {
         fn spawn(mut commands: Commands) {
             commands.spawn_empty().insert((
                 Transform::default(),
-                Transition::new(TransitionStep::<TransformTranslationLens>::new_arc(
-                    Vec3::X * 2.0,
-                    Some(LinearSpeed::new(10.0)),
-                    NextStep::Step(TransitionStep::<TransformTranslationLens>::new_arc(
-                        Vec3::default(),
-                        None,
-                        NextStep::Step(TransitionStep::<TransformTranslationLens>::new_arc(
-                            Vec3::Y * 4.0,
-                            Some(LinearSpeed::new(20.0)),
-                            NextStep::None,
-                        )),
-                    )),
-                )),
+                TransitionBuilder::<TransformTranslationLens>::default()
+                .then_wait(Duration::from_secs_f32(0.2))
+                    .then_tween(Vec3::X * 2.0, 10.0.into())
+                    .build(),
+            ));
+        }
+
+        app.add_systems(Startup, spawn);
+        assert_sequence(
+            &mut app,
+            &[
+                [Transform::default()],
+                [Transform::default()],
+                [Transform::default()],
+                [Transform::from_translation(Vec3::X)],
+                [Transform::from_translation(Vec3::X * 2.0)],
+                // has not moved any further
+                [Transform::from_translation(Vec3::X * 2.0)],
+                [Transform::from_translation(Vec3::X * 2.0)],
+            ],
+            "step",
+        );
+    }
+
+    #[test]
+    pub fn test_transition_transform_set_value() {
+        let mut app = App::new();
+        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(
+            100,
+        )));
+        app.add_plugins(TimePlugin);
+        app.register_transition::<TransformTranslationLens>();
+
+        fn spawn(mut commands: Commands) {
+            commands.spawn_empty().insert((
+                Transform::default(),
+                TransitionBuilder::<TransformTranslationLens>::default()
+                .then_tween(Vec3::X * 10.0, 40.0.into())
+                .then_set_value(Vec3::ZERO)
+                .then_tween(Vec3::Y * 10.0, 50.0.into()).build(),
             ));
         }
 
@@ -125,11 +157,13 @@ mod tests {
             &mut app,
             &[
                 [Transform::default()],
-                [Transform::from_translation(Vec3::X)],
-                [Transform::from_translation(Vec3::X * 2.0)],
+                [Transform::from_translation(Vec3::X * 4.0)],
+                [Transform::from_translation(Vec3::X * 8.0)],
+                [Transform::from_translation(Vec3::Y * 2.5)],
                 //[Transform::from_translation(Vec3::default())],
-                [Transform::from_translation(Vec3::Y * 2.0)],
-                [Transform::from_translation(Vec3::Y * 4.0)],
+                [Transform::from_translation(Vec3::Y * 7.5)],
+                [Transform::from_translation(Vec3::Y * 10.0)],
+                [Transform::from_translation(Vec3::Y * 10.0)],
             ],
             "step",
         );
@@ -147,13 +181,10 @@ mod tests {
         fn spawn(mut commands: Commands) {
             commands.spawn_empty().insert((
                 Transform::default(),
-                Transition::new(TransitionStep::<TransformTranslationLens>::new_cycle(
-                    [
-                        (Vec3::X * 2.0, LinearSpeed::new(10.0)),
-                        (Vec3::X * -2.0, LinearSpeed::new(20.0)),
-                    ]
-                    .into_iter(),
-                )),
+                TransitionBuilder::<TransformTranslationLens>::default()
+                .then_tween(Vec3::X * 3.0, 10.0.into())
+                .then_tween(Vec3::X * 1.0, 10.0.into())
+                .build_loop()
             ));
         }
 
@@ -165,9 +196,15 @@ mod tests {
                 [Transform::default()],
                 [Transform::from_translation(Vec3::X)],
                 [Transform::from_translation(Vec3::X * 2.0)],
-                [Transform::from_translation(Vec3::default())],
-                [Transform::from_translation(Vec3::X * -2.0)],
-                [Transform::from_translation(Vec3::X * -1.0)],
+                [Transform::from_translation(Vec3::X * 3.0)],
+                [Transform::from_translation(Vec3::X * 2.0)],
+                [Transform::from_translation(Vec3::X * 1.0)],
+                [Transform::from_translation(Vec3::X * 2.0)],
+                [Transform::from_translation(Vec3::X * 3.0)],
+                [Transform::from_translation(Vec3::X * 2.0)],
+                [Transform::from_translation(Vec3::X * 1.0)],
+                [Transform::from_translation(Vec3::X * 2.0)],
+
             ],
             "step",
         );

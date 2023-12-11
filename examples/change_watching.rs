@@ -92,8 +92,8 @@ impl MavericNode for ChangeWatcher{
                 ScheduledForDeletion{
                     remaining: Duration::from_secs_f32(2.0)
                 },
-                Transition::<TransformScaleLens>::new(TransitionStep::new_arc(Vec3::ZERO, Some(0.5.into()), NextStep::None)),
-                Transition::<TransformTranslationLens>::new(TransitionStep::new_arc(Vec3{x: 0.0, y: 5000.0, z:0.0}, Some(500.0.into()), NextStep::None)),
+                TransitionBuilder::<TransformScaleLens>::default().then_tween(Vec3::ZERO, 2.0.into()).build(),
+                TransitionBuilder::<TransformTranslationLens>::default().then_tween(Vec3{x: 0.0, y: 5000.0, z:0.0}, 500.0.into()).build(),
 
             ));
         });

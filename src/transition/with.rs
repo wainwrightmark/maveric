@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use std::time::Duration;
 
 use bevy::prelude::*;
@@ -10,7 +9,7 @@ use super::speed::calculate_speed;
 
 pub trait CanHaveTransition: MavericNode + Sized {
     #[must_use]
-    fn with_transition_in<L: Lens + GetValueLens>(
+    fn with_transition_in<L: Lens + GetValueLens + SetValueLens>(
         self,
         initial_value: L::Value,
         destination: L::Value,
@@ -18,16 +17,23 @@ pub trait CanHaveTransition: MavericNode + Sized {
     ) -> WithTransition<Self, L, ()>
     where
         L::Value: Tweenable,
-        L::Object: Clone + Component,
+        L::Object: Component,
     {
         let speed = calculate_speed(&initial_value, &destination, duration);
-        let update_transition = TransitionStep::new_arc(destination, Some(speed), NextStep::None);
 
-        self.with_transition(initial_value, update_transition, ())
+        self.with_transition(
+            initial_value,
+            Transition::TweenValue {
+                destination,
+                speed,
+                next: None,
+            },
+            (),
+        )
     }
 
     #[must_use]
-    fn with_transition_in_out<L: Lens + GetValueLens>(
+    fn with_transition_in_out<L: Lens + GetValueLens + SetValueLens>(
         self,
         initial_value: L::Value,
         destination: L::Value,
@@ -37,46 +43,52 @@ pub trait CanHaveTransition: MavericNode + Sized {
     ) -> WithTransition<Self, L, DurationDeletionPathMaker<L>>
     where
         L::Value: Tweenable,
-        L::Object: Clone + Component,
+        L::Object: Component,
     {
         let speed = calculate_speed(&initial_value, &destination, in_duration);
-        let update_transition = TransitionStep::new_arc(destination, Some(speed), NextStep::None);
 
         self.with_transition(
             initial_value,
-            update_transition,
+            Transition::TweenValue {
+                destination,
+                speed,
+                next: None,
+            },
             DurationDeletionPathMaker::new(out_duration, out_destination),
         )
     }
 
     #[must_use]
-    fn with_transition_to<L: Lens + GetValueLens>(
+    fn with_transition_to<L: Lens + GetValueLens + SetValueLens>(
         self,
         destination: L::Value,
         speed: <L::Value as Tweenable>::Speed,
     ) -> WithTransition<Self, L, ()>
     where
         L::Value: Tweenable,
-        L::Object: Clone + Component,
+        L::Object: Component,
     {
-        //todo
-        //this should work differently - take a function that reads the current value (before other components are added) and uses that to calculate the initial value
-        let update_transition =
-            TransitionStep::new_arc(destination.clone(), Some(speed), NextStep::None);
-
-        self.with_transition(destination, update_transition, ())
+        self.with_transition(
+            destination.clone(),
+            Transition::TweenValue {
+                destination,
+                speed,
+                next: None,
+            },
+            (),
+        )
     }
 
     #[must_use]
-    fn with_transition<L: Lens + GetValueLens, P: DeletionPathMaker<L>>(
+    fn with_transition<L: Lens + GetValueLens + SetValueLens, P: DeletionPathMaker<L>>(
         self,
         initial_value: L::Value,
-        update_transition: Arc<TransitionStep<L>>,
+        update_transition: Transition<L>,
         deletion: P,
     ) -> WithTransition<Self, L, P>
     where
         L::Value: Tweenable,
-        L::Object: Clone + Component,
+        L::Object: Component,
     {
         WithTransition {
             node: self,
@@ -91,23 +103,24 @@ impl<N: MavericNode> CanHaveTransition for N {}
 /// This requires the animation plugin
 
 #[derive(Debug, Clone)]
-pub struct WithTransition<N: MavericNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>>
-where
+pub struct WithTransition<
+    N: MavericNode,
+    L: Lens + GetValueLens + SetValueLens,
+    P: DeletionPathMaker<L>,
+> where
     L::Value: Tweenable,
-    L::Object: Clone + Component,
+    L::Object: Component,
 {
     pub node: N,
-
-    pub transition: (L::Value, Arc<TransitionStep<L>>),
-
+    pub transition: (L::Value, Transition<L>),
     pub deletion: P,
 }
 
-impl<N: MavericNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> PartialEq
+impl<N: MavericNode, L: Lens + GetValueLens + SetValueLens, P: DeletionPathMaker<L>> PartialEq
     for WithTransition<N, L, P>
 where
     L::Value: Tweenable,
-    L::Object: Clone + Component,
+    L::Object: Component,
 {
     fn eq(&self, other: &Self) -> bool {
         self.node == other.node
@@ -116,19 +129,30 @@ where
     }
 }
 
-impl<N: MavericNode, L: Lens + GetValueLens, P: DeletionPathMaker<L>> MavericNode
+impl<N: MavericNode, L: Lens + GetValueLens + SetValueLens, P: DeletionPathMaker<L>> MavericNode
     for WithTransition<N, L, P>
 where
     L::Value: Tweenable,
-    L::Object: Clone + Component,
+    L::Object: Component,
 {
     type Context = N::Context;
 
-    fn on_created(&self,context: &<Self::Context as NodeContext>::Wrapper<'_>,  world: &World, entity_commands: &mut bevy::ecs::system::EntityCommands ) {
+    fn on_created(
+        &self,
+        context: &<Self::Context as NodeContext>::Wrapper<'_>,
+        world: &World,
+        entity_commands: &mut bevy::ecs::system::EntityCommands,
+    ) {
         N::on_created(&self.node, context, world, entity_commands);
     }
 
-    fn on_changed(&self, previous: &Self, context: &<Self::Context as NodeContext>::Wrapper<'_>,  world: &World, entity_commands: &mut bevy::ecs::system::EntityCommands ) {
+    fn on_changed(
+        &self,
+        previous: &Self,
+        context: &<Self::Context as NodeContext>::Wrapper<'_>,
+        world: &World,
+        entity_commands: &mut bevy::ecs::system::EntityCommands,
+    ) {
         N::on_changed(&self.node, &previous.node, context, world, entity_commands);
     }
 
@@ -145,58 +169,62 @@ where
 
                 let transition = match args.event {
                     SetEvent::Created => {
-                        let in_transition = TransitionStep::new_arc(
-                            initial_value.clone(),
-                            None,
-                            NextStep::Step(update_transition.clone()),
-                        );
+                        let in_transition = Transition::SetValue {
+                            value: initial_value.clone(),
+                            next: Some(Box::new(update_transition.clone())),
+                        };
 
-                        Some(Transition::new(in_transition))
+                        Some(in_transition)
                     }
                     SetEvent::Updated => {
                         if args.is_hot() {
-                            let mut transition =
-                            if let Some(previous_path) = commands.get::<Transition<L>>() {
-                                if previous_path.starts_with(update_transition) {
+                            let transition = if let Some(previous_transition) =
+                                commands.get::<Transition<L>>()
+                            {
+                                if previous_transition.same_destination(update_transition) {
                                     //info!("Same path found - no change");
                                     None
                                 } else {
                                     //info!("New path found");
-                                    Some(Transition::new(update_transition.clone()))
+                                    Some(update_transition.clone())
                                 }
                             } else {
                                 //info!("No path found");
-                                Some(Transition::new(update_transition.clone()))
+                                Some(update_transition.clone())
                             };
 
-                            if let Some(t) = transition.as_mut(){
-                                if let Some(current_value)  = commands.get::<L::Object>().and_then(L::try_get_value){
-                                    t.step = TransitionStep::new_arc(current_value, None, NextStep::Step(t.step.clone()));
-                                }
+                            match transition {
+                                Some(t) => Some(
+                                    if let Some(current_value) =
+                                        commands.get::<L::Object>().and_then(L::try_get_value)
+                                    {
+                                        Transition::SetValue {
+                                            value: current_value,
+                                            next: Some(Box::new(t)),
+                                        }
+                                    } else {
+                                        t
+                                    },
+                                ),
+                                None => None,
                             }
-
-
-                            transition
                         } else {
                             None
                         }
                     }
                     SetEvent::Undeleted => {
-                        let step = if let Some(existing_value) = commands.get::<L::Object>() {
+                        Some(if let Some(existing_value) = commands.get::<L::Object>() {
                             if let Some(destination) = L::try_get_value(existing_value) {
-                                TransitionStep::<L>::new_arc(
-                                    destination,
-                                    None,
-                                    NextStep::Step(update_transition.clone()),
-                                )
+                                Transition::SetValue {
+                                    value: destination,
+                                    next: Some(Box::new(update_transition.clone())),
+                                }
                             } else {
                                 update_transition.clone()
                             }
                         } else {
                             update_transition.clone()
-                        };
-
-                        Some(Transition::new(step))
+                        })
                     }
                 };
                 if let Some(transition) = transition {
@@ -235,7 +263,7 @@ where
             DeletionPolicy::Linger(d) => duration.max(d),
         };
 
-        commands.insert(Transition::new(deletion_path));
+        commands.insert(deletion_path);
 
         DeletionPolicy::Linger(duration)
     }

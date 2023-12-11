@@ -10,7 +10,7 @@ use super::speed::{AngularSpeed, LinearSpeed, ScalarSpeed, Speed};
 pub trait Tweenable: Debug + Clone + Send + Sync + PartialEq + 'static {
     type Speed: Speed;
 
-    /// # Errors 
+    /// # Errors
     /// If speed is zero
     fn duration_to(
         &self,
@@ -18,8 +18,15 @@ pub trait Tweenable: Debug + Clone + Send + Sync + PartialEq + 'static {
         speed: &Self::Speed,
     ) -> Result<Duration, TryFromFloatSecsError>;
 
+    /// Transition this value towards `destination` at the given speed for `delta_seconds`
+    /// Returns Some(s) if the destination was reached where `s` is the remaining seconds
     #[must_use]
-    fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, delta_seconds: &f32) -> Self;
+    fn transition_towards(
+        &mut self,
+        destination: &Self,
+        speed: &Self::Speed,
+        delta_seconds: &f32,
+    ) -> Option<f32>;
 }
 
 impl Tweenable for f32 {
@@ -37,19 +44,44 @@ impl Tweenable for f32 {
         Duration::try_from_secs_f32((self - rhs).abs() / speed.amount_per_second)
     }
 
-    fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, elapsed_seconds: &f32) -> Self {
-        let diff = rhs - *self;
+    fn transition_towards(
+        &mut self,
+        destination: &Self,
+        speed: &Self::Speed,
+        delta_seconds: &f32,
+    ) -> Option<f32> {
+        let distance = *destination - *self;
 
-        diff.abs().min(speed.amount_per_second * elapsed_seconds).mul_add(diff.signum(), *self)
+        let change = speed.amount_per_second * delta_seconds;
+        if change < distance.abs() {
+            *self += change * distance.signum();
+            return None;
+        } else {
+            *self = *destination;
+            Some(delta_seconds - (distance.abs() / speed.amount_per_second))
+        }
     }
 }
 
 impl Tweenable for Vec2 {
     type Speed = LinearSpeed;
 
-    fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, delta_seconds: &f32) -> Self {
-        let diff = *rhs - *self;
-        *self + diff.clamp_length_max(speed.units_per_second * delta_seconds)
+    fn transition_towards(
+        &mut self,
+        destination: &Self,
+        speed: &Self::Speed,
+        delta_seconds: &f32,
+    ) -> Option<f32> {
+        let distance = *destination - *self;
+
+        let change = speed.units_per_second * delta_seconds;
+        if change < distance.length() {
+            *self += change * distance.normalize_or_zero();
+            return None;
+        } else {
+            *self = *destination;
+            Some(delta_seconds - (distance.length() / speed.units_per_second))
+        }
     }
 
     fn duration_to(
@@ -68,11 +100,22 @@ impl Tweenable for Vec2 {
 impl Tweenable for Vec3 {
     type Speed = LinearSpeed;
 
-    fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, delta_seconds: &f32) -> Self {
-        let diff = *rhs - *self;
-        let clamped = diff.clamp_length_max(speed.units_per_second * delta_seconds);
-        //info!("From: {self:?} to {rhs:?} {diff} {clamped:?} {speed} * {delta_seconds}");
-        *self + clamped
+    fn transition_towards(
+        &mut self,
+        destination: &Self,
+        speed: &Self::Speed,
+        delta_seconds: &f32,
+    ) -> Option<f32> {
+        let distance = *destination - *self;
+
+        let change = speed.units_per_second * delta_seconds;
+        if change < distance.length() {
+            *self += change * distance.normalize_or_zero();
+            return None;
+        } else {
+            *self = *destination;
+            Some(delta_seconds - (distance.length() / speed.units_per_second))
+        }
     }
 
     fn duration_to(
@@ -91,9 +134,22 @@ impl Tweenable for Vec3 {
 impl Tweenable for Quat {
     type Speed = AngularSpeed;
 
-    fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, delta_seconds: &f32) -> Self {
-        let diff = *rhs - *self;
-        *self + quat_clamp_length_max(diff, speed.radians_per_second * delta_seconds)
+    fn transition_towards(
+        &mut self,
+        destination: &Self,
+        speed: &Self::Speed,
+        delta_seconds: &f32,
+    ) -> Option<f32> {
+        let radians = self.angle_between(*destination);
+
+        let change = speed.radians_per_second * delta_seconds;
+        if change < radians {
+            *self = self.lerp(*destination, change / radians);
+            return None;
+        } else {
+            *self = *destination;
+            Some(delta_seconds - (radians / speed.radians_per_second))
+        }
     }
 
     fn duration_to(
@@ -121,18 +177,28 @@ impl Tweenable for Transform {
             .duration_to(&(rhs.translation, rhs.rotation, rhs.scale), speed)
     }
 
-    fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, delta_seconds: &f32) -> Self {
-        let (translation, rotation, scale) = (self.translation, self.rotation, self.scale)
-            .transition_towards(
-                &(rhs.translation, rhs.rotation, rhs.scale),
-                speed,
-                delta_seconds,
-            );
-        Self {
-            translation,
-            rotation,
-            scale,
-        }
+    fn transition_towards(
+        &mut self,
+        destination: &Self,
+        speed: &Self::Speed,
+        delta_seconds: &f32,
+    ) -> Option<f32> {
+        let mut tuple = (self.translation, self.rotation, self.scale);
+
+        let result = tuple.transition_towards(
+            &(
+                destination.translation,
+                destination.rotation,
+                destination.scale,
+            ),
+            speed,
+            delta_seconds,
+        );
+        self.translation = tuple.0;
+        self.rotation = tuple.1;
+        self.scale = tuple.2;
+
+        return result;
     }
 }
 
@@ -156,42 +222,41 @@ impl Tweenable for Val {
         }
     }
 
-    fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, delta_seconds: &f32) -> Self {
+    fn transition_towards(
+        &mut self,
+        rhs: &Self,
+        speed: &Self::Speed,
+        delta_seconds: &f32,
+    ) -> Option<f32> {
         match (self, rhs) {
-            (Val::Px(l), Val::Px(r)) => Val::Px(<f32 as Tweenable>::transition_towards(
-                l,
-                r,
-                speed,
-                delta_seconds,
-            )),
-            (Val::Percent(l), Val::Percent(r)) => Val::Percent(
-                <f32 as Tweenable>::transition_towards(l, r, speed, delta_seconds),
-            ),
-            (Val::Vw(l), Val::Vw(r)) => Val::Vw(<f32 as Tweenable>::transition_towards(
-                l,
-                r,
-                speed,
-                delta_seconds,
-            )),
-            (Val::Vh(l), Val::Vh(r)) => Val::Vh(<f32 as Tweenable>::transition_towards(
-                l,
-                r,
-                speed,
-                delta_seconds,
-            )),
-            (Val::VMin(l), Val::VMin(r)) => Val::VMin(<f32 as Tweenable>::transition_towards(
-                l,
-                r,
-                speed,
-                delta_seconds,
-            )),
-            (Val::VMax(l), Val::VMax(r)) => Val::VMax(<f32 as Tweenable>::transition_towards(
-                l,
-                r,
-                speed,
-                delta_seconds,
-            )),
-            _ => *rhs,
+            (Val::Px(l), Val::Px(r)) => {
+                <f32 as Tweenable>::transition_towards(l, r, speed, delta_seconds)
+            }
+
+            (Val::Percent(l), Val::Percent(r)) => {
+                <f32 as Tweenable>::transition_towards(l, r, speed, delta_seconds)
+            }
+
+            (Val::Vw(l), Val::Vw(r)) => {
+                <f32 as Tweenable>::transition_towards(l, r, speed, delta_seconds)
+            }
+
+            (Val::Vh(l), Val::Vh(r)) => {
+                <f32 as Tweenable>::transition_towards(l, r, speed, delta_seconds)
+            }
+
+            (Val::VMin(l), Val::VMin(r)) => {
+                <f32 as Tweenable>::transition_towards(l, r, speed, delta_seconds)
+            }
+
+            (Val::VMax(l), Val::VMax(r)) => {
+                <f32 as Tweenable>::transition_towards(l, r, speed, delta_seconds)
+            }
+
+            (s, rhs) => {
+                *s = *rhs;
+                Some(*delta_seconds)
+            }
         }
     }
 }
@@ -295,8 +360,13 @@ impl Tweenable for Color {
         Duration::try_from_secs_f32(seconds)
     }
 
-    fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, delta_seconds: &f32) -> Self {
-        match (self, rhs) {
+    fn transition_towards(
+        &mut self,
+        destination: &Self,
+        speed: &Self::Speed,
+        delta_seconds: &f32,
+    ) -> Option<f32> {
+        match (self, destination) {
             (
                 Color::Rgba {
                     red,
@@ -310,12 +380,12 @@ impl Tweenable for Color {
                     blue: blue2,
                     alpha: alpha2,
                 },
-            ) => Color::Rgba {
-                red: red.transition_towards(red2, speed, delta_seconds),
-                green: green.transition_towards(green2, speed, delta_seconds),
-                blue: blue.transition_towards(blue2, speed, delta_seconds),
-                alpha: alpha.transition_towards(alpha2, speed, delta_seconds),
-            },
+            ) => transition_4_tuple(
+                (red, green, blue, alpha),
+                (red2, green2, blue2, alpha2),
+                speed,
+                delta_seconds,
+            ),
             (
                 Color::RgbaLinear {
                     red,
@@ -329,12 +399,12 @@ impl Tweenable for Color {
                     blue: blue2,
                     alpha: alpha2,
                 },
-            ) => Color::RgbaLinear {
-                red: red.transition_towards(red2, speed, delta_seconds),
-                green: green.transition_towards(green2, speed, delta_seconds),
-                blue: blue.transition_towards(blue2, speed, delta_seconds),
-                alpha: alpha.transition_towards(alpha2, speed, delta_seconds),
-            },
+            ) => transition_4_tuple(
+                (red, green, blue, alpha),
+                (red2, green2, blue2, alpha2),
+                speed,
+                delta_seconds,
+            ),
 
             (
                 Color::Hsla {
@@ -349,12 +419,12 @@ impl Tweenable for Color {
                     lightness: lightness2,
                     alpha: alpha2,
                 },
-            ) => Color::Hsla {
-                lightness: lightness.transition_towards(lightness2, speed, delta_seconds),
-                saturation: saturation.transition_towards(saturation2, speed, delta_seconds),
-                hue: hue.transition_towards(hue2, speed, delta_seconds),
-                alpha: alpha.transition_towards(alpha2, speed, delta_seconds),
-            },
+            ) => transition_4_tuple(
+                (hue, saturation, lightness, alpha),
+                (hue2, saturation2, lightness2, alpha2),
+                speed,
+                delta_seconds,
+            ),
             (
                 Color::Lcha {
                     lightness,
@@ -368,24 +438,44 @@ impl Tweenable for Color {
                     hue: hue2,
                     alpha: alpha2,
                 },
-            ) => Color::Lcha {
-                lightness: lightness.transition_towards(lightness2, speed, delta_seconds),
-                chroma: chroma.transition_towards(chroma2, speed, delta_seconds),
-                hue: hue.transition_towards(hue2, speed, delta_seconds),
-                alpha: alpha.transition_towards(alpha2, speed, delta_seconds),
-            },
-            _ => *rhs,
+            ) => transition_4_tuple(
+                (lightness, chroma, hue, alpha),
+                (lightness2, chroma2, hue2, alpha2),
+                speed,
+                delta_seconds,
+            ),
+            (s, destination) => {
+                //TODO convert self to the other color and then transition as normal
+                *s = *destination;
+                Some(*delta_seconds)
+            }
         }
     }
 }
 
-fn quat_clamp_length_max(q: Quat, max: f32) -> Quat {
-    let length_sq = q.length_squared();
-    if length_sq > max * max {
-        (q / f32::sqrt(length_sq)) * max
-    } else {
-        q
+fn transition_4_tuple(
+    lhs: (&mut f32, &mut f32, &mut f32, &mut f32),
+    rhs: (&f32, &f32, &f32, &f32),
+    speed: &<f32 as Tweenable>::Speed,
+    delta_seconds: &f32,
+) -> Option<f32> {
+    let mut remaining: Option<f32> = Some(*delta_seconds);
+
+    for pair in [
+        (lhs.0, rhs.0),
+        (lhs.1, rhs.1),
+        (lhs.2, rhs.2),
+        (lhs.3, rhs.3),
+    ] {
+        if let Some(r) = pair.0.transition_towards(pair.1, speed, delta_seconds) {
+            if remaining.is_some_and(|rem| rem > r) {
+                remaining = Some(r);
+            }
+        } else {
+            remaining = None;
+        }
     }
+    remaining
 }
 
 macro_rules! impl_tweenable {
@@ -404,14 +494,23 @@ macro_rules! impl_tweenable {
                 Ok(result)
             }
 
-            fn transition_towards(&self, rhs: &Self, speed: &Self::Speed, _delta_seconds: &f32) -> Self {
+            fn transition_towards(&mut self, destination: &Self, speed: &Self::Speed, delta_seconds: &f32) -> Option<f32> {
                 let ($($t,)*) = self;
-                let ($($r,)*) = rhs;
+                let ($($r,)*) = destination;
                 let ($($s,)*) = speed;
 
-                (
-                    $($t.transition_towards($r, $s, _delta_seconds),)*
-                )
+                let mut remaining: Option<f32> = Some(*delta_seconds);
+                $({
+                    if let Some(r) = $t.transition_towards($r, $s, delta_seconds){
+                        if remaining.is_some_and(|rem| rem > r){
+                            remaining = Some(r);
+                        }
+                    }else{
+                        remaining = None;
+                    }
+
+                })*
+                remaining
             }
         }
     };
@@ -426,3 +525,98 @@ impl_tweenable!(
     (T2, t2, r2, s2),
     (T3, t3, r3, s3)
 );
+
+#[cfg(test)]
+mod tests {
+    use bevy::{
+        math::{Quat, Vec3},
+        transform::components::Transform, render::color::Color,
+    };
+
+    use super::Tweenable;
+
+    #[test]
+    pub fn test_transition_tuple() {
+        let mut value = (1.0, 2.0);
+
+        let destination = (5.0, 5.0);
+
+        let r1 = Tweenable::transition_towards(
+            &mut value,
+            &destination,
+            &(3.0.into(), 1.0.into()),
+            &1.0,
+        );
+
+        assert_eq!(r1, None);
+        assert_eq!(value, (4.0, 3.0));
+    }
+
+    #[test]
+    pub fn test_transition_transform() {
+        let mut value = Transform {
+            translation: Vec3 {
+                x: 3.0,
+                y: 4.0,
+                z: 5.0,
+            },
+            rotation: Quat::from_axis_angle(Vec3::X, std::f32::consts::PI),
+            scale: Vec3 {
+                x: 3.0,
+                y: 4.0,
+                z: 5.0,
+            },
+        };
+
+        let destination = Transform {
+            translation: Vec3 {
+                x: 5.0,
+                y: 4.0,
+                z: 3.0,
+            },
+            rotation: Quat::from_axis_angle(Vec3::Y, std::f32::consts::PI),
+            scale: Vec3 {
+                x: 5.0,
+                y: 4.0,
+                z: 3.0,
+            },
+        };
+
+        let r1 = Tweenable::transition_towards(
+            &mut value,
+            &destination,
+            &(1.0.into(), 1.0.into(), 1.0.into()),
+            &1.0,
+        );
+
+        assert_eq!(r1, None);
+
+        let expected = Transform {
+            translation: Vec3::new(3.7071068, 4.0, 4.2928934),
+            rotation: Quat::from_xyzw(0.9060874, 0.4230905, 0.0, -5.8100213e-8),
+            scale: Vec3::new(3.7071068, 4.0, 4.2928934),
+        };
+
+        assert_eq!(value, expected);
+    }
+
+    #[test]
+    pub fn test_transition_color() {
+        let mut value = Color::Rgba { red: 0.3, green: 0.4, blue: 0.5, alpha: 0.0 };
+
+        let destination =Color::Rgba { red: 0.6, green: 0.8, blue: 1.0, alpha: 1.0 };
+
+        let r1 = Tweenable::transition_towards(
+            &mut value,
+            &destination,
+            &0.1.into(),
+            &1.0,
+        );
+
+        assert_eq!(r1, None);
+
+        let expected =  Color::Rgba { red: 0.4, green: 0.5, blue: 0.6, alpha: 0.1 };
+
+        assert_eq!(value, expected);
+    }
+}

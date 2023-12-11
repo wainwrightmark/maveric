@@ -1,20 +1,81 @@
 use crate::transition::prelude::*;
 use bevy::prelude::*;
-use std::{marker::PhantomData, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 
-#[derive(Clone, PartialEq)]
-pub struct TransitionStep<L: Lens>
+#[derive(Component, Clone)]
+pub enum Transition<L: Lens + GetValueLens + SetValueLens>
 where
+    L::Object: Component,
     L::Value: Tweenable,
 {
-    pub destination: L::Value,
-    pub speed: Option<<L::Value as Tweenable>::Speed>,
-    phantom: PhantomData<L>,
-    pub next: NextStep<L>,
+    /// Set the lens value
+    SetValue {
+        value: L::Value,
+        next: Option<Box<Self>>,
+    },
+    /// Gradually transition the lens value
+    TweenValue {
+        destination: L::Value,
+        speed: <L::Value as Tweenable>::Speed,
+        next: Option<Box<Self>>,
+    },
+    /// Wait a particular amount of time
+    Wait {
+        remaining: Duration,
+        next: Option<Box<Self>>,
+    },
+    /// Begin (or continue) a loop
+    Loop(Arc<dyn TransitionBuilderTrait<L>>),
 }
 
-impl<L: Lens> TransitionStep<L>
+impl<L: Lens + GetValueLens + SetValueLens> PartialEq for Transition<L>
 where
+    L::Object: Component,
+    L::Value: Tweenable,
+{
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (
+                Self::SetValue {
+                    value: l_value,
+                    next: l_next,
+                },
+                Self::SetValue {
+                    value: r_value,
+                    next: r_next,
+                },
+            ) => l_value == r_value && l_next == r_next,
+            (
+                Self::TweenValue {
+                    destination: l_destination,
+                    speed: l_speed,
+                    next: l_next,
+                },
+                Self::TweenValue {
+                    destination: r_destination,
+                    speed: r_speed,
+                    next: r_next,
+                },
+            ) => l_destination == r_destination && l_speed == r_speed && l_next == r_next,
+            (
+                Self::Wait {
+                    remaining: l_remaining,
+                    next: l_next,
+                },
+                Self::Wait {
+                    remaining: r_remaining,
+                    next: r_next,
+                },
+            ) => l_remaining == r_remaining && l_next == r_next,
+            (Self::Loop(l0), Self::Loop(r0)) => Arc::ptr_eq(l0, r0), //TODO improve this somehow
+            _ => false,
+        }
+    }
+}
+
+impl<L: Lens + GetValueLens + SetValueLens> Transition<L>
+where
+    L::Object: Component,
     L::Value: Tweenable,
 {
     /// Returns remaining duration, or none if this is infinite
@@ -23,126 +84,113 @@ where
         let mut current_value: &L::Value = start;
         let mut current_step = self;
 
-        'l: loop {
-            if let Some(speed) = current_step.speed {
-                let step_duration = current_value
-                    .duration_to(&current_step.destination, &speed)
-                    .ok()?;
-
-                total += step_duration;
-                current_value = &current_step.destination;
-            }
-
-            match &current_step.next {
-                NextStep::None => break 'l,
-                NextStep::Step(arc) => current_step = arc.as_ref(),
-                NextStep::Cycle(..) => return None,
+        loop {
+            match current_step {
+                Transition::SetValue { value, next } => {
+                    current_value = value;
+                    match next {
+                        Some(next) => current_step = next,
+                        None => return Some(total),
+                    }
+                }
+                Transition::TweenValue {
+                    destination: to,
+                    speed,
+                    next,
+                } => {
+                    total += current_value.duration_to(to, speed).ok()?;
+                    match next {
+                        Some(next) => current_step = next,
+                        None => return Some(total),
+                    }
+                }
+                Transition::Wait { remaining, next } => {
+                    total += *remaining;
+                    match next {
+                        Some(next) => current_step = next,
+                        None => return Some(total),
+                    }
+                }
+                Transition::Loop(_) => return None,
             }
         }
-
-        Some(total)
     }
 }
 
-impl<L: Lens> std::fmt::Debug for TransitionStep<L>
+impl<L: Lens + GetValueLens + SetValueLens> std::fmt::Debug for Transition<L>
 where
+    L::Object: Component,
     L::Value: Tweenable,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("TransitionStep")
-            .field("destination", &self.destination)
-            .field("speed", &self.speed)
-            .finish()
+        match self {
+            Self::SetValue { value, next } => f
+                .debug_struct("SetValue")
+                .field("value", value)
+                .field("next", next)
+                .finish(),
+            Self::TweenValue {
+                destination: to,
+                speed,
+                next,
+            } => f
+                .debug_struct("Transition")
+                .field("to", to)
+                .field("speed", speed)
+                .field("next", next)
+                .finish(),
+            Self::Wait { remaining, next } => f
+                .debug_struct("Wait")
+                .field("remaining", remaining)
+                .field("next", next)
+                .finish(),
+            Self::Loop(_) => f.debug_tuple("Loop").finish(),
+        }
     }
 }
 
-impl<L: Lens> TransitionStep<L>
+impl<L: Lens + GetValueLens + SetValueLens> Transition<L>
 where
+    L::Object: Component,
     L::Value: Tweenable,
 {
-    pub fn new_arc(
-        destination: L::Value,
-        speed: Option<<L::Value as Tweenable>::Speed>,
-        next: NextStep<L>,
-    ) -> Arc<Self> {
-        Arc::new(Self {
-            destination,
-            speed,
-            next,
-            phantom: PhantomData,
-        })
+    pub fn same_destination(&self, other: &Self) -> bool {
+        self.destination()
+            .is_some_and(|x| Some(x) == other.destination())
     }
 
-    /// # Panics
-    /// If `steps` is empty
-    pub fn new_cycle(
-        steps: impl ExactSizeIterator
-            + DoubleEndedIterator<Item = (L::Value, <L::Value as Tweenable>::Speed)>,
-    ) -> Arc<Self> {
-        Arc::new_cyclic(move |weak| {
-            let mut next = NextStep::Cycle(weak.clone());
+    pub fn destination(&self) -> Option<&L::Value> {
+        let mut next: Option<&Transition<L>> = Some(self);
+        let mut result: Option<&L::Value> = None;
 
-            for (index, (destination, speed)) in steps.enumerate().rev() {
-                let step = Self {
+        while let Some(current) = next {
+            next = match current {
+                Transition::SetValue { value, next } => {
+                    result = Some(value);
+                    match next {
+                        Some(b) => Some(&b),
+                        None => None,
+                    }
+                }
+                Transition::TweenValue {
                     destination,
-                    speed: Some(speed),
-                    phantom: PhantomData,
+                    speed: _,
                     next,
-                };
-                if index == 0 {
-                    return step;
+                } => {
+                    result = Some(destination);
+                    match next {
+                        Some(b) => Some(&b),
+                        None => None,
+                    }
                 }
-                next = NextStep::Step(Arc::new(step));
+                Transition::Wait { remaining: _, next } => match next {
+                    Some(b) => Some(&b),
+                    None => None,
+                },
+                Transition::Loop(_) => return None,
             }
-            panic!("cannot create transition cycle with no steps")
-        })
-    }
-}
-
-#[derive(Component)]
-pub struct Transition<L: Lens>
-where
-    L::Value: Tweenable,
-{
-    pub(crate) step: Arc<TransitionStep<L>>,
-    start: Arc<TransitionStep<L>>,
-}
-
-impl<L: Lens> Transition<L>
-where
-    L::Value: Tweenable,
-{
-    pub fn new(step: Arc<TransitionStep<L>>) -> Self {
-        Self {
-            start: step.clone(),
-            step,
         }
-    }
 
-    pub fn starts_with(&self, step: &TransitionStep<L>) -> bool {
-        self.start.as_ref().eq(step)
-    }
-
-    pub(crate) fn try_go_to_next_step(&mut self) -> bool {
-        match &self.step.next {
-            NextStep::None => {
-                //info!("No next step");
-                false
-            }
-            NextStep::Step(step) => {
-                //info!("Moved to next step");
-                self.step = step.clone();
-                true
-            }
-            NextStep::Cycle(weak) => match weak.upgrade() {
-                Some(step) => {
-                    self.step = step;
-                    true
-                }
-                None => false,
-            },
-        }
+        result
     }
 }
-
-impl<L: Lens> Transition<L> where L::Value: Tweenable {}

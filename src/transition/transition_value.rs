@@ -3,26 +3,31 @@ pub use super::prelude::*;
 use bevy::prelude::*;
 
 impl<'c, 'w, 's, 'a, 'world> ComponentCommands<'c, 'w, 's, 'a, 'world> {
-    /// Inserts a transition to a particular
-    pub fn transition_value<L: Lens + GetValueLens>(
+    /// Inserts a transition to a particular value
+    /// Returns the value that the property should be set to
+    pub fn transition_value<L: Lens + GetValueLens + SetValueLens>(
         &mut self,
         destination: L::Value,
-        speed: Option<<L::Value as Tweenable>::Speed>,
+        speed: <L::Value as Tweenable>::Speed,
     ) -> L::Value
     where
-        L::Value: Tweenable + Clone,
-        L::Object: Clone + Component,
+        L::Value: Tweenable,
+        L::Object: Component,
     {
         let Some(current_value) = self.get::<L::Object>().and_then(L::try_get_value) else {
             return destination;
         };
 
         if let Some(previous_path) = self.get::<Transition<L>>() {
-            if previous_path.step.destination.eq(&destination)
-                && previous_path.step.speed == speed
-                && previous_path.step.next.is_none()
+            if let Transition::TweenValue {
+                destination: old_to,
+                speed: old_speed,
+                next: old_next,
+            } = previous_path
             {
-                return current_value;
+                if old_to.eq(&destination) && old_speed.eq(&speed) && old_next.is_none() {
+                    return current_value;
+                }
             }
 
             if current_value.eq(&destination) {
@@ -33,11 +38,11 @@ impl<'c, 'w, 's, 'a, 'world> ComponentCommands<'c, 'w, 's, 'a, 'world> {
             return current_value;
         }
 
-        self.insert(Transition::<L>::new(TransitionStep::new_arc(
+        self.insert(Transition::<L>::TweenValue {
             destination,
             speed,
-            NextStep::None,
-        )));
+            next: None,
+        });
 
         current_value
     }

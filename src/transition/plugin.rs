@@ -38,6 +38,17 @@ impl CanRegisterTransition for App {
     }
 }
 
+/// Inner type used for transition stepping
+enum StepResult<L: Lens + GetValueLens + SetValueLens>
+where
+    L::Object: Component,
+    L::Value: Tweenable,
+{
+    Continue,
+    Finished,
+    Advance(Transition<L>),
+}
+
 #[allow(clippy::needless_pass_by_value)]
 fn step_transition<L: Lens + GetValueLens + SetValueLens>(
     mut commands: Commands,
@@ -47,45 +58,80 @@ fn step_transition<L: Lens + GetValueLens + SetValueLens>(
     L::Object: Component,
     L::Value: Tweenable,
 {
-    let delta_seconds = time.delta_seconds();
+    for (entity, mut transition, mut object) in query.iter_mut() {
+        let mut remaining_delta = time.delta();
 
-    for (entity, mut tp, mut t) in query.iter_mut() {
-        let component = t.as_mut();
-
-        let speed = {
-            loop {
-                if let Some(speed) = tp.step.speed {
-                    break speed;
+        'inner: loop {
+            let step_result: StepResult<L> = match transition.as_mut() {
+                Transition::SetValue { value, next } => {
+                    L::try_set(object.as_mut(), value.clone()); //TODO avoid this clone
+                    match std::mem::take(next) {
+                        Some(b) => StepResult::Advance(*b),
+                        None => StepResult::Finished,
+                    }
                 }
-                <L as SetValueLens>::try_set(component, tp.step.destination.clone());
-                if !tp.try_go_to_next_step() {
+                Transition::TweenValue {
+                    destination,
+                    speed,
+                    next,
+                } => {
+                    if let Some(mut from) = L::try_get_value(object.as_ref()) {
+                        let transition_result = from.transition_towards(
+                            destination,
+                            speed,
+                            &remaining_delta.as_secs_f32(),
+                        );
+                        L::try_set(object.as_mut(), from);
+                        if let Some(remaining_seconds) = transition_result {
+                            remaining_delta =
+                                Duration::try_from_secs_f32(remaining_seconds).unwrap_or_default();
+                            match std::mem::take(next) {
+                                Some(b) => StepResult::Advance(*b),
+                                None => StepResult::Finished,
+                            }
+                        } else {
+                            StepResult::Continue
+                        }
+                    } else {
+                        StepResult::Finished
+                    }
+                }
+                Transition::Wait { remaining, next } => {
+                    match remaining_delta.checked_sub(*remaining) {
+                        Some(new_remaining_delta) => {
+                            // The wait is over
+                            remaining_delta = new_remaining_delta;
+                            match std::mem::take(next) {
+                                Some(b) => StepResult::Advance(*b),
+                                None => StepResult::Finished,
+                            }
+                        }
+                        None => {
+                            *remaining = remaining.saturating_sub(remaining_delta);
+                            StepResult::Continue
+                        }
+                    }
+                }
+                Transition::Loop(a) => {
+                    let cloned = a.clone();
+                    let next = a.build_with_next(Transition::Loop(cloned));
+                    StepResult::Advance(next)
+                }
+            };
+
+            match step_result {
+                StepResult::Continue => {
+                    break 'inner;
+                }
+                StepResult::Finished => {
                     commands.entity(entity).remove::<Transition<L>>();
-                    return;
+                    break 'inner;
+                }
+                StepResult::Advance(next) => {
+                    *transition.as_mut() = next;
                 }
             }
-        };
-
-        // println!(
-        //     "Transition: {lens:?} {delta_seconds:?}",
-        //     lens = std::any::type_name::<L>()
-        // );
-
-        let from = L::try_get_value(component);
-
-        let Some(from) = from else {
-            return;
-        };
-
-        let new_value =
-            Tweenable::transition_towards(&from, &tp.step.destination, &speed, &delta_seconds);
-
-        //info!("Transition from {from:?} to {new_value:?}");
-
-        if tp.step.destination.eq(&new_value) && !tp.try_go_to_next_step() {
-            commands.entity(entity).remove::<Transition<L>>();
         }
-
-        <L as SetValueLens>::try_set(component, new_value);
     }
 }
 
