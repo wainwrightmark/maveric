@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, text::Text2dBounds, sprite::Anchor};
 use maveric::{prelude::*, widgets::text2d_node::Text2DNode};
 use strum::{Display, EnumIs, EnumIter, IntoEnumIterator, IntoStaticStr};
 
@@ -162,6 +162,8 @@ impl MavericNode for NumberNode {
                     font: FONT_PATH,
                     alignment: TextAlignment::Center,
                     linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
+                    text_anchor: Anchor::default(),
+                    text_2d_bounds: Text2dBounds::default()
                 },
                 context,
             );
