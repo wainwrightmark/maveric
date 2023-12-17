@@ -8,6 +8,8 @@ use crate::transition::prelude::*;
 use super::speed::calculate_speed;
 
 pub trait CanHaveTransition: MavericNode + Sized {
+
+    /// Transition from `initial_value` to `destination` when the node is first created
     #[must_use]
     fn with_transition_in<L: Lens + GetValueLens + SetValueLens>(
         self,
@@ -31,7 +33,8 @@ pub trait CanHaveTransition: MavericNode + Sized {
             (),
         )
     }
-
+    /// Transition from `initial_value` to `destination` when the node is first created
+    /// Transition to `out_destination` when the node is removed
     #[must_use]
     fn with_transition_in_out<L: Lens + GetValueLens + SetValueLens>(
         self,
@@ -57,7 +60,7 @@ pub trait CanHaveTransition: MavericNode + Sized {
             DurationDeletionPathMaker::new(out_duration, out_destination),
         )
     }
-
+    /// Transition to `destination` whenever it changes
     #[must_use]
     fn with_transition_to<L: Lens + GetValueLens + SetValueLens>(
         self,
@@ -102,7 +105,7 @@ impl<N: MavericNode> CanHaveTransition for N {}
 
 /// This requires the animation plugin
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct WithTransition<
     N: MavericNode,
     L: Lens + GetValueLens + SetValueLens,
@@ -116,18 +119,18 @@ pub struct WithTransition<
     pub deletion: P,
 }
 
-impl<N: MavericNode, L: Lens + GetValueLens + SetValueLens, P: DeletionPathMaker<L>> PartialEq
-    for WithTransition<N, L, P>
-where
-    L::Value: Tweenable,
-    L::Object: Component,
-{
-    fn eq(&self, other: &Self) -> bool {
-        self.node == other.node
-            && self.transition == other.transition
-            && self.deletion == other.deletion
-    }
-}
+// impl<N: MavericNode, L: Lens + GetValueLens + SetValueLens, P: DeletionPathMaker<L>> PartialEq
+//     for WithTransition<N, L, P>
+// where
+//     L::Value: Tweenable,
+//     L::Object: Component,
+// {
+//     fn eq(&self, other: &Self) -> bool {
+//         self.node == other.node
+//             && self.transition == other.transition
+//             && self.deletion == other.deletion
+//     }
+// }
 
 impl<N: MavericNode, L: Lens + GetValueLens + SetValueLens, P: DeletionPathMaker<L>> MavericNode
     for WithTransition<N, L, P>
