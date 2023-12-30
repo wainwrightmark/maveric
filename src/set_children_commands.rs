@@ -21,7 +21,7 @@ pub struct SetChildrenCommands<
     args: NodeArgs<'n, 'p, 'c1, 'c2, N, C>,
     world: &'world World,
     ec: &'ec mut EntityCommands<'w, 's, 'a>,
-    alloc: &'alloc bumpalo::Bump,
+    alloc: &'alloc Allocator,
     phantom: PhantomData<R>,
 }
 
@@ -45,7 +45,7 @@ impl<
         args: NodeArgs<'n, 'p, 'c1, 'c2, N, C>,
         world: &'world World,
         ec: &'ec mut EntityCommands<'w, 's, 'a>,
-        alloc: &'alloc bumpalo::Bump,
+        alloc: &'alloc Allocator,
     ) -> Self {
         Self {
             args,

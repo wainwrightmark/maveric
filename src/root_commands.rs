@@ -8,7 +8,7 @@ use bevy::{
 
 pub(crate) struct RootCommands<'w, 's, 'b, 'q, 'alloc, R: MavericRoot> {
     commands: &'b mut Commands<'w, 's>,
-    remaining_old_entities: HashMap<ChildKey, Entity, DefaultHashBuilder, &'alloc bumpalo::Bump>,
+    remaining_old_entities: HashMap<ChildKey, Entity, DefaultHashBuilder, &'alloc Allocator>,
     world: &'q World,
     phantom: PhantomData<R>,
 }
@@ -18,13 +18,13 @@ impl<'w, 's, 'b, 'w1, 'q: 'w1, 'alloc, R: MavericRoot> RootCommands<'w, 's, 'b, 
         commands: &'b mut Commands<'w, 's>,
         world: &'q World,
         query: &Query<(Entity, &MavericChildComponent<R>), Without<Parent>>,
-        allocator: &'alloc bumpalo::Bump,
+        allocator: &'alloc Allocator,
     ) -> Self {
         let mut remaining_old_entities: HashMap<
             ChildKey,
             Entity,
             DefaultHashBuilder,
-            &'alloc bumpalo::Bump,
+            &'alloc Allocator,
         > = HashMap::new_in(allocator);
 
         remaining_old_entities.extend(

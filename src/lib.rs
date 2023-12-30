@@ -58,10 +58,24 @@ pub mod prelude {
     pub use crate::widgets::prelude::*;
 
     pub (crate) use crate::components::*;
-    pub(crate) use crate::allocator::*;
+
     pub(crate) use crate::helpers::*;
     pub(crate) use crate::root_commands::*;
 
+
     #[cfg(any(feature = "derive", test))]
     pub use maveric_macro::{MavericContext, MavericRoot};
+
+    #[cfg(feature="bumpalo")]
+    pub (crate) type Allocator = bumpalo::Bump;
+    #[cfg(not(feature="bumpalo"))]
+    pub (crate) type Allocator = allocator_api2::alloc::Global;
+
+    pub (crate) fn reset_allocator(allocator: &mut Allocator){
+        #[cfg(feature="bumpalo")]
+        {
+            allocator.reset();
+        }
+
+    }
 }

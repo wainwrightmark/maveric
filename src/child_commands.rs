@@ -39,7 +39,7 @@ impl DuplicateChecker {
 pub struct UnorderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> {
     ec: &'c mut EntityCommands<'w, 's, 'a>,
     world: &'world World,
-    remaining_old_entities: HashMap<ChildKey, Entity, DefaultHashBuilder, &'alloc bumpalo::Bump>,
+    remaining_old_entities: HashMap<ChildKey, Entity, DefaultHashBuilder, &'alloc Allocator>,
     phantom: PhantomData<R>,
     duplicate_checker: DuplicateChecker,
 }
@@ -103,12 +103,12 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot>
     pub(crate) fn new(
         ec: &'c mut EntityCommands<'w, 's, 'a>,
         world: &'world World,
-        allocator: &'alloc bumpalo::Bump,
+        allocator: &'alloc Allocator,
     ) -> Self {
         let children = world.get::<Children>(ec.id());
         let child_count = children.map(|x| x.len()).unwrap_or_default();
-        let mut remaining_old_entities: HashMap<ChildKey, Entity,BuildHasherDefault<AHasher>, &'alloc bumpalo::Bump> =
-        HashMap::<ChildKey, Entity,BuildHasherDefault<AHasher>,&'alloc bumpalo::Bump>::with_capacity_in(child_count, allocator);
+        let mut remaining_old_entities: HashMap<ChildKey, Entity,BuildHasherDefault<AHasher>, &'alloc Allocator> =
+        HashMap::<ChildKey, Entity,BuildHasherDefault<AHasher>,&'alloc Allocator>::with_capacity_in(child_count, allocator);
         if let Some(children) = children {
             remaining_old_entities.extend(children.iter().filter_map(|entity| {
                 world
@@ -139,9 +139,9 @@ pub struct OrderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> 
     world: &'world World,
     phantom: PhantomData<R>,
     remaining_old_entities:
-        HashMap<ChildKey, (usize, Entity), DefaultHashBuilder, &'alloc bumpalo::Bump>,
-    new_children: allocator_api2::vec::Vec<Entity, &'alloc bumpalo::Bump>,
-    new_indices: allocator_api2::vec::Vec<Option<usize>, &'alloc bumpalo::Bump>,
+        HashMap<ChildKey, (usize, Entity), DefaultHashBuilder, &'alloc Allocator>,
+    new_children: allocator_api2::vec::Vec<Entity, &'alloc Allocator>,
+    new_indices: allocator_api2::vec::Vec<Option<usize>, &'alloc Allocator>,
     duplicate_checker: DuplicateChecker,
 }
 
@@ -206,12 +206,12 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot>
     pub(crate) fn new(
         ec: &'c mut EntityCommands<'w, 's, 'a>,
         world: &'world World,
-        allocator: &'alloc bumpalo::Bump,
+        allocator: &'alloc Allocator,
     ) -> Self {
         let children = world.get::<Children>(ec.id());
         let child_count = children.map(|x| x.len()).unwrap_or_default();
-        let mut remaining_old_entities: HashMap<ChildKey, (usize, Entity),BuildHasherDefault<AHasher>, &'alloc bumpalo::Bump> =
-        HashMap::<ChildKey, (usize, Entity),BuildHasherDefault<AHasher>,&'alloc bumpalo::Bump>::with_capacity_in(child_count, allocator);
+        let mut remaining_old_entities: HashMap<ChildKey, (usize, Entity),BuildHasherDefault<AHasher>, &'alloc Allocator> =
+        HashMap::<ChildKey, (usize, Entity),BuildHasherDefault<AHasher>,&'alloc Allocator>::with_capacity_in(child_count, allocator);
 
         if let Some(children) = children {
             remaining_old_entities.extend(children.iter().enumerate().filter_map(
