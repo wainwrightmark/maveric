@@ -1,7 +1,14 @@
 use crate::prelude::*;
-use std::{any::type_name, marker::PhantomData};
+use std::{any::type_name, hash::BuildHasherDefault, marker::PhantomData};
 
-use bevy::{ecs::system::EntityCommands, prelude::*, utils::hashbrown::HashMap};
+use bevy::{
+    ecs::system::EntityCommands,
+    prelude::*,
+    utils::{
+        hashbrown::{hash_map::DefaultHashBuilder, HashMap},
+        AHasher,
+    },
+};
 
 pub trait ChildCommands {
     fn add_child<NChild: MavericNode>(
@@ -32,8 +39,7 @@ impl DuplicateChecker {
 pub struct UnorderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> {
     ec: &'c mut EntityCommands<'w, 's, 'a>,
     world: &'world World,
-    remaining_old_entities: HashMap<ChildKey, Entity>,
-    allocator: &'alloc mut Allocator,
+    remaining_old_entities: HashMap<ChildKey, Entity, DefaultHashBuilder, &'alloc bumpalo::Bump>,
     phantom: PhantomData<R>,
     duplicate_checker: DuplicateChecker,
 }
@@ -65,7 +71,7 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
                     child,
                     context,
                     self.world,
-                    self.allocator,
+                    self.remaining_old_entities.allocator(),
                 );
                 return; // do not spawn a new child;
             }
@@ -79,7 +85,14 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
 
         self.ec.with_children(|cb| {
             let cec = cb.spawn_empty();
-            create_recursive::<R, NChild>(cec, child, context, key, self.world, self.allocator);
+            create_recursive::<R, NChild>(
+                cec,
+                child,
+                context,
+                key,
+                self.world,
+                self.remaining_old_entities.allocator(),
+            );
         });
     }
 }
@@ -90,11 +103,12 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot>
     pub(crate) fn new(
         ec: &'c mut EntityCommands<'w, 's, 'a>,
         world: &'world World,
-        allocator: &'alloc mut Allocator,
+        allocator: &'alloc bumpalo::Bump,
     ) -> Self {
         let children = world.get::<Children>(ec.id());
-        let mut remaining_old_entities: HashMap<ChildKey, Entity> =
-            allocator.unordered_entities.claim();
+        let child_count = children.map(|x| x.len()).unwrap_or_default();
+        let mut remaining_old_entities: HashMap<ChildKey, Entity,BuildHasherDefault<AHasher>, &'alloc bumpalo::Bump> =
+        HashMap::<ChildKey, Entity,BuildHasherDefault<AHasher>,&'alloc bumpalo::Bump>::with_capacity_in(child_count, allocator);
         if let Some(children) = children {
             remaining_old_entities.extend(children.iter().filter_map(|entity| {
                 world
@@ -108,7 +122,6 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot>
             world,
             remaining_old_entities,
             phantom: PhantomData,
-            allocator,
             duplicate_checker: DuplicateChecker::default(),
         }
     }
@@ -118,10 +131,6 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot>
         for (_key, entity) in self.remaining_old_entities.iter() {
             let _ = delete_recursive::<R>(self.ec.commands(), *entity, self.world);
         }
-
-        self.allocator
-            .unordered_entities
-            .reclaim(self.remaining_old_entities);
     }
 }
 
@@ -129,12 +138,10 @@ pub struct OrderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> 
     ec: &'c mut EntityCommands<'w, 's, 'a>,
     world: &'world World,
     phantom: PhantomData<R>,
-
-    remaining_old_entities: HashMap<ChildKey, (usize, Entity)>,
-
-    new_children: Vec<Entity>,
-    new_indices: Vec<Option<usize>>,
-    allocator: &'alloc mut Allocator,
+    remaining_old_entities:
+        HashMap<ChildKey, (usize, Entity), DefaultHashBuilder, &'alloc bumpalo::Bump>,
+    new_children: allocator_api2::vec::Vec<Entity, &'alloc bumpalo::Bump>,
+    new_indices: allocator_api2::vec::Vec<Option<usize>, &'alloc bumpalo::Bump>,
     duplicate_checker: DuplicateChecker,
 }
 
@@ -165,7 +172,7 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
                     child,
                     context,
                     self.world,
-                    self.allocator,
+                    self.remaining_old_entities.allocator(),
                 );
                 self.new_children.push(entity);
                 self.new_indices.push(Some(old_index));
@@ -186,7 +193,7 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
             context,
             key,
             self.world,
-            self.allocator,
+            self.remaining_old_entities.allocator(),
         );
         self.new_children.push(id);
         self.new_indices.push(None);
@@ -199,12 +206,14 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot>
     pub(crate) fn new(
         ec: &'c mut EntityCommands<'w, 's, 'a>,
         world: &'world World,
-        allocator: &'alloc mut Allocator,
+        allocator: &'alloc bumpalo::Bump,
     ) -> Self {
-        let mut remaining_old_entities: HashMap<ChildKey, (usize, Entity)> =
-            allocator.ordered_entities.claim();
+        let children = world.get::<Children>(ec.id());
+        let child_count = children.map(|x| x.len()).unwrap_or_default();
+        let mut remaining_old_entities: HashMap<ChildKey, (usize, Entity),BuildHasherDefault<AHasher>, &'alloc bumpalo::Bump> =
+        HashMap::<ChildKey, (usize, Entity),BuildHasherDefault<AHasher>,&'alloc bumpalo::Bump>::with_capacity_in(child_count, allocator);
 
-        if let Some(children) = world.get::<Children>(ec.id()) {
+        if let Some(children) = children {
             remaining_old_entities.extend(children.iter().enumerate().filter_map(
                 |(index, entity)| {
                     world
@@ -220,9 +229,8 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot>
             remaining_old_entities,
 
             phantom: PhantomData,
-            new_children: allocator.ordered_children.claim(),
-            new_indices: allocator.ordered_indices.claim(),
-            allocator,
+            new_children: allocator_api2::vec::Vec::new_in(allocator),
+            new_indices: allocator_api2::vec::Vec::new_in(allocator),
             duplicate_checker: DuplicateChecker::default(),
         }
     }
@@ -292,20 +300,14 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot>
         if order_changed {
             self.ec.replace_children(&self.new_children);
         }
-
-        self.allocator.ordered_children.reclaim(self.new_children);
-        self.allocator
-            .ordered_entities
-            .reclaim(self.remaining_old_entities);
-        self.allocator.ordered_indices.reclaim(self.new_indices);
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate as maveric;
     use crate::prelude::*;
     use bevy::{time::TimePlugin, utils::HashSet};
-    use crate as maveric;
 
     #[test]
     pub fn test_ordering() {
@@ -446,12 +448,12 @@ mod tests {
     #[derive(Debug, Clone, PartialEq, Resource, Default)]
     pub struct TreeState(Vec<u32>);
 
-    impl MavericContext for TreeState{}
+    impl MavericContext for TreeState {}
 
     #[derive(Debug, Clone, PartialEq, Resource, Default)]
     pub struct LingerState(HashSet<u32>);
 
-    impl MavericContext for LingerState{}
+    impl MavericContext for LingerState {}
 
     #[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
     struct Root;

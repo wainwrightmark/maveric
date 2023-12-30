@@ -41,7 +41,7 @@ fn sync_state<R: MavericRoot>(
     param: StaticSystemParam<R::ContextParam<'_>>,
     root_query: Query<(Entity, &MavericChildComponent<R>), Without<Parent>>,
     world: &World,
-    mut allocator: Local<Allocator>,
+    mut allocator: Local<bumpalo::Bump>,
 ) {
     let context = R::get_context(param);
 
@@ -56,6 +56,8 @@ fn sync_state<R: MavericRoot>(
 
     R::set_children(&context, &mut root_commands);
     root_commands.finish();
+
+    allocator.reset();
 
     //allocator.print_info();
 }

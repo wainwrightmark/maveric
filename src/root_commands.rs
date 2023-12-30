@@ -1,14 +1,16 @@
 use std::{any::type_name, marker::PhantomData};
 
 use crate::prelude::*;
-use bevy::{prelude::*, utils::hashbrown::HashMap};
+use bevy::{
+    prelude::*,
+    utils::hashbrown::{hash_map::DefaultHashBuilder, HashMap},
+};
 
 pub(crate) struct RootCommands<'w, 's, 'b, 'q, 'alloc, R: MavericRoot> {
     commands: &'b mut Commands<'w, 's>,
-    remaining_old_entities: HashMap<ChildKey, Entity>,
+    remaining_old_entities: HashMap<ChildKey, Entity, DefaultHashBuilder, &'alloc bumpalo::Bump>,
     world: &'q World,
     phantom: PhantomData<R>,
-    allocator: &'alloc mut Allocator,
 }
 
 impl<'w, 's, 'b, 'w1, 'q: 'w1, 'alloc, R: MavericRoot> RootCommands<'w, 's, 'b, 'q, 'alloc, R> {
@@ -16,10 +18,14 @@ impl<'w, 's, 'b, 'w1, 'q: 'w1, 'alloc, R: MavericRoot> RootCommands<'w, 's, 'b, 
         commands: &'b mut Commands<'w, 's>,
         world: &'q World,
         query: &Query<(Entity, &MavericChildComponent<R>), Without<Parent>>,
-        allocator: &'alloc mut Allocator,
+        allocator: &'alloc bumpalo::Bump,
     ) -> Self {
-        let mut remaining_old_entities: HashMap<ChildKey, Entity> =
-            allocator.unordered_entities.claim();
+        let mut remaining_old_entities: HashMap<
+            ChildKey,
+            Entity,
+            DefaultHashBuilder,
+            &'alloc bumpalo::Bump,
+        > = HashMap::new_in(allocator);
 
         remaining_old_entities.extend(
             query
@@ -33,7 +39,6 @@ impl<'w, 's, 'b, 'w1, 'q: 'w1, 'alloc, R: MavericRoot> RootCommands<'w, 's, 'b, 
             remaining_old_entities,
             world,
             phantom: PhantomData,
-            allocator,
         }
     }
 
@@ -41,10 +46,6 @@ impl<'w, 's, 'b, 'w1, 'q: 'w1, 'alloc, R: MavericRoot> RootCommands<'w, 's, 'b, 
         for (_key, er) in self.remaining_old_entities.iter() {
             let _ = delete_recursive::<R>(self.commands, *er, self.world);
         }
-
-        self.allocator
-            .unordered_entities
-            .reclaim(self.remaining_old_entities);
     }
 }
 
@@ -71,7 +72,7 @@ impl<'w, 's, 'b, 'q, 'alloc, R: MavericRoot> ChildCommands
                     child,
                     context,
                     self.world,
-                    self.allocator,
+                    self.remaining_old_entities.allocator(),
                 );
             } else {
                 warn!(
@@ -88,12 +89,19 @@ impl<'w, 's, 'b, 'q, 'alloc, R: MavericRoot> ChildCommands
                     context,
                     key,
                     self.world,
-                    self.allocator,
+                    self.remaining_old_entities.allocator(),
                 );
             }
         } else {
-                        let cec = self.commands.spawn_empty();
-                        create_recursive::<R, NChild>(cec, child, context, key, self.world, self.allocator);
-                    }
+            let cec = self.commands.spawn_empty();
+            create_recursive::<R, NChild>(
+                cec,
+                child,
+                context,
+                key,
+                self.world,
+                self.remaining_old_entities.allocator(),
+            );
+        }
     }
 }

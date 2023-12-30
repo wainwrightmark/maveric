@@ -168,7 +168,7 @@ where
             .advanced(|args, commands| {
                 let (initial_value, update_transition) = args.node;
 
-                //info!("{args:?}");
+                //info!("With! {args:?}");
 
                 let transition = match args.event {
                     SetEvent::Created => {
@@ -230,6 +230,8 @@ where
                         })
                     }
                 };
+
+                //info!("Transition {transition:?}");
                 if let Some(transition) = transition {
                     commands.insert(transition);
                 }

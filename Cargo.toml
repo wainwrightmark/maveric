@@ -6,7 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+allocator-api2 = "0.2.16"
 bevy = { version = "0.12", default-features = false}
+bumpalo = { version = "3.14.0", features = ["allocator-api2"] }
 maveric-macro = { path = "./macro", version = "=0.1.0", optional = true }
 
 
