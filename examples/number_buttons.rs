@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-use maveric::transition::prelude::*;
 use maveric::prelude::*;
+use maveric::transition::prelude::*;
 use std::f32::consts;
 use std::string::ToString;
 use std::time::Duration;
@@ -14,9 +14,8 @@ const BOXES_PER_ROW: usize = 5;
 fn main() {
     let mut app = App::new();
 
-    app
-    .insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
-    .add_plugins(DefaultPlugins)
+    app.insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
+        .add_plugins(DefaultPlugins)
         .register_maveric::<Root>()
         .init_resource::<UIState>()
         .add_systems(Startup, setup)
@@ -33,9 +32,7 @@ pub struct UIState {
     pub dynamic_buttons: Vec<u32>,
 }
 
-impl MavericContext for UIState{
-
-}
+impl MavericContext for UIState {}
 
 impl UIState {
     pub fn remove_or_readd(&mut self, next_number: u32) {
@@ -202,8 +199,6 @@ impl MavericNode for DynamicGrid {
             })
     }
 }
-
-
 
 const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
 const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);

@@ -60,7 +60,6 @@ impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Ma
                 node,
                 previous,
             } = args;
-            
 
             let Some(center_page) = (node.get_child)(node.current_page) else {
                 return;

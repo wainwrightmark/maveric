@@ -1,8 +1,8 @@
-use std::time::Duration;
 use bevy::prelude::*;
+use std::time::Duration;
 
 /// a Component that will be deleted when the timer runs out
-#[derive(Debug, Component)]
+#[derive(Debug, Component, PartialEq, Eq, Clone, Copy, PartialOrd, Ord, Hash, Default)]
 pub struct ScheduledForDeletion {
     pub remaining: Duration,
 }
@@ -14,7 +14,6 @@ impl ScheduledForDeletion {
         }
     }
 }
-
 
 #[derive(Debug, Default)]
 pub struct ScheduleForDeletionPlugin;

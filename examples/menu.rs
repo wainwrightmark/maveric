@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-use maveric::transition::prelude::*;
 use maveric::prelude::*;
+use maveric::transition::prelude::*;
 
 use std::string::ToString;
 use std::time::Duration;
@@ -70,11 +70,10 @@ pub enum MenuState {
     ShowLevelsPage(u32),
 }
 
-impl MavericContext for MenuState{}
+impl MavericContext for MenuState {}
 
 #[derive(Debug, Clone, Copy, PartialEq, Default, MavericRoot)]
 pub struct MenuRoot;
-
 
 impl MavericRootChildren for MenuRoot {
     type Context = MenuState;
@@ -217,47 +216,49 @@ impl MavericNode for MainOrLevelMenu {
     }
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
-        commands.ignore_context() .unordered_children_with_node(|node,  commands| match node {
-            MainOrLevelMenu::Main => {
-                for (key, action) in ButtonAction::main_buttons().iter().enumerate() {
-                    let button = text_button_node(*action);
-                    let button = button.with_transition_in::<BackgroundColorLens>(
-                        Color::WHITE.with_a(0.0),
-                        Color::WHITE,
-                        Duration::from_secs_f32(1.0),
-                    );
+        commands
+            .ignore_context()
+            .unordered_children_with_node(|node, commands| match node {
+                MainOrLevelMenu::Main => {
+                    for (key, action) in ButtonAction::main_buttons().iter().enumerate() {
+                        let button = text_button_node(*action);
+                        let button = button.with_transition_in::<BackgroundColorLens>(
+                            Color::WHITE.with_a(0.0),
+                            Color::WHITE,
+                            Duration::from_secs_f32(1.0),
+                        );
 
-                    commands.add_child(key as u32, button, &())
-                }
+                        commands.add_child(key as u32, button, &())
+                    }
 
-                commands.add_child(
-                    "image",
-                    ImageNode {
-                        style: BigImageNodeStyle,
-                        background_color: Color::WHITE,
-                        path: r#"images\MedalsGold.png"#,
-                    },
-                    &(),
-                )
-            }
-            MainOrLevelMenu::Level(page) => {
-                let start = page * LEVELS_PER_PAGE;
-                let end = start + LEVELS_PER_PAGE;
-
-                for (key, level) in (start..end).enumerate() {
                     commands.add_child(
-                        key as u32,
-                        text_and_image_button_node(
-                            ButtonAction::GotoLevel { level },
-                            r#"images/MedalsBlack.png"#,
-                        ),
+                        "image",
+                        ImageNode {
+                            style: BigImageNodeStyle,
+                            background_color: Color::WHITE,
+                            path: r#"images\MedalsGold.png"#,
+                        },
                         &(),
                     )
                 }
+                MainOrLevelMenu::Level(page) => {
+                    let start = page * LEVELS_PER_PAGE;
+                    let end = start + LEVELS_PER_PAGE;
 
-                commands.add_child("buttons", LevelMenuArrows(*page), &());
-            }
-        });
+                    for (key, level) in (start..end).enumerate() {
+                        commands.add_child(
+                            key as u32,
+                            text_and_image_button_node(
+                                ButtonAction::GotoLevel { level },
+                                r#"images/MedalsBlack.png"#,
+                            ),
+                            &(),
+                        )
+                    }
+
+                    commands.add_child("buttons", LevelMenuArrows(*page), &());
+                }
+            });
     }
 }
 

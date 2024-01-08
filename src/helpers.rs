@@ -8,7 +8,7 @@ pub(crate) fn create_recursive<R: MavericRoot, N: MavericNode>(
     context: &<N::Context as NodeContext>::Wrapper<'_>,
     key: ChildKey,
     world: &World,
-    alloc: & Allocator,
+    alloc: &Allocator,
 ) -> Entity {
     let component_commands = SetComponentCommands::<N, N::Context>::new(
         NodeArgs::new(context, SetEvent::Created, &node, None),
@@ -31,8 +31,6 @@ pub(crate) fn create_recursive<R: MavericRoot, N: MavericNode>(
     let child_component = MavericChildComponent::<R>::new::<N>(key);
 
     entity_commands.insert((node_component, child_component));
-
-
 
     entity_commands.id()
 }
@@ -65,7 +63,7 @@ pub(crate) fn delete_recursive<R: MavericRootChildren>(
         }
         DeletionPolicy::Linger(duration) => {
             cc.insert(ScheduledForDeletion {
-                remaining: duration
+                remaining: duration,
             });
 
             Some(ec.id())
@@ -79,7 +77,7 @@ pub(crate) fn update_recursive<R: MavericRoot, N: MavericNode>(
     node: N,
     context: &<N::Context as NodeContext>::Wrapper<'_>,
     world: &World,
-    alloc: & Allocator,
+    alloc: &Allocator,
 ) {
     let mut ec = commands.entity(entity);
     let undeleted = if world.get::<ScheduledForDeletion>(entity).is_some() {

@@ -1,4 +1,4 @@
-use bevy::{prelude::*, text::Text2dBounds, sprite::Anchor};
+use bevy::{prelude::*, sprite::Anchor, text::Text2dBounds};
 use maveric::{prelude::*, widgets::text2d_node::Text2DNode};
 use strum::{Display, EnumIs, EnumIter, IntoEnumIterator, IntoStaticStr};
 
@@ -163,7 +163,7 @@ impl MavericNode for NumberNode {
                     alignment: TextAlignment::Center,
                     linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
                     text_anchor: Anchor::default(),
-                    text_2d_bounds: Text2dBounds::default()
+                    text_2d_bounds: Text2dBounds::default(),
                 },
                 context,
             );
@@ -176,7 +176,7 @@ pub struct GraphState {
     number: u32,
 }
 
-impl MavericContext for GraphState{}
+impl MavericContext for GraphState {}
 
 fn organize_graph(time: Res<Time>, mut nodes: Query<(&mut Transform, &GraphNode)>) {
     const ATTRACTION: f32 = 0.01;

@@ -109,7 +109,7 @@ pub struct TreeState {
     red_leaf_count: u32,
 }
 
-impl MavericContext for TreeState{}
+impl MavericContext for TreeState {}
 
 #[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
 struct Root;
@@ -126,7 +126,6 @@ impl MavericRootChildren for Root {
         }
     }
 }
-
 
 #[derive(Debug, Clone, PartialEq, Default)]
 struct Branch;

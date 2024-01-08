@@ -258,9 +258,9 @@ pub mod tests {
 
     #[test]
     pub fn test_element_at_lens() {
-        type L0 = ElementAtLens::<0,2, f64>;
-        type L1 = ElementAtLens::<1,2, f64>;
-        let mut array = [0.0,1.0];
+        type L0 = ElementAtLens<0, 2, f64>;
+        type L1 = ElementAtLens<1, 2, f64>;
+        let mut array = [0.0, 1.0];
 
         assert_eq!(L0::try_get_value(&array), Some(0.0));
         assert_eq!(L1::try_get_value(&array), Some(1.0));

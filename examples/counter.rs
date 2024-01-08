@@ -6,9 +6,8 @@ use std::string::ToString;
 fn main() {
     let mut app = App::new();
 
-    app
-    .insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
-    .add_plugins(DefaultPlugins)
+    app.insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
+        .add_plugins(DefaultPlugins)
         .init_resource::<CounterState>()
         .add_systems(Startup, setup)
         .add_systems(Update, button_system)
@@ -61,7 +60,7 @@ pub struct CounterState {
     number: usize,
 }
 
-impl MavericContext for CounterState{}
+impl MavericContext for CounterState {}
 
 fn button_system(
     mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<Button>)>,

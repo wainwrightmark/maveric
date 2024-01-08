@@ -35,12 +35,12 @@ impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext> NodeArgs<'n, 'p, 'c1, 'c2, 
     }
 
     /// Returns true if this is a creation or undeletion, or if the context or args have changed
-    #[must_use] pub fn is_hot(&self) -> bool {
+    #[must_use]
+    pub fn is_hot(&self) -> bool {
         match self.event {
             SetEvent::Created | SetEvent::Undeleted => true,
-            SetEvent::Updated  => {
-                C::has_changed(self.context)
-                    || self.previous.map_or(true, |p| !p.eq(self.node))
+            SetEvent::Updated => {
+                C::has_changed(self.context) || self.previous.map_or(true, |p| !p.eq(self.node))
             }
         }
     }

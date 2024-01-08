@@ -7,7 +7,8 @@ pub enum DeletionPolicy {
 }
 
 impl DeletionPolicy {
-    #[must_use] pub fn linger(secs: f32) -> Self {
+    #[must_use]
+    pub fn linger(secs: f32) -> Self {
         if secs <= 0.0 {
             Self::DeleteImmediately
         } else {

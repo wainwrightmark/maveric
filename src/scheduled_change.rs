@@ -1,5 +1,5 @@
+use bevy::{ecs::system::EntityCommands, prelude::*};
 use std::time::Duration;
-use bevy::{prelude::*, ecs::system::EntityCommands};
 
 #[derive(Component)]
 pub struct ScheduledChange {
@@ -9,7 +9,7 @@ pub struct ScheduledChange {
 
 pub struct ScheduledChangePlugin;
 
-impl Plugin for ScheduledChangePlugin{
+impl Plugin for ScheduledChangePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Last, handle_scheduled_changes);
     }
@@ -27,8 +27,9 @@ fn handle_scheduled_changes(
                 let mut ec = commands.entity(entity);
                 ec.remove::<ScheduledChange>();
 
-                let mut f: Box<dyn FnOnce(&mut bevy::ecs::system::EntityCommands) + 'static + Sync + Send> =
-                    Box::new(|_| {});
+                let mut f: Box<
+                    dyn FnOnce(&mut bevy::ecs::system::EntityCommands) + 'static + Sync + Send,
+                > = Box::new(|_| {});
 
                 std::mem::swap(&mut f, &mut schedule.boxed_change);
                 f(&mut ec);

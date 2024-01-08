@@ -60,8 +60,6 @@ impl MavericRootChildren for Root {
     }
 }
 
-
-
 #[derive(Debug, Clone, PartialEq, Default)]
 struct Branch;
 

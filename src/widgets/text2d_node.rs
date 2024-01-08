@@ -48,8 +48,6 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode fo
         commands.node_to_component(|x| &x.text_anchor, anchor_compare);
         commands.node_to_component(|x| &x.text_2d_bounds, text_2d_bound_compare);
 
-
-
         commands.scope(|commands| {
             commands
                 .advanced(|args, commands| {

@@ -117,20 +117,26 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
 
     /// Convert the node to a component and insert if it is different from the previous value
     #[allow(clippy::return_self_not_must_use)]
-    pub fn node_to_component<B: Component + Clone>(&mut self, map: impl Fn(&N) -> &B, eq: impl Fn(&B, &B)-> bool) {
+    pub fn node_to_component<B: Component + Clone>(
+        &mut self,
+        map: impl Fn(&N) -> &B,
+        eq: impl Fn(&B, &B) -> bool,
+    ) {
+        self.scope(|x| {
+            x.ignore_context()
+                .advanced(|n, c| {
+                    if !n.is_hot() {
+                        return;
+                    }
 
-        self.scope(|x|x.ignore_context() .advanced(|n,c|{
-            if !n.is_hot(){
-                return;
-            }
-
-            let b1 = map(n.node);
-            if n.previous.is_some_and(|p|eq(map(p), b1) ){
-                return;
-            }
-            c.insert(b1.clone());
-
-        }).finish());
+                    let b1 = map(n.node);
+                    if n.previous.is_some_and(|p| eq(map(p), b1)) {
+                        return;
+                    }
+                    c.insert(b1.clone());
+                })
+                .finish()
+        });
     }
 
     /// Gives you advanced access to the commands.

@@ -530,7 +530,8 @@ impl_tweenable!(
 mod tests {
     use bevy::{
         math::{Quat, Vec3},
-        transform::components::Transform, render::color::Color,
+        render::color::Color,
+        transform::components::Transform,
     };
 
     use super::Tweenable;
@@ -602,20 +603,30 @@ mod tests {
 
     #[test]
     pub fn test_transition_color() {
-        let mut value = Color::Rgba { red: 0.3, green: 0.4, blue: 0.5, alpha: 0.0 };
+        let mut value = Color::Rgba {
+            red: 0.3,
+            green: 0.4,
+            blue: 0.5,
+            alpha: 0.0,
+        };
 
-        let destination =Color::Rgba { red: 0.6, green: 0.8, blue: 1.0, alpha: 1.0 };
+        let destination = Color::Rgba {
+            red: 0.6,
+            green: 0.8,
+            blue: 1.0,
+            alpha: 1.0,
+        };
 
-        let r1 = Tweenable::transition_towards(
-            &mut value,
-            &destination,
-            &0.1.into(),
-            &1.0,
-        );
+        let r1 = Tweenable::transition_towards(&mut value, &destination, &0.1.into(), &1.0);
 
         assert_eq!(r1, None);
 
-        let expected =  Color::Rgba { red: 0.4, green: 0.5, blue: 0.6, alpha: 0.1 };
+        let expected = Color::Rgba {
+            red: 0.4,
+            green: 0.5,
+            blue: 0.6,
+            alpha: 0.1,
+        };
 
         assert_eq!(value, expected);
     }

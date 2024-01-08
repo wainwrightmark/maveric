@@ -1,4 +1,4 @@
-use bevy::ecs::system::{StaticSystemParam, ReadOnlySystemParam};
+use bevy::ecs::system::{ReadOnlySystemParam, StaticSystemParam};
 
 use crate::prelude::*;
 

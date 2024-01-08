@@ -96,7 +96,7 @@ mod tests {
         );
     }
 
-     #[test]
+    #[test]
     pub fn test_transition_wait() {
         let mut app = App::new();
         app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(
@@ -109,7 +109,7 @@ mod tests {
             commands.spawn_empty().insert((
                 Transform::default(),
                 TransitionBuilder::<TransformTranslationLens>::default()
-                .then_wait(Duration::from_secs_f32(0.2))
+                    .then_wait(Duration::from_secs_f32(0.2))
                     .then_tween(Vec3::X * 2.0, 10.0.into())
                     .build(),
             ));
@@ -145,9 +145,10 @@ mod tests {
             commands.spawn_empty().insert((
                 Transform::default(),
                 TransitionBuilder::<TransformTranslationLens>::default()
-                .then_tween(Vec3::X * 10.0, 40.0.into())
-                .then_set_value(Vec3::ZERO)
-                .then_tween(Vec3::Y * 10.0, 50.0.into()).build(),
+                    .then_tween(Vec3::X * 10.0, 40.0.into())
+                    .then_set_value(Vec3::ZERO)
+                    .then_tween(Vec3::Y * 10.0, 50.0.into())
+                    .build(),
             ));
         }
 
@@ -182,9 +183,9 @@ mod tests {
             commands.spawn_empty().insert((
                 Transform::default(),
                 TransitionBuilder::<TransformTranslationLens>::default()
-                .then_tween(Vec3::X * 3.0, 10.0.into())
-                .then_tween(Vec3::X * 1.0, 10.0.into())
-                .build_loop()
+                    .then_tween(Vec3::X * 3.0, 10.0.into())
+                    .then_tween(Vec3::X * 1.0, 10.0.into())
+                    .build_loop(),
             ));
         }
 
@@ -204,7 +205,6 @@ mod tests {
                 [Transform::from_translation(Vec3::X * 2.0)],
                 [Transform::from_translation(Vec3::X * 1.0)],
                 [Transform::from_translation(Vec3::X * 2.0)],
-
             ],
             "step",
         );

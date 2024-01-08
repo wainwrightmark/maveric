@@ -1,14 +1,13 @@
 use bevy::prelude::*;
-use maveric::{prelude::*, helpers::ScheduledForDeletion};
+use maveric::{helpers::ScheduledForDeletion, prelude::*};
 
 use std::{string::ToString, time::Duration};
 
 fn main() {
     let mut app = App::new();
 
-    app
-    .insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
-    .add_plugins(DefaultPlugins)
+    app.insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
+        .add_plugins(DefaultPlugins)
         .init_resource::<CounterState>()
         .add_systems(Startup, setup)
         .add_systems(Update, button_system)
@@ -56,16 +55,22 @@ impl MavericRootChildren for Root {
             },
             &(),
         );
-        commands.add_child(1, ChangeWatcher{number:context.number}, &());
+        commands.add_child(
+            1,
+            ChangeWatcher {
+                number: context.number,
+            },
+            &(),
+        );
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ChangeWatcher{
-    number: usize
+pub struct ChangeWatcher {
+    number: usize,
 }
 
-impl MavericNode for ChangeWatcher{
+impl MavericNode for ChangeWatcher {
     type Context = ();
 
     fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
@@ -76,38 +81,55 @@ impl MavericNode for ChangeWatcher{
         commands.no_children()
     }
 
-    fn on_changed(&self, _previous: &Self, _context: &<Self::Context as NodeContext>::Wrapper<'_>,  world: &World, entity_commands: &mut bevy::ecs::system::EntityCommands ) {
-        entity_commands.with_children(|cb|{
+    fn on_changed(
+        &self,
+        _previous: &Self,
+        _context: &<Self::Context as NodeContext>::Wrapper<'_>,
+        world: &World,
+        entity_commands: &mut bevy::ecs::system::EntityCommands,
+    ) {
+        entity_commands.with_children(|cb| {
             let asset_server = world.resource::<AssetServer>();
 
             cb.spawn((
-
-                Text2dBundle{
-                    text: Text::from_section(format!("{}", self.number), TextStyle{
-                        font: asset_server.load(FONT_PATH), font_size: 128.0,
-                         color: Color::GREEN
-                    }),
+                Text2dBundle {
+                    text: Text::from_section(
+                        format!("{}", self.number),
+                        TextStyle {
+                            font: asset_server.load(FONT_PATH),
+                            font_size: 128.0,
+                            color: Color::GREEN,
+                        },
+                    ),
                     ..default()
                 },
-                ScheduledForDeletion{
-                    remaining: Duration::from_secs_f32(2.0)
+                ScheduledForDeletion {
+                    remaining: Duration::from_secs_f32(2.0),
                 },
-                TransitionBuilder::<TransformScaleLens>::default().then_tween(Vec3::ZERO, 2.0.into()).build(),
-                TransitionBuilder::<TransformTranslationLens>::default().then_tween(Vec3{x: 0.0, y: 5000.0, z:0.0}, 500.0.into()).build(),
-
+                TransitionBuilder::<TransformScaleLens>::default()
+                    .then_tween(Vec3::ZERO, 2.0.into())
+                    .build(),
+                TransitionBuilder::<TransformTranslationLens>::default()
+                    .then_tween(
+                        Vec3 {
+                            x: 0.0,
+                            y: 5000.0,
+                            z: 0.0,
+                        },
+                        500.0.into(),
+                    )
+                    .build(),
             ));
         });
     }
 }
-
-
 
 #[derive(Debug, Clone, PartialEq, Resource, Default)]
 pub struct CounterState {
     number: usize,
 }
 
-impl MavericContext for CounterState{}
+impl MavericContext for CounterState {}
 
 fn button_system(
     mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<Button>)>,

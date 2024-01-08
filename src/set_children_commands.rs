@@ -56,16 +56,17 @@ impl<
         }
     }
 
-    #[must_use] pub fn ignore_node(
+    #[must_use]
+    pub fn ignore_node(
         self,
     ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, (), C, R> {
         self.map_args(|_| &())
     }
 
-    #[must_use] pub fn ignore_context(
+    #[must_use]
+    pub fn ignore_context(
         self,
-    ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N, (), R>
-    {
+    ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N, (), R> {
         self.map_context(|_| &())
     }
 

@@ -11,7 +11,6 @@ pub struct TextNode<T: Into<String> + PartialEq + Clone + Send + Sync + 'static>
     pub linebreak_behavior: bevy::text::BreakLineOn,
 } // TODO style
 
-
 impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode for TextNode<T> {
     type Context = ();
 
@@ -20,7 +19,9 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode fo
 
         commands.advanced(|args, commands| {
             let node = args.node;
-            let server: &AssetServer = commands.get_res_untracked().expect("Could not get asset server");
+            let server: &AssetServer = commands
+                .get_res_untracked()
+                .expect("Could not get asset server");
             let font = server.load(node.font);
             let mut bundle = Text::from_section(
                 node.text.clone(),

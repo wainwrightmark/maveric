@@ -5,7 +5,8 @@ use bevy::prelude::*;
 pub use super::prelude::*;
 use super::speed::calculate_speed;
 
-pub trait DeletionPathMaker<L: Lens + GetValueLens + SetValueLens>: Send + Sync + PartialEq + 'static
+pub trait DeletionPathMaker<L: Lens + GetValueLens + SetValueLens>:
+    Send + Sync + PartialEq + 'static
 where
     L::Value: Tweenable,
     L::Object: Component,

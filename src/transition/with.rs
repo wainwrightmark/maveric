@@ -8,7 +8,6 @@ use crate::transition::prelude::*;
 use super::speed::calculate_speed;
 
 pub trait CanHaveTransition: MavericNode + Sized {
-
     /// Transition from `initial_value` to `destination` when the node is first created
     #[must_use]
     fn with_transition_in<L: Lens + GetValueLens + SetValueLens>(

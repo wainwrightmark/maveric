@@ -22,15 +22,15 @@ pub mod node_context;
 pub mod plugin;
 pub mod root;
 pub mod root_commands;
+pub mod scheduled_change;
+pub mod scheduled_for_deletion;
 pub mod set_children_commands;
 pub mod set_components_commands;
 pub mod set_event;
 pub mod transition;
-pub mod with_bundle;
 #[cfg(any(feature = "widgets", test))]
 pub mod widgets;
-pub mod scheduled_for_deletion;
-pub mod scheduled_change;
+pub mod with_bundle;
 
 pub mod prelude {
     pub use crate::child_commands::*;
@@ -46,36 +46,34 @@ pub mod prelude {
     pub use crate::node_context::*;
     pub use crate::plugin::*;
     pub use crate::root::*;
+    pub use crate::scheduled_change::*;
+    pub use crate::scheduled_for_deletion::*;
     pub use crate::set_children_commands::*;
     pub use crate::set_components_commands::*;
     pub use crate::set_event::*;
-    pub use crate::scheduled_for_deletion::*;
-    pub use crate::scheduled_change::*;
     pub use crate::transition::prelude::*;
     pub use crate::with_bundle;
 
     #[cfg(any(feature = "widgets", test))]
     pub use crate::widgets::prelude::*;
 
-    pub (crate) use crate::components::*;
+    pub(crate) use crate::components::*;
 
     pub(crate) use crate::helpers::*;
     pub(crate) use crate::root_commands::*;
 
-
     #[cfg(any(feature = "derive", test))]
     pub use maveric_macro::{MavericContext, MavericRoot};
 
-    #[cfg(feature="bumpalo")]
-    pub (crate) type Allocator = bumpalo::Bump;
-    #[cfg(not(feature="bumpalo"))]
-    pub (crate) type Allocator = allocator_api2::alloc::Global;
+    #[cfg(feature = "bumpalo")]
+    pub(crate) type Allocator = bumpalo::Bump;
+    #[cfg(not(feature = "bumpalo"))]
+    pub(crate) type Allocator = allocator_api2::alloc::Global;
 
-    pub (crate) fn reset_allocator(allocator: &mut Allocator){
-        #[cfg(feature="bumpalo")]
+    pub(crate) fn reset_allocator(allocator: &mut Allocator) {
+        #[cfg(feature = "bumpalo")]
         {
             allocator.reset();
         }
-
     }
 }
