@@ -117,7 +117,7 @@ impl MavericNode for ChangeWatcher {
                             z: 0.0,
                         },
                         500.0.into(),
-                        &EaseInCirc,
+                        Ease::CircIn,
                     )
                     .build(),
             ));

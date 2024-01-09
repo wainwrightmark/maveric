@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use maveric::prelude::*;
 
-
 use std::string::ToString;
 use std::time::Duration;
 use strum::{Display, EnumIs};
@@ -97,10 +96,15 @@ impl MavericRootChildren for MenuRoot {
                 commands.add_child("open_icon", menu_button_node(), &());
                 return;
             }
-            MenuState::ShowMainMenu => Carousel::new(0, get_carousel_child, transition_duration),
-            MenuState::ShowLevelsPage(n) => {
-                Carousel::new(n + 1_u32, get_carousel_child, transition_duration)
+            MenuState::ShowMainMenu => {
+                Carousel::new(0, get_carousel_child, transition_duration, Ease::ExpoInOut)
             }
+            MenuState::ShowLevelsPage(n) => Carousel::new(
+                n + 1_u32,
+                get_carousel_child,
+                transition_duration,
+                Ease::ExpoInOut,
+            ),
         };
 
         commands.add_child("carousel", carousel, context);
@@ -226,7 +230,7 @@ impl MavericNode for MainOrLevelMenu {
                             Color::WHITE.with_a(0.0),
                             Color::WHITE,
                             Duration::from_secs_f32(1.0),
-                            None
+                            None,
                         );
 
                         commands.add_child(key as u32, button, &())

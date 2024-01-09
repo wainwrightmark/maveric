@@ -15,7 +15,7 @@ pub trait CanHaveTransition: MavericNode + Sized {
         initial_value: L::Value,
         destination: L::Value,
         duration: Duration,
-        ease: Option<&'static dyn Ease>,
+        ease: Option<Ease>,
     ) -> WithTransition<Self, L, ()>
     where
         L::Value: Tweenable,
@@ -72,7 +72,7 @@ pub trait CanHaveTransition: MavericNode + Sized {
         self,
         destination: L::Value,
         speed: <L::Value as Tweenable>::Speed,
-        ease: Option<&'static dyn Ease>,
+        ease: Option<Ease>,
     ) -> WithTransition<Self, L, ()>
     where
         L::Value: Tweenable,

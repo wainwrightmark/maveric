@@ -7,15 +7,22 @@ pub struct Carousel<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Op
     current_page: u32,
     get_child: F,
     transition_duration: Duration,
+    ease: Ease,
     phantom: PhantomData<Child>,
 }
 
 impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Carousel<Child, F> {
-    pub const fn new(current_page: u32, get_child: F, transition_duration: Duration) -> Self {
+    pub const fn new(
+        current_page: u32,
+        get_child: F,
+        transition_duration: Duration,
+        ease: Ease,
+    ) -> Self {
         Self {
             current_page,
             get_child,
             transition_duration,
+            ease,
             phantom: PhantomData,
         }
     }
@@ -28,6 +35,7 @@ impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Pa
         self.current_page == other.current_page
             && self.phantom == other.phantom
             && self.transition_duration == other.transition_duration
+            && self.ease == other.ease
     }
 }
 
@@ -91,7 +99,7 @@ impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Ma
                         Val::Percent(CENTER),
                         Val::Percent(previous_position),
                         node.transition_duration,
-                        Some(& EaseInCubic)
+                        Some(Ease::CubicIn),
                     );
 
                     commands.add_child(*previous_page_number, previous_page, context);
@@ -102,7 +110,7 @@ impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Ma
                 Val::Percent(center_page_initial),
                 Val::Percent(CENTER),
                 node.transition_duration,
-                Some(& EaseInCubic)
+                Some(node.ease),
             );
 
             commands.add_child(node.current_page, center_page, context);

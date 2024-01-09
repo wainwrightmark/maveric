@@ -22,7 +22,7 @@ where
 // {
 //     duration: Duration,
 //     destination: L::Value,
-//     ease: &'static dyn Ease,
+//     ease: Ease,
 // }
 
 // impl<L: Lens + GetValueLens> EaseDeletionPathMaker<L>
@@ -30,7 +30,7 @@ where
 //     L::Value: Tweenable,
 //     L::Object: Component,
 // {
-//     pub fn new(duration: Duration, destination: L::Value, ease: &'static dyn Ease) -> Self {
+//     pub fn new(duration: Duration, destination: L::Value, ease: Ease) -> Self {
 //         Self {
 //             duration,
 //             destination,

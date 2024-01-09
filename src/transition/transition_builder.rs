@@ -43,7 +43,7 @@ where
         self,
         destination: <L as Lens>::Value,
         speed: <<L as Lens>::Value as Tweenable>::Speed,
-        ease: &'static dyn Ease,
+        ease: Ease,
     ) -> TransitionBuilderEase<L, Self> {
         TransitionBuilderEase {
             previous: self,
@@ -205,7 +205,7 @@ pub struct TransitionBuilderEase<
     previous: Previous,
     destination: L::Value,
     speed: <<L as Lens>::Value as Tweenable>::Speed,
-    ease: &'static dyn Ease,
+    ease: Ease,
 }
 
 impl<L: Lens + GetValueLens + SetValueLens, Previous: TransitionBuilderCanThen<L>>

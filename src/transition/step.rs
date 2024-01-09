@@ -25,14 +25,14 @@ where
         destination: L::Value,
         elapsed: Duration,
         total: Duration,
-        ease: &'static dyn Ease,
+        ease: Ease,
         next: Option<Box<Self>>,
     },
 
     ThenEase {
         destination: L::Value,
         speed: <L::Value as Tweenable>::Speed,
-        ease: &'static dyn Ease,
+        ease: Ease,
         next: Option<Box<Self>>,
     },
 
