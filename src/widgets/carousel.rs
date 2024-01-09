@@ -91,6 +91,7 @@ impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Ma
                         Val::Percent(CENTER),
                         Val::Percent(previous_position),
                         node.transition_duration,
+                        Some(& EaseInCubic)
                     );
 
                     commands.add_child(*previous_page_number, previous_page, context);
@@ -101,6 +102,7 @@ impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Ma
                 Val::Percent(center_page_initial),
                 Val::Percent(CENTER),
                 node.transition_duration,
+                Some(& EaseInCubic)
             );
 
             commands.add_child(node.current_page, center_page, context);

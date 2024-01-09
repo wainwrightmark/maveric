@@ -1,7 +1,7 @@
 use bevy::{prelude::*, time::TimePlugin};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use maveric::prelude::*;
-use maveric_macro::{MavericRoot};
+use maveric_macro::MavericRoot;
 
 criterion_group!(
     benches,

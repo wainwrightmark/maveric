@@ -27,6 +27,13 @@ pub trait Tweenable: Debug + Clone + Send + Sync + PartialEq + 'static {
         speed: &Self::Speed,
         delta_seconds: &f32,
     ) -> Option<f32>;
+
+    /// Performs a linear interpolation between `self` and `rhs` based on the value `s`.
+    ///
+    /// When `s` is `0.0`, the result will be equal to `self`.  When `s` is `1.0`, the result
+    /// will be equal to `rhs`. When `s` is outside of range `[0, 1]`, the result is linearly
+    /// extrapolated.
+    fn lerp_value(&self, rhs: &Self, s: f32) -> Self;
 }
 
 impl Tweenable for f32 {
@@ -60,6 +67,10 @@ impl Tweenable for f32 {
             *self = *destination;
             Some(delta_seconds - (distance.abs() / speed.amount_per_second))
         }
+    }
+
+    fn lerp_value(&self, rhs: &Self, s: f32) -> Self {
+        self + ((rhs - self) * s)
     }
 }
 
@@ -95,6 +106,10 @@ impl Tweenable for Vec2 {
 
         Duration::try_from_secs_f32(self.distance(*rhs) / speed.units_per_second)
     }
+
+    fn lerp_value(&self, rhs: &Self, s: f32) -> Self {
+        self.lerp(*rhs, s)
+    }
 }
 
 impl Tweenable for Vec3 {
@@ -129,6 +144,10 @@ impl Tweenable for Vec3 {
 
         Duration::try_from_secs_f32(self.distance(*rhs) / speed.units_per_second)
     }
+
+    fn lerp_value(&self, rhs: &Self, s: f32) -> Self {
+        self.lerp(*rhs, s)
+    }
 }
 
 impl Tweenable for Quat {
@@ -162,6 +181,10 @@ impl Tweenable for Quat {
         }
 
         Duration::try_from_secs_f32(self.angle_between(*rhs) / speed.radians_per_second)
+    }
+
+    fn lerp_value(&self, rhs: &Self, s: f32) -> Self {
+        self.lerp(*rhs, s)
     }
 }
 
@@ -199,6 +222,14 @@ impl Tweenable for Transform {
         self.scale = tuple.2;
 
         return result;
+    }
+
+    fn lerp_value(&self, rhs: &Self, s: f32) -> Self {
+        Self {
+            translation: self.translation.lerp(rhs.translation, s),
+            rotation: self.rotation.lerp(rhs.rotation, s),
+            scale: self.scale.lerp(rhs.scale, s),
+        }
     }
 }
 
@@ -256,6 +287,25 @@ impl Tweenable for Val {
             (s, rhs) => {
                 *s = *rhs;
                 Some(*delta_seconds)
+            }
+        }
+    }
+
+    fn lerp_value(&self, rhs: &Self, s: f32) -> Self {
+        match (self, rhs) {
+            (Val::Auto, Val::Auto) => Val::Auto,
+            (Val::Px(l), Val::Px(r)) => Val::Px(l.lerp_value(r, s)),
+            (Val::Percent(l), Val::Percent(r)) => Val::Percent(l.lerp_value(r, s)),
+            (Val::Vw(l), Val::Vw(r)) => Val::Vw(l.lerp_value(r, s)),
+            (Val::Vh(l), Val::Vh(r)) => Val::Vh(l.lerp_value(r, s)),
+            (Val::VMin(l), Val::VMin(r)) => Val::VMin(l.lerp_value(r, s)),
+            (Val::VMax(l), Val::VMax(r)) => Val::VMax(l.lerp_value(r, s)),
+            (lhs, rhs) => {
+                if s < 0.5 {
+                    *lhs
+                } else {
+                    *rhs
+                }
             }
         }
     }
@@ -451,6 +501,96 @@ impl Tweenable for Color {
             }
         }
     }
+
+    fn lerp_value(&self, rhs: &Self, s: f32) -> Self {
+        match (self, rhs) {
+            (
+                Color::Rgba {
+                    red,
+                    green,
+                    blue,
+                    alpha,
+                },
+                Color::Rgba {
+                    red: red2,
+                    green: green2,
+                    blue: blue2,
+                    alpha: alpha2,
+                },
+            ) => Color::Rgba {
+                red: red.lerp_value(&red2, s),
+                green: green.lerp_value(&green2, s),
+                blue: blue.lerp_value(&blue2, s),
+                alpha: alpha.lerp_value(&alpha2, s),
+            },
+            (
+                Color::RgbaLinear {
+                    red,
+                    green,
+                    blue,
+                    alpha,
+                },
+                Color::RgbaLinear {
+                    red: red2,
+                    green: green2,
+                    blue: blue2,
+                    alpha: alpha2,
+                },
+            ) => Color::RgbaLinear {
+                red: red.lerp_value(&red2, s),
+                green: green.lerp_value(&green2, s),
+                blue: blue.lerp_value(&blue2, s),
+                alpha: alpha.lerp_value(&alpha2, s),
+            },
+
+            (
+                Color::Hsla {
+                    hue,
+                    saturation,
+                    lightness,
+                    alpha,
+                },
+                Color::Hsla {
+                    hue: hue2,
+                    saturation: saturation2,
+                    lightness: lightness2,
+                    alpha: alpha2,
+                },
+            ) => Color::Hsla {
+                lightness: lightness.lerp_value(&lightness2, s),
+                saturation: saturation.lerp_value(&saturation2, s),
+                hue: hue.lerp_value(&hue2, s),
+                alpha: alpha.lerp_value(&alpha2, s),
+            },
+            (
+                Color::Lcha {
+                    lightness,
+                    chroma,
+                    hue,
+                    alpha,
+                },
+                Color::Lcha {
+                    lightness: lightness2,
+                    chroma: chroma2,
+                    hue: hue2,
+                    alpha: alpha2,
+                },
+            ) => Color::Lcha {
+                lightness: lightness.lerp_value(&lightness2, s),
+                chroma: chroma.lerp_value(&chroma2, s),
+                hue: hue.lerp_value(&hue2, s),
+                alpha: alpha.lerp_value(&alpha2, s),
+            },
+            (lhs, rhs) => {
+                //TODO convert self to the other color and then lerp as normal
+                if s < 0.5 {
+                    *lhs
+                } else {
+                    *rhs
+                }
+            }
+        }
+    }
 }
 
 fn transition_4_tuple(
@@ -511,6 +651,12 @@ macro_rules! impl_tweenable {
 
                 })*
                 remaining
+            }
+
+            fn lerp_value(&self, rhs: &Self, s: f32) -> Self {
+                let ($($t,)*) = self;
+                let ($($r,)*) = rhs;
+                ($($t.lerp_value($r, s),)*)
             }
         }
     };

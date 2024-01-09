@@ -1,4 +1,5 @@
 pub mod deletion_path_maker;
+pub mod ease;
 pub mod lens;
 pub mod lenses;
 pub mod next_step;
@@ -17,11 +18,12 @@ pub mod prelude {
     pub use crate::transition::deletion_path_maker::*;
     pub use crate::transition::lens::*;
     pub use crate::transition::lenses::*;
-    
+
     pub use crate::transition::plugin::*;
     pub use crate::transition::step::*;
     pub use crate::transition::transition_builder::*;
-    
+
+    pub use crate::transition::ease::*;
     pub use crate::transition::tweenable::*;
     pub use crate::transition::with::*;
 

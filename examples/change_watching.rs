@@ -110,13 +110,14 @@ impl MavericNode for ChangeWatcher {
                     .then_tween(Vec3::ZERO, 2.0.into())
                     .build(),
                 TransitionBuilder::<TransformTranslationLens>::default()
-                    .then_tween(
+                    .then_ease(
                         Vec3 {
                             x: 0.0,
-                            y: 5000.0,
+                            y: 500.0,
                             z: 0.0,
                         },
                         500.0.into(),
+                        &EaseInCirc,
                     )
                     .build(),
             ));

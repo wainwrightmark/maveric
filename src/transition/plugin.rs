@@ -1,7 +1,6 @@
-use std::time::Duration;
-
 use crate::transition::prelude::*;
 use bevy::{ecs::component::ComponentId, prelude::*, utils::HashSet};
+use std::time::Duration;
 
 pub trait CanRegisterTransition {
     fn register_transition<L: Lens + GetValueLens + SetValueLens>(&mut self) -> &mut Self
@@ -116,6 +115,62 @@ fn step_transition<L: Lens + GetValueLens + SetValueLens>(
                     let cloned = a.clone();
                     let next = a.build_with_next(Transition::Loop(cloned));
                     StepResult::Advance(next)
+                }
+                Transition::EaseValue {
+                    start,
+                    destination,
+                    elapsed,
+                    total,
+                    ease,
+                    next,
+                } => {
+                    let remaining = *total - *elapsed;
+                    match remaining_delta.checked_sub(remaining) {
+                        Some(new_remaining_delta) => {
+                            // The easing is over
+                            remaining_delta = new_remaining_delta;
+                            L::try_set(object.as_mut(), destination.clone());
+                            match std::mem::take(next) {
+                                Some(b) => StepResult::Advance(*b),
+                                None => StepResult::Finished,
+                            }
+                        }
+                        None => {
+                            *elapsed += remaining_delta;
+
+                            let proportion = elapsed.as_secs_f32() / total.as_secs_f32();
+
+                            let s = ease.ease(proportion);
+
+                            let new_value = start.lerp_value(&destination, s);
+                            L::try_set(object.as_mut(), new_value);
+
+                            StepResult::Continue
+                        }
+                    }
+                }
+                Transition::ThenEase {
+                    destination,
+                    speed,
+                    ease,
+                    next,
+                } => {
+                    if let Some(from) = L::try_get_value(object.as_ref()) {
+                        if let Ok(total) = from.duration_to(&destination, speed) {
+                            StepResult::Advance(Transition::EaseValue {
+                                start: from,
+                                destination: destination.clone(),
+                                elapsed: Duration::ZERO,
+                                total,
+                                ease: *ease,
+                                next: std::mem::take(next),
+                            })
+                        } else {
+                            StepResult::Finished
+                        }
+                    } else {
+                        StepResult::Finished
+                    }
                 }
             };
 

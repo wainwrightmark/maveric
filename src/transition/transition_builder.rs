@@ -5,7 +5,7 @@ use bevy::ecs::component::Component;
 use super::{
     lens::{GetValueLens, Lens, SetValueLens},
     prelude::Tweenable,
-    step::Transition,
+    step::Transition, ease::Ease,
 };
 
 pub trait TransitionBuilderCanBuild<L: Lens + GetValueLens + SetValueLens>:
@@ -36,6 +36,20 @@ where
         TransitionBuilderSetValue {
             previous: self,
             value,
+        }
+    }
+
+    fn then_ease(
+        self,
+        destination: <L as Lens>::Value,
+        speed: <<L as Lens>::Value as Tweenable>::Speed,
+        ease: &'static dyn Ease,
+    ) -> TransitionBuilderEase<L, Self> {
+        TransitionBuilderEase {
+            previous: self,
+            destination,
+            speed,
+            ease,
         }
     }
 
@@ -177,6 +191,52 @@ where
             destination: self.destination,
             speed: self.speed,
             next: None,
+        })
+    }
+}
+
+pub struct TransitionBuilderEase<
+    L: Lens + GetValueLens + SetValueLens,
+    Previous: TransitionBuilderCanThen<L>,
+> where
+    L::Object: Component,
+    L::Value: Tweenable,
+{
+    previous: Previous,
+    destination: L::Value,
+    speed: <<L as Lens>::Value as Tweenable>::Speed,
+    ease: &'static dyn Ease,
+}
+
+impl<L: Lens + GetValueLens + SetValueLens, Previous: TransitionBuilderCanThen<L>>
+    TransitionBuilderTrait<L> for TransitionBuilderEase<L, Previous>
+where
+    L::Object: Component,
+    L::Value: Tweenable,
+{
+    fn build_with_next(&self, next: Transition<L>) -> Transition<L> {
+        let this = Transition::ThenEase {
+            destination: self.destination.clone(),
+            speed: self.speed,
+            next: Some(Box::new(next)),
+            ease: self.ease,
+        };
+        self.previous.build_with_next(this)
+    }
+}
+
+impl<L: Lens + GetValueLens + SetValueLens, Previous: TransitionBuilderCanThen<L>>
+    TransitionBuilderCanBuild<L> for TransitionBuilderEase<L, Previous>
+where
+    L::Object: Component,
+    L::Value: Tweenable,
+{
+    fn build(self) -> Transition<L> {
+        self.previous.build_with_next(Transition::ThenEase {
+            destination: self.destination,
+            speed: self.speed,
+            next: None,
+            ease: self.ease,
         })
     }
 }

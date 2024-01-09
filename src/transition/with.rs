@@ -15,6 +15,7 @@ pub trait CanHaveTransition: MavericNode + Sized {
         initial_value: L::Value,
         destination: L::Value,
         duration: Duration,
+        ease: Option<&'static dyn Ease>,
     ) -> WithTransition<Self, L, ()>
     where
         L::Value: Tweenable,
@@ -22,15 +23,21 @@ pub trait CanHaveTransition: MavericNode + Sized {
     {
         let speed = calculate_speed(&initial_value, &destination, duration);
 
-        self.with_transition(
-            initial_value,
-            Transition::TweenValue {
+        let transition = match ease {
+            Some(ease) => Transition::ThenEase {
+                destination,
+                speed,
+                next: None,
+                ease,
+            },
+            None => Transition::TweenValue {
                 destination,
                 speed,
                 next: None,
             },
-            (),
-        )
+        };
+
+        self.with_transition(initial_value, transition, ())
     }
     /// Transition from `initial_value` to `destination` when the node is first created
     /// Transition to `out_destination` when the node is removed
@@ -65,20 +72,27 @@ pub trait CanHaveTransition: MavericNode + Sized {
         self,
         destination: L::Value,
         speed: <L::Value as Tweenable>::Speed,
+        ease: Option<&'static dyn Ease>,
     ) -> WithTransition<Self, L, ()>
     where
         L::Value: Tweenable,
         L::Object: Component,
     {
-        self.with_transition(
-            destination.clone(),
-            Transition::TweenValue {
-                destination,
+        let transition = match ease {
+            Some(ease) => Transition::ThenEase {
+                destination: destination.clone(),
+                speed,
+                next: None,
+                ease,
+            },
+            None => Transition::TweenValue {
+                destination: destination.clone(),
                 speed,
                 next: None,
             },
-            (),
-        )
+        };
+
+        self.with_transition(destination, transition, ())
     }
 
     #[must_use]
@@ -117,19 +131,6 @@ pub struct WithTransition<
     pub transition: (L::Value, Transition<L>),
     pub deletion: P,
 }
-
-// impl<N: MavericNode, L: Lens + GetValueLens + SetValueLens, P: DeletionPathMaker<L>> PartialEq
-//     for WithTransition<N, L, P>
-// where
-//     L::Value: Tweenable,
-//     L::Object: Component,
-// {
-//     fn eq(&self, other: &Self) -> bool {
-//         self.node == other.node
-//             && self.transition == other.transition
-//             && self.deletion == other.deletion
-//     }
-// }
 
 impl<N: MavericNode, L: Lens + GetValueLens + SetValueLens, P: DeletionPathMaker<L>> MavericNode
     for WithTransition<N, L, P>

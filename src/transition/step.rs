@@ -19,6 +19,23 @@ where
         speed: <L::Value as Tweenable>::Speed,
         next: Option<Box<Self>>,
     },
+
+    EaseValue {
+        start: L::Value,
+        destination: L::Value,
+        elapsed: Duration,
+        total: Duration,
+        ease: &'static dyn Ease,
+        next: Option<Box<Self>>,
+    },
+
+    ThenEase {
+        destination: L::Value,
+        speed: <L::Value as Tweenable>::Speed,
+        ease: &'static dyn Ease,
+        next: Option<Box<Self>>,
+    },
+
     /// Wait a particular amount of time
     Wait {
         remaining: Duration,
@@ -99,6 +116,7 @@ where
                     next,
                 } => {
                     total += current_value.duration_to(to, speed).ok()?;
+                    current_value = to;
                     match next {
                         Some(next) => current_step = next,
                         None => return Some(total),
@@ -112,6 +130,35 @@ where
                     }
                 }
                 Transition::Loop(_) => return None,
+                Transition::EaseValue {
+                    destination: to,
+                    elapsed,
+                    total: ease_duration,
+                    next,
+                    ..
+                } => {
+                    total += *ease_duration;
+                    total -= *elapsed;
+                    current_value = to;
+                    match next {
+                        Some(next) => current_step = next,
+                        None => return Some(total),
+                    }
+                }
+                Transition::ThenEase {
+                    destination: to,
+                    speed,
+                    next,
+                    ..
+
+                } => {
+                    total += current_value.duration_to(to, speed).ok()?;
+                    current_value = to;
+                    match next {
+                        Some(next) => current_step = next,
+                        None => return Some(total),
+                    }
+                }
             }
         }
     }
@@ -130,13 +177,41 @@ where
                 .field("next", next)
                 .finish(),
             Self::TweenValue {
-                destination: to,
+                destination,
                 speed,
                 next,
             } => f
-                .debug_struct("Transition")
-                .field("to", to)
+                .debug_struct("TweenValue")
+                .field("destination", destination)
                 .field("speed", speed)
+                .field("next", next)
+                .finish(),
+            Self::EaseValue {
+                start,
+                destination,
+                elapsed,
+                total,
+                ease,
+                next,
+            } => f
+                .debug_struct("EaseValue")
+                .field("start", start)
+                .field("destination", destination)
+                .field("elapsed", elapsed)
+                .field("total", total)
+                .field("ease", ease)
+                .field("next", next)
+                .finish(),
+            Self::ThenEase {
+                destination,
+                speed,
+                ease,
+                next,
+            } => f
+                .debug_struct("ThenEase")
+                .field("destination", destination)
+                .field("speed", speed)
+                .field("ease", ease)
                 .field("next", next)
                 .finish(),
             Self::Wait { remaining, next } => f
@@ -144,7 +219,7 @@ where
                 .field("remaining", remaining)
                 .field("next", next)
                 .finish(),
-            Self::Loop(_) => f.debug_tuple("Loop").finish(),
+            Self::Loop(..) => f.debug_tuple("Loop").finish(),
         }
     }
 }
@@ -188,6 +263,29 @@ where
                     None => None,
                 },
                 Transition::Loop(_) => return None,
+                Transition::EaseValue {
+                    destination,
+                    next,
+                    ..
+
+                } => {
+                    result = Some(destination);
+                    match next {
+                        Some(b) => Some(&b),
+                        None => None,
+                    }
+                }
+                Transition::ThenEase {
+                    destination,
+                    next,
+                    ..
+                } => {
+                    result = Some(destination);
+                    match next {
+                        Some(b) => Some(&b),
+                        None => None,
+                    }
+                }
             }
         }
 
