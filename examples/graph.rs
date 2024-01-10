@@ -11,6 +11,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .init_resource::<GraphState>()
         .register_transition::<BackgroundColorLens>()
+        .register_transition::<TextColorLens<0>>()
         .add_systems(Startup, setup)
         .add_systems(Update, button_system)
         .add_systems(Update, organize_graph)
@@ -51,7 +52,7 @@ impl MavericRootChildren for Root {
                     Duration::from_secs_f32(0.5),
                     Duration::from_secs_f32(2.0),
                     Some(Ease::CubicIn),
-                            Some(Ease::CubicIn),
+                    Some(Ease::CubicIn),
                 ),
                 &(),
             )
@@ -170,6 +171,20 @@ impl MavericNode for NumberNode {
                 context,
             );
         });
+    }
+
+    fn on_deleted(&self, commands: &mut ComponentCommands) -> DeletionPolicy {
+        //set text color to pink for deleted nodes
+        commands.try_modify_child(
+            |x| x.contains::<Text>(),
+            |mut ec| {
+                ec.insert(Transition::<TextColorLens<0>>::SetValue {
+                    value: Color::PINK,
+                    next: None,
+                });
+            },
+        );
+        DeletionPolicy::Linger(Duration::from_secs(1))
     }
 }
 
