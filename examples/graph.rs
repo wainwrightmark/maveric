@@ -174,16 +174,19 @@ impl MavericNode for NumberNode {
     }
 
     fn on_deleted(&self, commands: &mut ComponentCommands) -> DeletionPolicy {
-        //set text color to pink for deleted nodes
-        commands.try_modify_child(
-            |x| x.contains::<Text>(),
-            |mut ec| {
-                ec.insert(Transition::<TextColorLens<0>>::SetValue {
-                    value: Color::PINK,
-                    next: None,
-                });
-            },
-        );
+
+        commands.modify_children(|child,mut ec|{
+            if let Some(text) = child.get::<Text>(){
+                let mut text = text.clone();
+                for section in text.sections.iter_mut(){
+                    section.style.color = Color::PINK;
+                }
+
+
+                ec.insert(text);
+            }
+        });
+
         DeletionPolicy::Linger(Duration::from_secs(1))
     }
 }

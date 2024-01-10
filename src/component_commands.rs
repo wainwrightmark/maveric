@@ -46,12 +46,9 @@ impl<'c, 'w, 's, 'a, 'world> ComponentCommands<'c, 'w, 's, 'a, 'world> {
         self.world.get_resource()
     }
 
-    /// Perform an action on the first child matching a predicate
-    /// //TODO only available on deletion?
-    pub fn try_modify_child(
+    pub fn modify_children(
         &mut self,
-        predicate: impl Fn(EntityRef) -> bool,
-        action: impl FnOnce(EntityCommands)
+        action: impl Fn(EntityRef, EntityCommands)
     ){
         let Some(children) = self.world.get_entity(self.ec.id()).and_then(|x|x.get::<Children>()) else{
             //warn!("Could not get children");
@@ -59,15 +56,10 @@ impl<'c, 'w, 's, 'a, 'world> ComponentCommands<'c, 'w, 's, 'a, 'world> {
 
         for child_entity in children.iter() {
             if let Some(child) = self.world.get_entity(*child_entity) {
-                if predicate(child) {
-                    let child_commands = self.ec.commands().entity(*child_entity);
-                    action(child_commands);
-                    return;
-                }
+
+                let child_ec = self.ec.commands().entity(*child_entity);
+                action(child, child_ec)
             }
         }
-
-        //warn!("No child matched predicate");
-
     }
 }
