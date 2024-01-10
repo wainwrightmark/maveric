@@ -49,6 +49,8 @@ pub trait CanHaveTransition: MavericNode + Sized {
         out_destination: L::Value,
         in_duration: Duration,
         out_duration: Duration,
+        in_ease: Option<Ease>,
+        out_ease: Option<Ease>
     ) -> WithTransition<Self, L, DurationDeletionPathMaker<L>>
     where
         L::Value: Tweenable,
@@ -56,14 +58,24 @@ pub trait CanHaveTransition: MavericNode + Sized {
     {
         let speed = calculate_speed(&initial_value, &destination, in_duration);
 
-        self.with_transition(
-            initial_value,
-            Transition::TweenValue {
+        let transition = match in_ease {
+            Some(ease) => Transition::ThenEase {
+                destination,
+                speed,
+                next: None,
+                ease,
+            },
+            None => Transition::TweenValue {
                 destination,
                 speed,
                 next: None,
             },
-            DurationDeletionPathMaker::new(out_duration, out_destination),
+        };
+
+        self.with_transition(
+            initial_value,
+            transition,
+            DurationDeletionPathMaker::new(out_duration, out_destination, out_ease),
         )
     }
     /// Transition to `destination` whenever it changes

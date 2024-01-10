@@ -192,6 +192,8 @@ impl MavericNode for DynamicGrid {
                             (consts::FRAC_PI_2, Vec3::ZERO),
                             Duration::from_secs_f32(0.5),
                             Duration::from_secs_f32(2.0),
+                            Some(Ease::CubicIn),
+                            Some(Ease::CubicIn),
                         );
 
                     commands.add_child(number, node, &());

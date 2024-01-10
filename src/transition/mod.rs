@@ -261,6 +261,8 @@ mod tests {
                             Vec3::X * -2.0,
                             Duration::from_millis(200),
                             Duration::from_millis(400),
+                            None,
+                            None
                         );
 
                     commands.add_child(0, child, &());

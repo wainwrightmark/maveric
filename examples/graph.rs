@@ -50,6 +50,8 @@ impl MavericRootChildren for Root {
                     Color::WHITE.with_a(0.0),
                     Duration::from_secs_f32(0.5),
                     Duration::from_secs_f32(2.0),
+                    Some(Ease::CubicIn),
+                            Some(Ease::CubicIn),
                 ),
                 &(),
             )

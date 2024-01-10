@@ -14,48 +14,6 @@ where
     fn get_step(&self, previous: &L::Value) -> Option<Transition<L>>;
 }
 
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct EaseDeletionPathMaker<L: Lens + GetValueLens>
-// where
-//     L::Value: Tweenable,
-//     L::Object: Component,
-// {
-//     duration: Duration,
-//     destination: L::Value,
-//     ease: Ease,
-// }
-
-// impl<L: Lens + GetValueLens> EaseDeletionPathMaker<L>
-// where
-//     L::Value: Tweenable,
-//     L::Object: Component,
-// {
-//     pub fn new(duration: Duration, destination: L::Value, ease: Ease) -> Self {
-//         Self {
-//             duration,
-//             destination,
-//             ease,
-//         }
-//     }
-// }
-
-// impl<L: Lens + GetValueLens + SetValueLens> DeletionPathMaker<L> for EaseDeletionPathMaker<L>
-// where
-//     L::Value: Tweenable,
-//     L::Object: Component,
-// {
-//     fn get_step(&self, previous: &<L as Lens>::Value) -> Option<Transition<L>> {
-//         let speed = calculate_speed(previous, &self.destination, self.duration);
-
-//         Some(Transition::ThenEase {
-//             destination: self.destination.clone(),
-//             speed,
-//             next: None,
-//             ease: self.ease
-//         })
-//     }
-// }
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct DurationDeletionPathMaker<L: Lens + GetValueLens>
 where
@@ -64,6 +22,7 @@ where
 {
     duration: Duration,
     destination: L::Value,
+    ease: Option<Ease>,
 }
 
 impl<L: Lens + GetValueLens + SetValueLens> DeletionPathMaker<L> for DurationDeletionPathMaker<L>
@@ -74,11 +33,19 @@ where
     fn get_step(&self, previous: &<L as Lens>::Value) -> Option<Transition<L>> {
         let speed = calculate_speed(previous, &self.destination, self.duration);
 
-        Some(Transition::TweenValue {
-            destination: self.destination.clone(),
-            speed,
-            next: None,
-        })
+        match self.ease {
+            Some(ease) => Some(Transition::ThenEase {
+                destination: self.destination.clone(),
+                speed,
+                ease,
+                next: None,
+            }),
+            None => Some(Transition::TweenValue {
+                destination: self.destination.clone(),
+                speed,
+                next: None,
+            }),
+        }
     }
 }
 
@@ -87,10 +54,11 @@ where
     L::Value: Tweenable,
     L::Object: Component,
 {
-    pub const fn new(duration: Duration, destination: L::Value) -> Self {
+    pub const fn new(duration: Duration, destination: L::Value, ease: Option<Ease>) -> Self {
         Self {
             duration,
             destination,
+            ease,
         }
     }
 }
