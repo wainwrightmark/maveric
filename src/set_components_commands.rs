@@ -158,6 +158,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
         self,
         get_value: impl FnOnce(&'n N, &'c1 C::Wrapper<'c2>) -> L::Value,
         speed: <L::Value as Tweenable>::Speed,
+        ease: Option<Ease>,
     ) -> Self
     where
         L::Value: Tweenable,
@@ -170,7 +171,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
 
             let value = get_value(args.node, args.context);
 
-            commands.transition_value::<L>(value, speed);
+            commands.transition_value::<L>(value, speed, ease);
         })
     }
 }
@@ -197,6 +198,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: Clone + PartialEq>
     pub fn animate_on_node<L: Lens<Value = N> + GetValueLens + SetValueLens>(
         self,
         speed: <L::Value as Tweenable>::Speed,
+        ease: Option<Ease>,
     ) -> Self
     where
         L::Value: Tweenable,
@@ -207,7 +209,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: Clone + PartialEq>
                 return;
             }
 
-            commands.transition_value::<L>(args.node.clone(), speed);
+            commands.transition_value::<L>(args.node.clone(), speed, ease);
         })
     }
 }

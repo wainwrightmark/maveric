@@ -9,6 +9,7 @@ impl<'c, 'w, 's, 'a, 'world> ComponentCommands<'c, 'w, 's, 'a, 'world> {
         &mut self,
         destination: L::Value,
         speed: <L::Value as Tweenable>::Speed,
+        ease: Option<Ease>
     ) -> L::Value
     where
         L::Value: Tweenable,
@@ -19,16 +20,21 @@ impl<'c, 'w, 's, 'a, 'world> ComponentCommands<'c, 'w, 's, 'a, 'world> {
         };
 
         if let Some(previous_path) = self.get::<Transition<L>>() {
-            if let Transition::TweenValue {
-                destination: old_to,
-                speed: old_speed,
-                next: old_next,
-            } = previous_path
-            {
-                if old_to.eq(&destination) && old_speed.eq(&speed) && old_next.is_none() {
-                    return current_value;
-                }
+            if previous_path.destination().is_some_and(|d| d == &destination){
+                return current_value; //same destination - no need to change anything
             }
+
+
+            // if let Transition::TweenValue {
+            //     destination: old_to,
+            //     speed: old_speed,
+            //     next: old_next,
+            // } = previous_path
+            // {
+            //     if old_to.eq(&destination) && old_speed.eq(&speed) && old_next.is_none() {
+            //         return current_value;
+            //     }
+            // }
 
             if current_value.eq(&destination) {
                 self.remove::<Transition<L>>();
@@ -38,11 +44,21 @@ impl<'c, 'w, 's, 'a, 'world> ComponentCommands<'c, 'w, 's, 'a, 'world> {
             return current_value;
         }
 
-        self.insert(Transition::<L>::TweenValue {
-            destination,
-            speed,
-            next: None,
-        });
+        let new_transition = match ease{
+            Some(ease) => Transition::<L>::ThenEase  {
+                destination,
+                speed,
+                next: None,
+                ease
+            },
+            None => Transition::<L>::TweenValue {
+                destination,
+                speed,
+                next: None,
+            },
+        };
+
+        self.insert(new_transition);
 
         current_value
     }
