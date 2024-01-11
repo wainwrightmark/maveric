@@ -47,6 +47,10 @@ impl<N: MavericNode, B: IntoBundle + PartialEq> MavericNode for WithBundle<N, B>
     fn on_deleted(&self, commands: &mut ComponentCommands) -> DeletionPolicy {
         self.node.on_deleted(commands)
     }
+
+    fn should_recreate(&self, previous: &Self, context: &<Self::Context as NodeContext>::Wrapper<'_>,)-> bool {
+        self.node.should_recreate(&previous.node, context)
+    }
 }
 
 pub trait CanWithBundle: MavericNode {

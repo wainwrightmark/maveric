@@ -61,37 +61,37 @@ impl<'w, 's, 'b, 'q, 'alloc, R: MavericRoot> ChildCommands
         let key = key.into();
 
         if let Some(entity) = self.remaining_old_entities.remove(&key) {
-            if self
-                .world
-                .get::<MavericNodeComponent<NChild>>(entity)
-                .is_some()
-            {
-                update_recursive::<R, NChild>(
-                    self.commands,
-                    entity,
-                    child,
-                    context,
-                    self.world,
-                    self.remaining_old_entities.allocator(),
-                );
+            if let Some(previous) = self.world.get::<MavericNodeComponent<NChild>>(entity) {
+                if !child.should_recreate(&previous.node, context) {
+                    update_recursive::<R, NChild>(
+                        self.commands,
+                        entity,
+                        child,
+                        context,
+                        self.world,
+                        self.remaining_old_entities.allocator(),
+                    );
+                    return;
+                }
             } else {
                 warn!(
                     "Child with key '{key}' has had node type changed to {}",
                     type_name::<NChild>()
                 );
-                // The node type has changed - delete this entity and readd
-                self.commands.entity(entity).despawn_recursive();
-
-                let cec = self.commands.spawn_empty();
-                create_recursive::<R, NChild>(
-                    cec,
-                    child,
-                    context,
-                    key,
-                    self.world,
-                    self.remaining_old_entities.allocator(),
-                );
             }
+
+            // The node type has changed - delete this entity and readd
+            self.commands.entity(entity).despawn_recursive();
+
+            let cec = self.commands.spawn_empty();
+            create_recursive::<R, NChild>(
+                cec,
+                child,
+                context,
+                key,
+                self.world,
+                self.remaining_old_entities.allocator(),
+            );
         } else {
             let cec = self.commands.spawn_empty();
             create_recursive::<R, NChild>(

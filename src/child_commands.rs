@@ -60,26 +60,31 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
         if let Some(entity) = self.remaining_old_entities.remove(&key) {
             //check if this node has changed
 
-            if self
+            if let Some(previous) = self
                 .world
                 .get::<MavericNodeComponent<NChild>>(entity)
-                .is_some()
             {
-                update_recursive::<R, NChild>(
-                    self.ec.commands(),
-                    entity,
-                    child,
-                    context,
-                    self.world,
-                    self.remaining_old_entities.allocator(),
-                );
-                return; // do not spawn a new child;
+                if !child.should_recreate(&previous.node, context){
+                    update_recursive::<R, NChild>(
+                        self.ec.commands(),
+                        entity,
+                        child,
+                        context,
+                        self.world,
+                        self.remaining_old_entities.allocator(),
+                    );
+                    return; // do not spawn a new child;
+                }
+
             }
-            warn!(
-                "Child with key '{key}' has had node type changed to {}",
-                type_name::<NChild>()
-            );
-            // The node type has changed - delete this entity and readd
+            else{
+                warn!(
+                    "Child with key '{key}' has had node type changed to {}",
+                    type_name::<NChild>()
+                );
+                // The node type has changed - delete this entity and readd
+            }
+
             self.ec.commands().entity(entity).despawn_recursive();
         }
 
@@ -161,28 +166,29 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
         if let Some((old_index, entity)) = self.remaining_old_entities.remove(&key) {
             //check if this node has changed
 
-            if self
-                .world
-                .get::<MavericNodeComponent<NChild>>(entity)
-                .is_some()
-            {
-                update_recursive::<R, NChild>(
-                    self.ec.commands(),
-                    entity,
-                    child,
-                    context,
-                    self.world,
-                    self.remaining_old_entities.allocator(),
+            if let Some(previous) = self.world.get::<MavericNodeComponent<NChild>>(entity) {
+                if !child.should_recreate(&previous.node, context) {
+                    update_recursive::<R, NChild>(
+                        self.ec.commands(),
+                        entity,
+                        child,
+                        context,
+                        self.world,
+                        self.remaining_old_entities.allocator(),
+                    );
+                    self.new_children.push(entity);
+                    self.new_indices.push(Some(old_index));
+                    return; //do not spawn a new child
+                }
+            } else {
+                warn!(
+                    "Child with key '{key}' has had node type changed to {}",
+                    type_name::<NChild>()
                 );
-                self.new_children.push(entity);
-                self.new_indices.push(Some(old_index));
-                return; //do not spawn a new child
+                // The node type has changed - delete this entity and readd
             }
-            warn!(
-                "Child with key '{key}' has had node type changed to {}",
-                type_name::<NChild>()
-            );
-            // The node type has changed - delete this entity and readd
+
+            // Delete and readd
             self.ec.commands().entity(entity).despawn_recursive();
         };
 

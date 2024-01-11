@@ -32,4 +32,9 @@ pub trait MavericNode: Send + Sync + Sized + PartialEq + 'static {
         entity_commands: &mut EntityCommands,
     ) {
     }
+
+    /// Should this node be deleted and recreated
+    fn should_recreate(&self, _previous: &Self, _context: &<Self::Context as NodeContext>::Wrapper<'_>,)-> bool{
+        false
+    }
 }

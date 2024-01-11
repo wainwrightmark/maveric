@@ -284,4 +284,9 @@ where
 
         DeletionPolicy::Linger(duration)
     }
+
+
+    fn should_recreate(&self, previous: &Self, context: &<Self::Context as NodeContext>::Wrapper<'_>,)-> bool {
+        self.node.should_recreate(&previous.node, context)
+    }
 }
