@@ -28,6 +28,9 @@ pub mod set_children_commands;
 pub mod set_components_commands;
 pub mod set_event;
 pub mod transition;
+
+#[cfg(feature = "tracing")]
+pub mod tracing;
 #[cfg(any(feature = "widgets", test))]
 pub mod widgets;
 pub mod with_bundle;

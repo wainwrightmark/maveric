@@ -17,6 +17,14 @@ impl CanRegisterMaveric for App {
             self.add_plugins(ScheduledChangePlugin);
         }
 
+        #[cfg(feature="tracing")]
+        {
+            if !self.is_plugin_added::<crate::tracing::TracingPlugin>() {
+                self.add_plugins(crate::tracing::TracingPlugin::default());
+            }
+        }
+
+
         #[cfg(debug_assertions)]
         {
             if !self.is_plugin_added::<CheckTransitionsPlugin>() {
@@ -57,9 +65,11 @@ fn sync_state<R: MavericRoot>(
     R::set_children(&context, &mut root_commands);
     root_commands.finish();
 
+    #[cfg(feature = "tracing")]
+    {
+        crate::tracing::GRAPH_UPDATES.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    }
     reset_allocator(allocator);
-
-    //allocator.print_info();
 }
 
 #[cfg(test)]

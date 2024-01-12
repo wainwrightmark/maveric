@@ -17,6 +17,13 @@ impl CanRegisterTransition for App {
     {
         self.add_systems(PreUpdate, step_transition::<L>);
 
+        #[cfg(feature = "tracing")]
+        {
+            if !self.is_plugin_added::<crate::tracing::TracingPlugin>() {
+                self.add_plugins(crate::tracing::TracingPlugin::default());
+            }
+        }
+
         #[cfg(debug_assertions)]
         {
             let component_id = self.world.init_component::<Transition<L>>();
@@ -57,7 +64,15 @@ fn step_transition<L: Lens + GetValueLens + SetValueLens>(
     L::Object: Component,
     L::Value: Tweenable,
 {
+    let mut count: usize = 0;
+
     for (entity, mut transition, mut object) in query.iter_mut() {
+        #[cfg(feature = "tracing")]
+        {
+            count += 1;
+        }
+
+
         let mut remaining_delta = time.delta();
 
         'inner: loop {
@@ -188,6 +203,14 @@ fn step_transition<L: Lens + GetValueLens + SetValueLens>(
             }
         }
     }
+
+    #[cfg(feature="tracing")]
+    {
+        if count > 0 {
+            crate::tracing::TRANSITIONS.fetch_add(count, std::sync::atomic::Ordering::Relaxed);
+        }
+    }
+
 }
 
 /// A plugin that checks all transition components are registered
