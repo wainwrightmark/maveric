@@ -44,6 +44,11 @@ path = "examples/counter.rs"
 required-features = ["widgets", "derive"]
 
 [[example]]
+name = "multiple_resources"
+path = "examples/multiple_resources.rs"
+required-features = ["widgets", "derive"]
+
+[[example]]
 name = "two_systems"
 path = "examples/two_systems.rs"
 required-features = ["widgets", "derive"]

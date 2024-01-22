@@ -1,5 +1,5 @@
 use proc_macro::TokenStream;
-use quote::quote;
+use quote::{format_ident, quote};
 use syn::{self};
 
 #[proc_macro_derive(MavericContext)]
@@ -40,4 +40,65 @@ fn impl_maveric_root(ast: &syn::DeriveInput) -> TokenStream {
         }
 
     ).into()
+}
+
+#[proc_macro_derive(NodeContext)]
+pub fn node_context_derive(input: TokenStream) -> TokenStream {
+    let ast = syn::parse(input).unwrap();
+    impl_node_context(&ast)
+}
+
+fn impl_node_context(ast: &syn::DeriveInput) -> TokenStream {
+    let name = &ast.ident;
+
+    let data_struct: &syn::DataStruct = match &ast.data {
+        syn::Data::Struct(s) => s,
+        syn::Data::Enum(_) => panic!("Node context can only be derived for structs"),
+        syn::Data::Union(_) => panic!("Node context can only be derived for unions"),
+    };
+
+    let fields_named = match &data_struct.fields {
+        syn::Fields::Named(fd) => fd,
+        syn::Fields::Unnamed(_) => {
+            panic!("Node context can only be derived for structs with named fields")
+        }
+        syn::Fields::Unit => {
+            panic!("Node context can only be derived for structs with named fields")
+        }
+    };
+
+    let wrapper_name = format_ident!("{name}Wrapper");
+    let visibility = &ast.vis;
+
+    let wrapper_fields = fields_named.named.iter().map(|field| {
+        let field_name = field.ident.clone().unwrap();
+        let field_type = &field.ty;
+        quote!(pub #field_name: <#field_type as maveric::node_context::NodeContext>::Wrapper<'w> )
+    });
+
+
+    let has_changed = fields_named.named.iter().map(|field| {
+        let field_name = field.ident.clone().unwrap();
+        let field_type = &field.ty;
+        quote!(<#field_type as maveric::node_context::NodeContext>::has_changed(&wrapper.#field_name) )
+    });
+
+    quote!(
+
+        #[derive(bevy::ecs::system::SystemParam)]
+        #visibility struct #wrapper_name<'w>{
+            #(#wrapper_fields),*
+        }
+
+
+        #[automatically_derived]
+        impl maveric::node_context::NodeContext for #name {
+            type Wrapper<'c> = #wrapper_name<'c>;
+
+            fn has_changed(wrapper: &Self::Wrapper<'_>) -> bool {
+                #(#has_changed)||*
+            }
+        }
+    )
+    .into()
 }
