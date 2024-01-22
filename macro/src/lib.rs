@@ -32,9 +32,9 @@ fn impl_maveric_root(ast: &syn::DeriveInput) -> TokenStream {
         impl MavericRoot for #name {
             type ContextParam<'c> = <<Self as maveric::prelude::MavericRootChildren>::Context as maveric::prelude::NodeContext>::Wrapper<'c>;
 
-            fn get_context<'a, 'c, 'w: 'c, 's>(
+            fn get_context<'a, 'w, 's>(
                 param: bevy::ecs::system::StaticSystemParam<'w, 's, Self::ContextParam<'a>>,
-            ) -> <<Self as MavericRootChildren>::Context as maveric::prelude::NodeContext>::Wrapper<'c> {
+            ) -> <<Self as MavericRootChildren>::Context as maveric::prelude::NodeContext>::Wrapper<'w> {
                 param.into_inner()
             }
         }

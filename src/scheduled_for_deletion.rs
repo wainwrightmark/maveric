@@ -30,14 +30,14 @@ fn handle_scheduled_for_deletion(
     time: Res<Time>,
     mut query: Query<(Entity, &mut ScheduledForDeletion)>,
 ) {
-    let mut count: usize = 0;
+    let mut _count: usize = 0;
     for (entity, mut schedule) in query.iter_mut() {
         match schedule.remaining.checked_sub(time.delta()) {
             Some(new_remaining) => schedule.remaining = new_remaining,
             None => {
                 #[cfg(feature = "tracing")]
                 {
-                    count += 1;
+                    _count += 1;
                 }
 
                 commands.entity(entity).despawn_recursive();
@@ -47,9 +47,9 @@ fn handle_scheduled_for_deletion(
 
     #[cfg(feature = "tracing")]
     {
-        if count > 0 {
+        if _count > 0 {
             crate::tracing::SCHEDULED_DELETIONS
-                .fetch_add(count, std::sync::atomic::Ordering::Relaxed);
+                .fetch_add(_count, std::sync::atomic::Ordering::Relaxed);
         }
     }
 }

@@ -4,9 +4,9 @@ use crate::prelude::*;
 
 pub trait MavericRoot: MavericRootChildren {
     type ContextParam<'c>: ReadOnlySystemParam;
-    fn get_context<'a, 'c, 'w: 'c, 's>(
+    fn get_context<'a, 'w, 's>(
         param: StaticSystemParam<'w, 's, Self::ContextParam<'a>>,
-    ) -> <Self::Context as NodeContext>::Wrapper<'c>;
+    ) -> <Self::Context as NodeContext>::Wrapper<'w>;
 }
 
 pub trait MavericRootChildren: Send + Sync + 'static {

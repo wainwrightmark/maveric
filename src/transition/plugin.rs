@@ -64,12 +64,12 @@ fn step_transition<L: Lens + GetValueLens + SetValueLens>(
     L::Object: Component,
     L::Value: Tweenable,
 {
-    let mut count: usize = 0;
+    let mut _count: usize = 0;
 
     for (entity, mut transition, mut object) in query.iter_mut() {
         #[cfg(feature = "tracing")]
         {
-            count += 1;
+            _count += 1;
         }
 
 
@@ -206,8 +206,8 @@ fn step_transition<L: Lens + GetValueLens + SetValueLens>(
 
     #[cfg(feature="tracing")]
     {
-        if count > 0 {
-            crate::tracing::TRANSITIONS.fetch_add(count, std::sync::atomic::Ordering::Relaxed);
+        if _count > 0 {
+            crate::tracing::TRANSITIONS.fetch_add(_count, std::sync::atomic::Ordering::Relaxed);
         }
     }
 

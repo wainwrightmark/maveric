@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{ecs::system::SystemParam, prelude::*};
 use maveric::prelude::*;
 
 use std::string::ToString;
@@ -22,17 +22,48 @@ fn setup(mut commands: Commands) {
 #[derive(Debug, Clone, PartialEq, Default, Component)]
 pub struct Marker;
 
-#[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Root;
 
+impl MavericRoot for Root{
+    type ContextParam<'c> = <<Self as maveric::prelude::MavericRootChildren>::Context as maveric::prelude::NodeContext>::Wrapper<'c>;
+
+    fn get_context<'a, 'w, 's>(
+        param: bevy::ecs::system::StaticSystemParam<'w, 's, Self::ContextParam<'a>>,
+    ) -> <Self::Context as NodeContext>::Wrapper<'w> {
+        param.into_inner()
+    }
+
+
+}
+
+#[derive(SystemParam)]
+pub struct MyContextWrapper<'w>{
+
+    pub counter_state: <CounterState as NodeContext>::Wrapper<'w>
+}
+
+pub struct MyContext{
+    pub counter_state: CounterState
+}
+
+impl NodeContext for MyContext{
+    type Wrapper<'c> = MyContextWrapper<'c>;
+
+    fn has_changed(wrapper: &Self::Wrapper<'_>) -> bool {
+        wrapper.counter_state.is_changed()
+    }
+}
+
+
 impl MavericRootChildren for Root {
-    type Context = CounterState;
+    type Context = MyContext;
 
     fn set_children<'r>(
         context: &<Self::Context as NodeContext>::Wrapper<'r>,
         commands: &mut impl ChildCommands,
     ) {
-        let text = context.number.to_string();
+        let text = context.counter_state.number.to_string();
         commands.add_child(
             0,
             ButtonNode {

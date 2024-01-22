@@ -21,7 +21,7 @@ fn handle_scheduled_changes(
     time: Res<Time>,
 ) {
 
-    let mut count: usize = 0;
+    let mut _count: usize = 0;
 
     for (entity, mut schedule) in query.iter_mut() {
         match schedule.remaining.checked_sub(time.delta()) {
@@ -29,7 +29,7 @@ fn handle_scheduled_changes(
             None => {
                 #[cfg(feature="tracing")]
                 {
-                    count += 1;
+                    _count += 1;
                 }
 
 
@@ -48,8 +48,8 @@ fn handle_scheduled_changes(
 
     #[cfg(feature="tracing")]
     {
-        if count > 0{
-            crate::tracing::SCHEDULED_CHANGES.fetch_add(count, std::sync::atomic::Ordering::Relaxed);
+        if _count > 0{
+            crate::tracing::SCHEDULED_CHANGES.fetch_add(_count, std::sync::atomic::Ordering::Relaxed);
         }
     }
 
