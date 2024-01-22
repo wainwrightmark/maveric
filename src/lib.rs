@@ -66,7 +66,7 @@ pub mod prelude {
     pub(crate) use crate::root_commands::*;
 
     #[cfg(any(feature = "derive", test))]
-    pub use maveric_macro::{MavericContext, MavericRoot};
+    pub use maveric_macro::{MavericContext, MavericRoot, NodeContext};
 
     #[cfg(feature = "bumpalo")]
     pub(crate) type Allocator = bumpalo::Bump;
