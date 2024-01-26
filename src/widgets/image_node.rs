@@ -1,6 +1,8 @@
 pub use crate::prelude::*;
 pub use bevy::prelude::*;
 
+/// A node that will draw an image in the UI tree.
+/// For non-ui image, use SpriteNode
 #[derive(PartialEq, Debug, Clone)]
 pub struct ImageNode<S: IntoBundle<B = Style>> {
     pub path: &'static str,
