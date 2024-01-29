@@ -5,7 +5,7 @@ use std::{sync::Arc, time::Duration};
 #[derive(Component, Clone)]
 pub enum Transition<L: Lens + GetValueLens + SetValueLens>
 where
-    L::Object: Component,
+    // L::Object: Component,
     L::Value: Tweenable,
 {
     /// Set the lens value

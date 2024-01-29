@@ -4,6 +4,12 @@ pub trait Lens: std::fmt::Debug + Clone + PartialEq + Send + Sync + 'static {
     type Object;
     type Value: 'static;
 }
+// todo have both types of lens `GetRefLens` and `GetRefMaybeLens` etc.
+// The second type should be automatically inferred from the first
+// There need to be two types of prisms to support this
+// Transitions should use the maybe type
+
+// TODO add a marker type parameter to get around the orphan rule
 
 pub trait GetRefLens: Lens {
     fn try_get_ref(object: &Self::Object) -> Option<&Self::Value>;

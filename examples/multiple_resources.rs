@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use maveric::prelude::*;
+use maveric::{define_lens_transparent, prelude::*};
 use maveric_macro::NodeContext;
 
 use std::string::ToString;
@@ -11,8 +11,10 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .init_resource::<CounterState>()
         .init_resource::<ColorState>()
+        .register_resource_transition::<ClearColorLens>()
         .add_systems(Startup, setup)
         .add_systems(Update, button_system)
+        .add_systems(Update, clear_color_transition)
         .register_maveric::<Root>();
     app.run();
 }
@@ -21,6 +23,22 @@ fn setup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
 }
 
+define_lens_transparent!(ClearColorLens, ClearColor, Color);
+
+fn clear_color_transition(
+    color_state: Res<ColorState>,
+    mut clear_transition: ResMut<ResourceTransition<ClearColorLens>>,
+) {
+    if color_state.is_changed() {
+        let new_color = color_state.get_clear_color();
+        clear_transition.transition = Some(Transition::ThenEase {
+            destination: new_color,
+            speed: 1.0.into(),
+            ease: Ease::CubicInOut,
+            next: None,
+        })
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Root;
@@ -38,7 +56,7 @@ impl MavericRoot for Root {
 #[derive(NodeContext)]
 pub struct MyContext {
     pub counter_state: CounterState,
-    pub color_state: ColorState
+    pub color_state: ColorState,
 }
 
 impl MavericRootChildren for Root {
@@ -49,11 +67,11 @@ impl MavericRootChildren for Root {
         commands: &mut impl ChildCommands,
     ) {
         let text = context.counter_state.number.to_string();
-        let (color, color_name) = get_color_and_name(context.color_state.color_index);
+        let (color, color_name) = context.color_state.get_color_and_name();
         commands.add_child(
             0,
             ButtonNode {
-                style: ButtonStyle{top: Val::Px(0.0)},
+                style: ButtonStyle { top: Val::Px(0.0) },
                 background_color: color,
                 border_color: BUTTON_BORDER,
                 visibility: Visibility::Visible,
@@ -73,7 +91,9 @@ impl MavericRootChildren for Root {
         commands.add_child(
             1,
             ButtonNode {
-                style: ButtonStyle{top: Val::Px(100.0)},
+                style: ButtonStyle {
+                    top: Val::Px(100.0),
+                },
                 background_color: color,
                 border_color: BUTTON_BORDER,
                 visibility: Visibility::Visible,
@@ -92,16 +112,6 @@ impl MavericRootChildren for Root {
     }
 }
 
-pub fn get_color_and_name(index: usize)-> (Color, &'static str)
-{
-    match index % 4{
-        0=> (Color::RED, "Red"),
-        1=> (Color::GREEN, "Green"),
-        2=> (Color::BLUE, "Blue"),
-        _=> (Color::GOLD, "Gold"),
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Resource, Default, MavericContext)]
 pub struct CounterState {
     number: usize,
@@ -112,20 +122,60 @@ pub struct ColorState {
     color_index: usize,
 }
 
+impl ColorState {
+    pub fn get_color_and_name(&self) -> (Color, &'static str) {
+        match self.color_index % 4 {
+            0 => (Color::RED, "Red"),
+            1 => (Color::GREEN, "Green"),
+            2 => (Color::BLUE, "Blue"),
+            _ => (Color::GOLD, "Gold"),
+        }
+    }
+
+    pub fn get_clear_color(&self) -> Color {
+        match self.color_index % 4 {
+            0 => Color::Rgba {
+                red: 0.6,
+                green: 0.4,
+                blue: 0.4,
+                alpha: 1.0,
+            },
+            1 => Color::Rgba {
+                red: 0.4,
+                green: 0.6,
+                blue: 0.4,
+                alpha: 1.0,
+            },
+            2 => Color::Rgba {
+                red: 0.4,
+                green: 0.4,
+                blue: 0.6,
+                alpha: 1.0,
+            },
+            _ => Color::Rgba {
+                red: 0.6,
+                green: 0.6,
+                blue: 0.2,
+                alpha: 1.0,
+            },
+        }
+    }
+}
+
 fn button_system(
-    mut interaction_query: Query<(&Interaction, &ButtonMarker), (Changed<Interaction>, With<Button>)>,
+    mut interaction_query: Query<
+        (&Interaction, &ButtonMarker),
+        (Changed<Interaction>, With<Button>),
+    >,
     mut counter_state: ResMut<CounterState>,
     mut color_state: ResMut<ColorState>,
 ) {
     for (interaction, marker) in &mut interaction_query {
         match interaction {
-            Interaction::Pressed => {
-                match marker{
-                    ButtonMarker::Number => counter_state.number += 1,
-                    ButtonMarker::Color => color_state.color_index += 1,
-                }
-
-            }
+            Interaction::Pressed => match marker {
+                ButtonMarker::Number => counter_state.number += 1,
+                ButtonMarker::Color => color_state.color_index += 1,
+            },
             Interaction::Hovered => {}
             Interaction::None => {}
         }
@@ -133,13 +183,15 @@ fn button_system(
 }
 
 #[derive(Debug, PartialEq, Clone, Copy, Component)]
-pub enum ButtonMarker{
+pub enum ButtonMarker {
     Number,
-    Color
+    Color,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
-pub struct ButtonStyle{pub top: Val}
+pub struct ButtonStyle {
+    pub top: Val,
+}
 impl IntoBundle for ButtonStyle {
     type B = Style;
 
@@ -175,4 +227,3 @@ pub const FONT_PATH: &str = "fonts/merged-font.ttf";
 pub const BUTTON_FONT_SIZE: f32 = 22.0;
 pub const BUTTON_BORDER: Color = Color::BLACK;
 pub const BUTTON_TEXT_COLOR: Color = Color::rgb(0.1, 0.1, 0.1);
-
