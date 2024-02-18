@@ -131,7 +131,7 @@ impl MavericNode for CommandGrid {
                             font: FONT_PATH,
                             font_size: BUTTON_FONT_SIZE,
                             color: BUTTON_TEXT_COLOR,
-                            alignment: TextAlignment::Center,
+                            justify_text: JustifyText::Center,
                             linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
                         },),
                     };
@@ -180,7 +180,7 @@ impl MavericNode for DynamicGrid {
                             font: FONT_PATH,
                             font_size: BUTTON_FONT_SIZE,
                             color: BUTTON_TEXT_COLOR,
-                            alignment: TextAlignment::Center,
+                            justify_text: JustifyText::Center,
                             linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
                         },),
                     };

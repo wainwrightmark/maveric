@@ -49,7 +49,7 @@ impl MavericRootChildren for Root {
                     font_size: BUTTON_FONT_SIZE,
                     color: BUTTON_TEXT_COLOR,
                     font: FONT_PATH,
-                    alignment: TextAlignment::Center,
+                    justify_text: JustifyText::Center,
                     linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
                 },),
             },

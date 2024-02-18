@@ -2,7 +2,7 @@ use super::super::prelude::*;
 pub use super::prelude::*;
 use bevy::prelude::*;
 
-impl<'c, 'w, 's, 'a, 'world> ComponentCommands<'c, 'w, 's, 'a, 'world> {
+impl<'c,  'a, 'world> ComponentCommands<'c,  'a, 'world> {
     /// Inserts a transition to a particular value
     /// Returns the value that the property should be set to
     pub fn transition_value<L: Lens + GetValueLens + SetValueLens>(

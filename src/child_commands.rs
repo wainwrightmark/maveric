@@ -36,16 +36,16 @@ impl DuplicateChecker {
     }
 }
 
-pub struct UnorderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> {
-    ec: &'c mut EntityCommands<'w, 's, 'a>,
+pub struct UnorderedChildCommands<'c, 'a, 'world, 'alloc, R: MavericRoot> {
+    ec: &'c mut EntityCommands< 'a>,
     world: &'world World,
     remaining_old_entities: HashMap<ChildKey, Entity, DefaultHashBuilder, &'alloc Allocator>,
     phantom: PhantomData<R>,
     duplicate_checker: DuplicateChecker,
 }
 
-impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
-    for UnorderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R>
+impl<'c, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
+    for UnorderedChildCommands<'c,  'a, 'world, 'alloc, R>
 {
     fn add_child<NChild: MavericNode>(
         &mut self,
@@ -66,7 +66,7 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
             {
                 if !child.should_recreate(&previous.node, context){
                     update_recursive::<R, NChild>(
-                        self.ec.commands(),
+                        &mut self.ec.commands(),
                         entity,
                         child,
                         context,
@@ -102,11 +102,11 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
     }
 }
 
-impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot>
-    UnorderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R>
+impl<'c,  'a, 'world, 'alloc, R: MavericRoot>
+    UnorderedChildCommands<'c,  'a, 'world, 'alloc, R>
 {
     pub(crate) fn new(
-        ec: &'c mut EntityCommands<'w, 's, 'a>,
+        ec: &'c mut EntityCommands< 'a>,
         world: &'world World,
         allocator: &'alloc Allocator,
     ) -> Self {
@@ -134,13 +134,13 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot>
     pub(crate) fn finish(self) {
         //remove all remaining old entities
         for (_key, entity) in self.remaining_old_entities.iter() {
-            let _ = delete_recursive::<R>(self.ec.commands(), *entity, self.world);
+            let _ = delete_recursive::<R>(&mut self.ec.commands(), *entity, self.world);
         }
     }
 }
 
-pub struct OrderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> {
-    ec: &'c mut EntityCommands<'w, 's, 'a>,
+pub struct OrderedChildCommands<'c, 'a, 'world, 'alloc, R: MavericRoot> {
+    ec: &'c mut EntityCommands< 'a>,
     world: &'world World,
     phantom: PhantomData<R>,
     remaining_old_entities:
@@ -150,8 +150,8 @@ pub struct OrderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> 
     duplicate_checker: DuplicateChecker,
 }
 
-impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
-    for OrderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R>
+impl<'c,  'a, 'world, 'alloc, R: MavericRoot> ChildCommands
+    for OrderedChildCommands<'c, 'a, 'world, 'alloc, R>
 {
     fn add_child<NChild: MavericNode>(
         &mut self,
@@ -169,7 +169,7 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
             if let Some(previous) = self.world.get::<MavericNodeComponent<NChild>>(entity) {
                 if !child.should_recreate(&previous.node, context) {
                     update_recursive::<R, NChild>(
-                        self.ec.commands(),
+                        &mut self.ec.commands(),
                         entity,
                         child,
                         context,
@@ -191,8 +191,9 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
             // Delete and readd
             self.ec.commands().entity(entity).despawn_recursive();
         };
+        let mut commands = self.ec.commands();
 
-        let new_commands = self.ec.commands().spawn_empty();
+        let new_commands = commands.spawn_empty();
         let id = create_recursive::<R, NChild>(
             new_commands,
             child,
@@ -206,11 +207,11 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
     }
 }
 
-impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot>
-    OrderedChildCommands<'c, 'w, 's, 'a, 'world, 'alloc, R>
+impl<'c,  'a, 'world, 'alloc, R: MavericRoot>
+    OrderedChildCommands<'c,  'a, 'world, 'alloc, R>
 {
     pub(crate) fn new(
-        ec: &'c mut EntityCommands<'w, 's, 'a>,
+        ec: &'c mut EntityCommands<'a>,
         world: &'world World,
         allocator: &'alloc Allocator,
     ) -> Self {
@@ -262,7 +263,7 @@ impl<'c, 'w, 's, 'a, 'world, 'alloc, R: MavericRoot>
         //remove all remaining old entities
         for (_key, (old_deleted_index, entity)) in self.remaining_old_entities.iter() {
             let Some(lingering_entity) =
-                delete_recursive::<R>(self.ec.commands(), *entity, self.world)
+                delete_recursive::<R>(&mut self.ec.commands(), *entity, self.world)
             else {
                 continue;
             };

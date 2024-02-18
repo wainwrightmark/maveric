@@ -13,7 +13,7 @@ pub struct Text2DNode<T: Into<String> + PartialEq + Clone + Send + Sync + 'stati
     pub font: &'static str,
     pub font_size: f32,
     pub color: Color,
-    pub alignment: TextAlignment,
+    pub justify_text: JustifyText,
     pub linebreak_behavior: bevy::text::BreakLineOn,
     pub text_anchor: Anchor,
     pub text_2d_bounds: Text2dBounds,
@@ -25,15 +25,11 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> PartialEq for 
             && self.font == other.font
             && self.font_size == other.font_size
             && self.color == other.color
-            && self.alignment == other.alignment
+            && self.justify_text == other.justify_text
             && self.linebreak_behavior == other.linebreak_behavior
-            && anchor_compare(&self.text_anchor, &other.text_anchor)
+            && self.text_anchor == other.text_anchor
             && text_2d_bound_compare(&self.text_2d_bounds, &other.text_2d_bounds)
     }
-}
-
-fn anchor_compare(l: &Anchor, r: &Anchor) -> bool {
-    l.as_vec() == r.as_vec()
 }
 
 fn text_2d_bound_compare(l: &Text2dBounds, r: &Text2dBounds) -> bool {
@@ -45,7 +41,7 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode fo
 
     fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
         commands.insert_static_bundle((SpatialBundle::default(), TextLayoutInfo::default()));
-        commands.node_to_component(|x| &x.text_anchor, anchor_compare);
+        commands.node_to_bundle(|x|&x.text_anchor);
         commands.node_to_component(|x| &x.text_2d_bounds, text_2d_bound_compare);
 
         commands.scope(|commands| {
@@ -65,7 +61,7 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode fo
                                 color: node.color,
                             },
                         )
-                        .with_alignment(node.alignment);
+                        .with_justify(node.justify_text);
 
                         bundle.linebreak_behavior = node.linebreak_behavior;
                         commands.insert(bundle);

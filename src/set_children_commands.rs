@@ -10,8 +10,6 @@ pub struct SetChildrenCommands<
     'c2,
     'world,
     'ec,
-    'w,
-    's,
     'a,
     'alloc,
     N: PartialEq,
@@ -20,7 +18,7 @@ pub struct SetChildrenCommands<
 > {
     args: NodeArgs<'n, 'p, 'c1, 'c2, N, C>,
     world: &'world World,
-    ec: &'ec mut EntityCommands<'w, 's, 'a>,
+    ec: &'ec mut EntityCommands<'a>,
     alloc: &'alloc Allocator,
     phantom: PhantomData<R>,
 }
@@ -39,12 +37,12 @@ impl<
         N: PartialEq,
         C: NodeContext,
         R: MavericRoot,
-    > SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N, C, R>
+    > SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'a, 'alloc, N, C, R>
 {
     pub(crate) fn new(
         args: NodeArgs<'n, 'p, 'c1, 'c2, N, C>,
         world: &'world World,
-        ec: &'ec mut EntityCommands<'w, 's, 'a>,
+        ec: &'ec mut EntityCommands< 'a>,
         alloc: &'alloc Allocator,
     ) -> Self {
         Self {
@@ -59,21 +57,21 @@ impl<
     #[must_use]
     pub fn ignore_node(
         self,
-    ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, (), C, R> {
+    ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec,  'a, 'alloc, (), C, R> {
         self.map_args(|_| &())
     }
 
     #[must_use]
     pub fn ignore_context(
         self,
-    ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N, (), R> {
+    ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec,  'a, 'alloc, N, (), R> {
         self.map_context(|_| &())
     }
 
     pub fn map_args<N2: PartialEq>(
         self,
         map: impl Fn(&N) -> &N2,
-    ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N2, C, R> {
+    ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec,  'a, 'alloc, N2, C, R> {
         SetChildrenCommands {
             args: self.args.map_node(map),
             phantom: self.phantom,
@@ -86,7 +84,7 @@ impl<
     pub fn map_context<C2: NodeContext>(
         self,
         map: impl FnOnce(&'c1 C::Wrapper<'c2>) -> &'c1 C2::Wrapper<'c2>,
-    ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N, C2, R> {
+    ) -> SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec,  'a, 'alloc, N, C2, R> {
         SetChildrenCommands {
             args: self.args.map_context(map),
             phantom: self.phantom,
@@ -111,7 +109,7 @@ impl<
         N: ChildTuple<Context = C>,
         C: NodeContext,
         R: MavericRoot,
-    > SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N, C, R>
+    > SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec,  'a, 'alloc, N, C, R>
 {
     pub fn add_children(self) {
         self.unordered_children_with_node_and_context(|args, context, commands| {
@@ -134,7 +132,7 @@ impl<
         N: PartialEq,
         C: NodeContext,
         R: MavericRoot,
-    > SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N, C, R>
+    > SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'a, 'alloc, N, C, R>
 {
     pub const fn no_children(self) {}
 
@@ -184,7 +182,7 @@ impl<
 }
 
 impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, R: MavericRoot>
-    SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, (), (), R>
+    SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec,  'a, 'alloc, (), (), R>
 {
     pub fn ordered_children(self, f: impl FnOnce(&mut OrderedChildCommands<R>)) {
         self.ordered_children_with_node_and_context(|_, _, cc| f(cc));
@@ -196,7 +194,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, R: MavericRoot>
 }
 
 impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N: PartialEq, R: MavericRoot>
-    SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N, (), R>
+    SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec,  'a, 'alloc, N, (), R>
 {
     pub fn ordered_children_with_node(self, f: impl FnOnce(&'n N, &mut OrderedChildCommands<R>)) {
         self.ordered_children_with_node_and_context(|n, _, cc| f(n, cc));
@@ -212,7 +210,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, N: PartialEq, R: Maveric
 }
 
 impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, C: NodeContext, R: MavericRoot>
-    SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, 'alloc, (), C, R>
+    SetChildrenCommands<'n, 'p, 'c1, 'c2, 'world, 'ec,  'a, 'alloc, (), C, R>
 {
     pub fn ordered_children_with_context(
         self,

@@ -123,7 +123,7 @@ fn menu_button_node() -> impl MavericNode<Context = ()> {
             font: FONT_PATH,
             font_size: ICON_FONT_SIZE,
             color: BUTTON_TEXT_COLOR,
-            alignment: TextAlignment::Center,
+            justify_text: JustifyText::Center,
             linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
         },),
     }
@@ -141,7 +141,7 @@ fn icon_button_node(button_action: ButtonAction) -> impl MavericNode<Context = (
             font: FONT_PATH,
             font_size: ICON_FONT_SIZE,
             color: BUTTON_TEXT_COLOR,
-            alignment: TextAlignment::Center,
+            justify_text: JustifyText::Center,
             linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
         },),
     }
@@ -159,7 +159,7 @@ fn text_button_node(button_action: ButtonAction) -> impl MavericNode<Context = (
             font: FONT_PATH,
             font_size: BUTTON_FONT_SIZE,
             color: BUTTON_TEXT_COLOR,
-            alignment: TextAlignment::Center,
+            justify_text: JustifyText::Center,
             linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
         },),
     }
@@ -181,7 +181,7 @@ fn text_and_image_button_node(
                 font: FONT_PATH,
                 font_size: BUTTON_FONT_SIZE,
                 color: BUTTON_TEXT_COLOR,
-                alignment: TextAlignment::Center,
+                justify_text: JustifyText::Center,
                 linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
             },
             ImageNode {

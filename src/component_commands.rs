@@ -1,15 +1,15 @@
 use crate::prelude::*;
 use bevy::{ecs::system::EntityCommands, prelude::*};
 
-pub struct ComponentCommands<'c, 'w, 's, 'a, 'world> {
-    ec: &'c mut EntityCommands<'w, 's, 'a>,
+pub struct ComponentCommands<'c, 'a, 'world> {
+    ec: &'c mut EntityCommands<'a>,
     world: &'world World,
     set_event: SetEvent,
 }
 
-impl<'c, 'w, 's, 'a, 'world> ComponentCommands<'c, 'w, 's, 'a, 'world> {
+impl<'c, 'a, 'world> ComponentCommands<'c, 'a, 'world> {
     pub(crate) fn new(
-        ec: &'c mut EntityCommands<'w, 's, 'a>,
+        ec: &'c mut EntityCommands<'a>,
         world: &'world World,
         set_event: SetEvent,
     ) -> Self {
@@ -46,18 +46,20 @@ impl<'c, 'w, 's, 'a, 'world> ComponentCommands<'c, 'w, 's, 'a, 'world> {
         self.world.get_resource()
     }
 
-    pub fn modify_children(
-        &mut self,
-        action: impl Fn(EntityRef, EntityCommands)
-    ){
-        let Some(children) = self.world.get_entity(self.ec.id()).and_then(|x|x.get::<Children>()) else{
+    pub fn modify_children(&mut self, action: impl Fn(EntityRef, EntityCommands)) {
+        let Some(children) = self
+            .world
+            .get_entity(self.ec.id())
+            .and_then(|x| x.get::<Children>())
+        else {
             //warn!("Could not get children");
-            return;};
+            return;
+        };
 
         for child_entity in children.iter() {
             if let Some(child) = self.world.get_entity(*child_entity) {
-
-                let child_ec = self.ec.commands().entity(*child_entity);
+                let mut commands =  self.ec.commands();
+                let child_ec = commands.entity(*child_entity);
                 action(child, child_ec)
             }
         }

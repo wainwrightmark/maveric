@@ -7,7 +7,7 @@ pub struct TextNode<T: Into<String> + PartialEq + Clone + Send + Sync + 'static>
     pub font: &'static str,
     pub font_size: f32,
     pub color: Color,
-    pub alignment: TextAlignment,
+    pub justify_text: JustifyText,
     pub linebreak_behavior: bevy::text::BreakLineOn,
 } // TODO style
 
@@ -31,7 +31,7 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode fo
                     color: node.color,
                 },
             )
-            .with_alignment(node.alignment);
+            .with_justify(node.justify_text);
 
             bundle.linebreak_behavior = node.linebreak_behavior;
             commands.insert(bundle);
