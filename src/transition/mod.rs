@@ -13,6 +13,8 @@ pub mod with;
 pub mod transition_builder;
 #[cfg(any(feature = "bevy_ui", test))]
 pub mod ui_lenses;
+#[cfg(any(feature = "bevy_text", test))]
+pub mod text_lenses;
 
 pub mod prelude {
     pub use crate::transition::deletion_path_maker::*;
@@ -29,6 +31,9 @@ pub mod prelude {
 
     #[cfg(any(feature = "bevy_ui", test))]
     pub use crate::transition::ui_lenses::*;
+
+    #[cfg(any(feature = "bevy_text", test))]
+    pub use crate::transition::text_lenses::*;
 }
 
 #[cfg(test)]

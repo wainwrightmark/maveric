@@ -25,9 +25,10 @@ criterion = { version = "0.5", features = ["html_reports"] }
 maveric-macro = { path = "./macro", version = "=0.1.0" }
 
 [features]
-widgets = ["bevy_render"]
+widgets = ["bevy_render", "bevy_text"]
 bevy_render = ["bevy/bevy_render"]
-bevy_ui = ["bevy/bevy_ui"]
+bevy_text = ["bevy/bevy_text"]
+bevy_ui = ["bevy_text", "bevy/bevy_ui"]
 derive = ["maveric-macro"]
 bumpalo = ["dep:bumpalo"]
 tracing = []
