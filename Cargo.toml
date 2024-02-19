@@ -25,7 +25,7 @@ criterion = { version = "0.5", features = ["html_reports"] }
 maveric-macro = { path = "./macro", version = "=0.1.0" }
 
 [features]
-widgets = ["bevy_render", "bevy_ui"]
+widgets = ["bevy_render"]
 bevy_render = ["bevy/bevy_render"]
 bevy_ui = ["bevy/bevy_ui"]
 derive = ["maveric-macro"]
@@ -36,32 +36,32 @@ default = ["widgets", "derive", "bumpalo"]
 [[example]]
 name = "menu"
 path = "examples/menu.rs"
-required-features = ["widgets", "derive"]
+required-features = ["widgets", "derive", "bevy_ui"]
 
 [[example]]
 name = "counter"
 path = "examples/counter.rs"
-required-features = ["widgets", "derive"]
+required-features = ["widgets", "derive", "bevy_ui"]
 
 [[example]]
 name = "multiple_resources"
 path = "examples/multiple_resources.rs"
-required-features = ["widgets", "derive"]
+required-features = ["widgets", "derive", "bevy_ui"]
 
 [[example]]
 name = "two_systems"
 path = "examples/two_systems.rs"
-required-features = ["widgets", "derive"]
+required-features = ["widgets", "derive", "bevy_ui"]
 
 [[example]]
 name = "number_buttons"
 path = "examples/number_buttons.rs"
-required-features = ["widgets", "derive"]
+required-features = ["widgets", "derive", "bevy_ui"]
 
 [[example]]
 name = "graph"
 path = "examples/graph.rs"
-required-features = ["widgets", "derive"]
+required-features = ["widgets", "derive", "bevy_ui"]
 
 
 [[bench]]
