@@ -337,32 +337,44 @@ where
 pub mod tests {
     use std::time::Duration;
 
-    use bevy::math::Vec3;
+    use bevy::{math::Vec3, transform::components::Transform};
 
     use crate::widgets::prelude::TransformTranslationLens;
 
     use super::{TransitionBuilder, TransitionBuilderCanBuild, TransitionBuilderCanThen};
 
-    //#[test]
+    #[test]
     pub fn test_transition_builder() {
-        let transition: crate::widgets::prelude::Transition<TransformTranslationLens> = TransitionBuilder::<TransformTranslationLens>::default()
-        .then_wait(Duration::from_secs(2))
-            .then_set_value(Vec3::ONE)
-            .then_wait(Duration::from_secs(2))
-            .then_tween_with_duration(Vec3::splat(3.0), Duration::from_secs(2))
-            .build();
+        let mut transition: crate::widgets::prelude::Transition<TransformTranslationLens> =
+            TransitionBuilder::<TransformTranslationLens>::default()
+                .then_wait(Duration::from_secs(2))
+                .then_set_value(Vec3::ONE)
+                .then_wait(Duration::from_secs(2))
+                .then_tween_with_duration(Vec3::splat(3.0), Duration::from_secs(2))
+                .build();
 
-        let mut current_value = Vec3::ZERO;
-
-
-        let expected_values: Vec<Vec3> = vec![0,0,1,1,1,2,3,3].into_iter().map(|x| x as f32 * Vec3::ONE).collect();
+        let expected_values: Vec<Vec3> = vec![0, 0, 1, 1, 1, 2, 3]
+            .into_iter()
+            .map(|x| x as f32 * Vec3::ONE)
+            .collect();
 
         let mut actual_values: Vec<Vec3> = vec![];
 
-        for _ in 0..8{
-            actual_values.push(current_value);
-            todo!()
-            //transition.
+        let mut transform = Transform::from_translation(Vec3::ZERO);
+        for _ in 0..5 {
+            actual_values.push(transform.translation);
+
+            let should_delete = transition.step(&mut transform, Duration::from_secs(1));
+            assert!(!should_delete);
         }
+
+        actual_values.push(transform.translation);
+
+        let should_delete = transition.step(&mut transform, Duration::from_secs(1));
+        assert!(should_delete);
+
+        actual_values.push(transform.translation);
+
+        assert_eq!(expected_values, actual_values);
     }
 }

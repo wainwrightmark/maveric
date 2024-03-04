@@ -92,9 +92,147 @@ where
 
 impl<L: Lens + GetValueLens + SetValueLens> Transition<L>
 where
-    L::Object: Component,
     L::Value: Tweenable,
 {
+    /// Steps this transition, returns whether the transition is finished and should be deleted
+    pub fn step(&mut self, object: &mut L::Object, mut remaining_delta: Duration) -> bool {
+        enum StepResult<L: Lens + GetValueLens + SetValueLens>
+        where
+            L::Value: Tweenable,
+        {
+            Continue,
+            Finished,
+            Advance(Transition<L>),
+        }
+
+        loop {
+            let step_result: StepResult<L> = match self {
+                Transition::SetValue { value, next } => {
+                    L::try_set(object, value.clone()); //TODO avoid this clone
+                    match std::mem::take(next) {
+                        Some(b) => StepResult::Advance(*b),
+                        None => StepResult::Finished,
+                    }
+                }
+                Transition::TweenValue {
+                    destination,
+                    speed,
+                    next,
+                } => {
+                    if let Some(mut from) = L::try_get_value(object) {
+                        let transition_result = from.transition_towards(
+                            destination,
+                            speed,
+                            &remaining_delta.as_secs_f32(),
+                        );
+                        L::try_set(object, from);
+                        if let Some(remaining_seconds) = transition_result {
+                            remaining_delta =
+                                Duration::try_from_secs_f32(remaining_seconds).unwrap_or_default();
+                            match std::mem::take(next) {
+                                Some(b) => StepResult::Advance(*b),
+                                None => StepResult::Finished,
+                            }
+                        } else {
+                            StepResult::Continue
+                        }
+                    } else {
+                        StepResult::Finished
+                    }
+                }
+                Transition::Wait { remaining, next } => {
+                    match remaining_delta.checked_sub(*remaining) {
+                        Some(new_remaining_delta) => {
+                            // The wait is over
+                            remaining_delta = new_remaining_delta;
+                            match std::mem::take(next) {
+                                Some(b) => StepResult::Advance(*b),
+                                None => StepResult::Finished,
+                            }
+                        }
+                        None => {
+                            *remaining = remaining.saturating_sub(remaining_delta);
+                            StepResult::Continue
+                        }
+                    }
+                }
+                Transition::Loop(a) => {
+                    let cloned = a.clone();
+                    let next = a.build_with_next(Transition::Loop(cloned));
+                    StepResult::Advance(next)
+                }
+                Transition::EaseValue {
+                    start,
+                    destination,
+                    elapsed,
+                    total,
+                    ease,
+                    next,
+                } => {
+                    let remaining = *total - *elapsed;
+                    match remaining_delta.checked_sub(remaining) {
+                        Some(new_remaining_delta) => {
+                            // The easing is over
+                            remaining_delta = new_remaining_delta;
+                            L::try_set(object, destination.clone());
+                            match std::mem::take(next) {
+                                Some(b) => StepResult::Advance(*b),
+                                None => StepResult::Finished,
+                            }
+                        }
+                        None => {
+                            *elapsed += remaining_delta;
+
+                            let proportion = elapsed.as_secs_f32() / total.as_secs_f32();
+
+                            let s = ease.ease(proportion);
+
+                            let new_value = start.lerp_value(&destination, s);
+                            L::try_set(object, new_value);
+
+                            StepResult::Continue
+                        }
+                    }
+                }
+                Transition::ThenEase {
+                    destination,
+                    speed,
+                    ease,
+                    next,
+                } => {
+                    if let Some(from) = L::try_get_value(object) {
+                        if let Ok(total) = from.duration_to(&destination, speed) {
+                            StepResult::Advance(Transition::EaseValue {
+                                start: from,
+                                destination: destination.clone(),
+                                elapsed: Duration::ZERO,
+                                total,
+                                ease: *ease,
+                                next: std::mem::take(next),
+                            })
+                        } else {
+                            StepResult::Finished
+                        }
+                    } else {
+                        StepResult::Finished
+                    }
+                }
+            };
+
+            match step_result {
+                StepResult::Continue => {
+                    return false;
+                }
+                StepResult::Finished => {
+                    return true;
+                }
+                StepResult::Advance(next) => {
+                    *self = next;
+                }
+            }
+        }
+    }
+
     /// Returns remaining duration, or none if this is infinite
     pub fn remaining_duration(&self, start: &L::Value) -> Option<Duration> {
         let mut total: Duration = Duration::default();
@@ -150,7 +288,6 @@ where
                     speed,
                     next,
                     ..
-
                 } => {
                     total += current_value.duration_to(to, speed).ok()?;
                     current_value = to;
@@ -264,10 +401,7 @@ where
                 },
                 Transition::Loop(_) => return None,
                 Transition::EaseValue {
-                    destination,
-                    next,
-                    ..
-
+                    destination, next, ..
                 } => {
                     result = Some(destination);
                     match next {
@@ -276,9 +410,7 @@ where
                     }
                 }
                 Transition::ThenEase {
-                    destination,
-                    next,
-                    ..
+                    destination, next, ..
                 } => {
                     result = Some(destination);
                     match next {
