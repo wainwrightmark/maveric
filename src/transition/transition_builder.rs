@@ -1,9 +1,11 @@
 use std::{marker::PhantomData, sync::Arc, time::Duration};
 
 use super::{
+    ease::Ease,
     lens::{GetValueLens, Lens, SetValueLens},
     prelude::Tweenable,
-    step::Transition, ease::Ease,
+    speed::calculate_speed,
+    step::Transition,
 };
 
 pub trait TransitionBuilderCanBuild<L: Lens + GetValueLens + SetValueLens>:
@@ -20,6 +22,15 @@ where
     L::Value: Tweenable,
 {
     fn build_with_next(&self, next: Transition<L>) -> Transition<L>;
+}
+
+pub trait TransitionBuilderWithValue<L: Lens + GetValueLens + SetValueLens>:
+    TransitionBuilderTrait<L> + Send + Sync + 'static
+where
+    L::Value: Tweenable,
+{
+    /// The value after this transition completes
+    fn get_value(&self) -> &L::Value;
 }
 
 pub trait TransitionBuilderCanThen<L: Lens + GetValueLens + SetValueLens>:
@@ -48,11 +59,44 @@ where
         }
     }
 
+    fn then_ease_with_duration(
+        self,
+        destination: <L as Lens>::Value,
+        duration: Duration,
+        ease: Ease,
+    ) -> TransitionBuilderEase<L, Self>
+    where
+        Self: TransitionBuilderWithValue<L>,
+    {
+        let current = self.get_value();
+        let speed = calculate_speed(current, &destination, duration);
+
+        self.then_ease(destination, speed, ease)
+    }
+
     fn then_tween(
         self,
         destination: <L as Lens>::Value,
         speed: <<L as Lens>::Value as Tweenable>::Speed,
     ) -> TransitionBuilderTween<L, Self> {
+        TransitionBuilderTween {
+            previous: self,
+            destination,
+            speed,
+        }
+    }
+
+    fn then_tween_with_duration(
+        self,
+        destination: <L as Lens>::Value,
+        duration: Duration,
+    ) -> TransitionBuilderTween<L, Self>
+    where
+        Self: TransitionBuilderWithValue<L>,
+    {
+        let current = self.get_value();
+        let speed = calculate_speed(current, &destination, duration);
+
         TransitionBuilderTween {
             previous: self,
             destination,
@@ -76,7 +120,6 @@ where
 impl<L: Lens + GetValueLens + SetValueLens, T: Sized + TransitionBuilderTrait<L>>
     TransitionBuilderCanThen<L> for T
 where
-
     L::Value: Tweenable,
 {
 }
@@ -115,6 +158,16 @@ pub struct TransitionBuilderSetValue<
 }
 
 impl<L: Lens + GetValueLens + SetValueLens, Previous: TransitionBuilderTrait<L>>
+    TransitionBuilderWithValue<L> for TransitionBuilderSetValue<L, Previous>
+where
+    L::Value: Tweenable,
+{
+    fn get_value(&self) -> &<L as Lens>::Value {
+        &self.value
+    }
+}
+
+impl<L: Lens + GetValueLens + SetValueLens, Previous: TransitionBuilderTrait<L>>
     TransitionBuilderTrait<L> for TransitionBuilderSetValue<L, Previous>
 where
     L::Value: Tweenable,
@@ -145,7 +198,6 @@ pub struct TransitionBuilderTween<
     L: Lens + GetValueLens + SetValueLens,
     Previous: TransitionBuilderCanThen<L>,
 > where
-
     L::Value: Tweenable,
 {
     previous: Previous,
@@ -154,9 +206,18 @@ pub struct TransitionBuilderTween<
 }
 
 impl<L: Lens + GetValueLens + SetValueLens, Previous: TransitionBuilderCanThen<L>>
+    TransitionBuilderWithValue<L> for TransitionBuilderTween<L, Previous>
+where
+    L::Value: Tweenable,
+{
+    fn get_value(&self) -> &L::Value {
+        &self.destination
+    }
+}
+
+impl<L: Lens + GetValueLens + SetValueLens, Previous: TransitionBuilderCanThen<L>>
     TransitionBuilderTrait<L> for TransitionBuilderTween<L, Previous>
 where
-
     L::Value: Tweenable,
 {
     fn build_with_next(&self, next: Transition<L>) -> Transition<L> {
@@ -172,7 +233,6 @@ where
 impl<L: Lens + GetValueLens + SetValueLens, Previous: TransitionBuilderCanThen<L>>
     TransitionBuilderCanBuild<L> for TransitionBuilderTween<L, Previous>
 where
-
     L::Value: Tweenable,
 {
     fn build(self) -> Transition<L> {
@@ -188,7 +248,6 @@ pub struct TransitionBuilderEase<
     L: Lens + GetValueLens + SetValueLens,
     Previous: TransitionBuilderCanThen<L>,
 > where
-
     L::Value: Tweenable,
 {
     previous: Previous,
@@ -198,9 +257,18 @@ pub struct TransitionBuilderEase<
 }
 
 impl<L: Lens + GetValueLens + SetValueLens, Previous: TransitionBuilderCanThen<L>>
+    TransitionBuilderWithValue<L> for TransitionBuilderEase<L, Previous>
+where
+    L::Value: Tweenable,
+{
+    fn get_value(&self) -> &L::Value {
+        &self.destination
+    }
+}
+
+impl<L: Lens + GetValueLens + SetValueLens, Previous: TransitionBuilderCanThen<L>>
     TransitionBuilderTrait<L> for TransitionBuilderEase<L, Previous>
 where
-
     L::Value: Tweenable,
 {
     fn build_with_next(&self, next: Transition<L>) -> Transition<L> {
@@ -217,7 +285,6 @@ where
 impl<L: Lens + GetValueLens + SetValueLens, Previous: TransitionBuilderCanThen<L>>
     TransitionBuilderCanBuild<L> for TransitionBuilderEase<L, Previous>
 where
-
     L::Value: Tweenable,
 {
     fn build(self) -> Transition<L> {
@@ -234,7 +301,6 @@ pub struct TransitionBuilderWait<
     L: Lens + GetValueLens + SetValueLens,
     Previous: TransitionBuilderCanThen<L>,
 > where
-
     L::Value: Tweenable,
 {
     previous: Previous,
@@ -243,9 +309,19 @@ pub struct TransitionBuilderWait<
 }
 
 impl<L: Lens + GetValueLens + SetValueLens, Previous: TransitionBuilderCanThen<L>>
+    TransitionBuilderWithValue<L> for TransitionBuilderWait<L, Previous>
+where
+    L::Value: Tweenable,
+    Previous: TransitionBuilderWithValue<L>,
+{
+    fn get_value(&self) -> &L::Value {
+        self.previous.get_value()
+    }
+}
+
+impl<L: Lens + GetValueLens + SetValueLens, Previous: TransitionBuilderCanThen<L>>
     TransitionBuilderTrait<L> for TransitionBuilderWait<L, Previous>
 where
-
     L::Value: Tweenable,
 {
     fn build_with_next(&self, next: Transition<L>) -> Transition<L> {
@@ -254,5 +330,39 @@ where
             next: Some(Box::new(next)),
         };
         self.previous.build_with_next(this)
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use std::time::Duration;
+
+    use bevy::math::Vec3;
+
+    use crate::widgets::prelude::TransformTranslationLens;
+
+    use super::{TransitionBuilder, TransitionBuilderCanBuild, TransitionBuilderCanThen};
+
+    //#[test]
+    pub fn test_transition_builder() {
+        let transition: crate::widgets::prelude::Transition<TransformTranslationLens> = TransitionBuilder::<TransformTranslationLens>::default()
+        .then_wait(Duration::from_secs(2))
+            .then_set_value(Vec3::ONE)
+            .then_wait(Duration::from_secs(2))
+            .then_tween_with_duration(Vec3::splat(3.0), Duration::from_secs(2))
+            .build();
+
+        let mut current_value = Vec3::ZERO;
+
+
+        let expected_values: Vec<Vec3> = vec![0,0,1,1,1,2,3,3].into_iter().map(|x| x as f32 * Vec3::ONE).collect();
+
+        let mut actual_values: Vec<Vec3> = vec![];
+
+        for _ in 0..8{
+            actual_values.push(current_value);
+            todo!()
+            //transition.
+        }
     }
 }
