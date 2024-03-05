@@ -17,6 +17,9 @@ pub trait ChildCommands {
         child: NChild,
         context: &<NChild::Context as NodeContext>::Wrapper<'_>,
     );
+
+    /// Remove a child immediately if it was previously present
+    fn remove_child<NChild: MavericNode>(&mut self, key: impl Into<ChildKey>);
 }
 
 #[derive(Debug, Default)]
@@ -37,7 +40,7 @@ impl DuplicateChecker {
 }
 
 pub struct UnorderedChildCommands<'c, 'a, 'world, 'alloc, R: MavericRoot> {
-    ec: &'c mut EntityCommands< 'a>,
+    ec: &'c mut EntityCommands<'a>,
     world: &'world World,
     remaining_old_entities: HashMap<ChildKey, Entity, DefaultHashBuilder, &'alloc Allocator>,
     phantom: PhantomData<R>,
@@ -45,8 +48,21 @@ pub struct UnorderedChildCommands<'c, 'a, 'world, 'alloc, R: MavericRoot> {
 }
 
 impl<'c, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
-    for UnorderedChildCommands<'c,  'a, 'world, 'alloc, R>
+    for UnorderedChildCommands<'c, 'a, 'world, 'alloc, R>
 {
+    fn remove_child<NChild: MavericNode>(&mut self, key: impl Into<ChildKey>) {
+        let key: ChildKey = key.into();
+
+        self.duplicate_checker.test(key);
+
+        match self.remaining_old_entities.remove(&key) {
+            Some(entity) => {
+                self.ec.commands().entity(entity).despawn_recursive();
+            }
+            None => {} //Entity was not present - do nothing
+        }
+    }
+
     fn add_child<NChild: MavericNode>(
         &mut self,
         key: impl Into<ChildKey>,
@@ -60,11 +76,8 @@ impl<'c, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
         if let Some(entity) = self.remaining_old_entities.remove(&key) {
             //check if this node has changed
 
-            if let Some(previous) = self
-                .world
-                .get::<MavericNodeComponent<NChild>>(entity)
-            {
-                if !child.should_recreate(&previous.node, context){
+            if let Some(previous) = self.world.get::<MavericNodeComponent<NChild>>(entity) {
+                if !child.should_recreate(&previous.node, context) {
                     update_recursive::<R, NChild>(
                         &mut self.ec.commands(),
                         entity,
@@ -75,9 +88,7 @@ impl<'c, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
                     );
                     return; // do not spawn a new child;
                 }
-
-            }
-            else{
+            } else {
                 warn!(
                     "Child with key '{key}' has had node type changed to {}",
                     type_name::<NChild>()
@@ -102,11 +113,9 @@ impl<'c, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
     }
 }
 
-impl<'c,  'a, 'world, 'alloc, R: MavericRoot>
-    UnorderedChildCommands<'c,  'a, 'world, 'alloc, R>
-{
+impl<'c, 'a, 'world, 'alloc, R: MavericRoot> UnorderedChildCommands<'c, 'a, 'world, 'alloc, R> {
     pub(crate) fn new(
-        ec: &'c mut EntityCommands< 'a>,
+        ec: &'c mut EntityCommands<'a>,
         world: &'world World,
         allocator: &'alloc Allocator,
     ) -> Self {
@@ -140,7 +149,7 @@ impl<'c,  'a, 'world, 'alloc, R: MavericRoot>
 }
 
 pub struct OrderedChildCommands<'c, 'a, 'world, 'alloc, R: MavericRoot> {
-    ec: &'c mut EntityCommands< 'a>,
+    ec: &'c mut EntityCommands<'a>,
     world: &'world World,
     phantom: PhantomData<R>,
     remaining_old_entities:
@@ -150,9 +159,22 @@ pub struct OrderedChildCommands<'c, 'a, 'world, 'alloc, R: MavericRoot> {
     duplicate_checker: DuplicateChecker,
 }
 
-impl<'c,  'a, 'world, 'alloc, R: MavericRoot> ChildCommands
+impl<'c, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
     for OrderedChildCommands<'c, 'a, 'world, 'alloc, R>
 {
+    fn remove_child<NChild: MavericNode>(&mut self, key: impl Into<ChildKey>) {
+        let key: ChildKey = key.into();
+
+        self.duplicate_checker.test(key);
+
+        match self.remaining_old_entities.remove(&key) {
+            Some((index, entity)) => {
+                self.ec.commands().entity(entity).despawn_recursive();
+            }
+            None => {} //Entity was not present - do nothing
+        }
+    }
+
     fn add_child<NChild: MavericNode>(
         &mut self,
         key: impl Into<ChildKey>,
@@ -207,9 +229,7 @@ impl<'c,  'a, 'world, 'alloc, R: MavericRoot> ChildCommands
     }
 }
 
-impl<'c,  'a, 'world, 'alloc, R: MavericRoot>
-    OrderedChildCommands<'c,  'a, 'world, 'alloc, R>
-{
+impl<'c, 'a, 'world, 'alloc, R: MavericRoot> OrderedChildCommands<'c, 'a, 'world, 'alloc, R> {
     pub(crate) fn new(
         ec: &'c mut EntityCommands<'a>,
         world: &'world World,
