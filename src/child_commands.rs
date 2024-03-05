@@ -19,7 +19,7 @@ pub trait ChildCommands {
     );
 
     /// Remove a child immediately if it was previously present
-    fn remove_child<NChild: MavericNode>(&mut self, key: impl Into<ChildKey>);
+    fn remove_child(&mut self, key: impl Into<ChildKey>);
 }
 
 #[derive(Debug, Default)]
@@ -50,7 +50,7 @@ pub struct UnorderedChildCommands<'c, 'a, 'world, 'alloc, R: MavericRoot> {
 impl<'c, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
     for UnorderedChildCommands<'c, 'a, 'world, 'alloc, R>
 {
-    fn remove_child<NChild: MavericNode>(&mut self, key: impl Into<ChildKey>) {
+    fn remove_child(&mut self, key: impl Into<ChildKey>) {
         let key: ChildKey = key.into();
 
         self.duplicate_checker.test(key);
@@ -162,13 +162,13 @@ pub struct OrderedChildCommands<'c, 'a, 'world, 'alloc, R: MavericRoot> {
 impl<'c, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
     for OrderedChildCommands<'c, 'a, 'world, 'alloc, R>
 {
-    fn remove_child<NChild: MavericNode>(&mut self, key: impl Into<ChildKey>) {
+    fn remove_child(&mut self, key: impl Into<ChildKey>) {
         let key: ChildKey = key.into();
 
         self.duplicate_checker.test(key);
 
         match self.remaining_old_entities.remove(&key) {
-            Some((index, entity)) => {
+            Some((_index, entity)) => {
                 self.ec.commands().entity(entity).despawn_recursive();
             }
             None => {} //Entity was not present - do nothing

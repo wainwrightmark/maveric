@@ -52,7 +52,7 @@ impl<'w, 's, 'b, 'w1, 'q: 'w1, 'alloc, R: MavericRoot> RootCommands<'w, 's, 'b, 
 impl<'w, 's, 'b, 'q, 'alloc, R: MavericRoot> ChildCommands
     for RootCommands<'w, 's, 'b, 'q, 'alloc, R>
 {
-    fn remove_child<NChild: MavericNode>(&mut self, key: impl Into<ChildKey>) {
+    fn remove_child(&mut self, key: impl Into<ChildKey>) {
         let key: ChildKey = key.into();
 
         match self.remaining_old_entities.remove(&key) {
