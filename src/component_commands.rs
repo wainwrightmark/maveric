@@ -46,6 +46,12 @@ impl<'c, 'a, 'world> ComponentCommands<'c, 'a, 'world> {
         self.world.get_resource()
     }
 
+    /// Insert a resource into the world.
+    /// You probably shouldn't use this unless you know what you are doing but it can be useful in implementing `on_deleted`
+    pub fn insert_resource<R: Resource>(&mut self, resource: R){
+        self.ec.commands().insert_resource(resource);
+    }
+
     pub fn modify_children(&mut self, action: impl Fn(EntityRef, EntityCommands)) {
         let Some(children) = self
             .world
