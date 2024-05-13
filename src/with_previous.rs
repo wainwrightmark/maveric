@@ -21,9 +21,9 @@ impl<'w, 's, T: Resource + Clone> AsRef<T> for WithPrevious<'w, 's, T> {
 }
 
 impl<'w, 's, T: Resource + Clone> WithPrevious<'w, 's, T> {
-    pub fn previous_if_changed(&self) -> Option<&'s T> {
+    #[must_use] pub fn previous_if_changed(&self) -> Option<&'s T> {
         if self.is_changed() {
-            Some(&self.previous)
+            Some(self.previous)
         } else {
             None
         }
@@ -34,7 +34,7 @@ impl<'w, 's, T: Resource + Clone> std::ops::Deref for WithPrevious<'w, 's, T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
-        self.inner.deref()
+        &self.inner
     }
 }
 

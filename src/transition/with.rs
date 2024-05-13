@@ -208,9 +208,7 @@ where
                                 Some(update_transition.clone())
                             };
 
-                            match transition {
-                                Some(t) => Some(
-                                    if let Some(current_value) =
+                            transition.map(|t| if let Some(current_value) =
                                         commands.get::<L::Object>().and_then(L::try_get_value)
                                     {
                                         Transition::SetValue {
@@ -219,10 +217,7 @@ where
                                         }
                                     } else {
                                         t
-                                    },
-                                ),
-                                None => None,
-                            }
+                                    })
                         } else {
                             None
                         }

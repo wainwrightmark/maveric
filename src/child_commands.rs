@@ -55,11 +55,8 @@ impl<'c, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
 
         self.duplicate_checker.test(key);
 
-        match self.remaining_old_entities.remove(&key) {
-            Some(entity) => {
-                self.ec.commands().entity(entity).despawn_recursive();
-            }
-            None => {} //Entity was not present - do nothing
+        if let Some(entity) = self.remaining_old_entities.remove(&key) {
+            self.ec.commands().entity(entity).despawn_recursive();
         }
     }
 
@@ -142,7 +139,7 @@ impl<'c, 'a, 'world, 'alloc, R: MavericRoot> UnorderedChildCommands<'c, 'a, 'wor
 
     pub(crate) fn finish(self) {
         //remove all remaining old entities
-        for (_key, entity) in self.remaining_old_entities.iter() {
+        for (_key, entity) in &self.remaining_old_entities {
             let _ = delete_recursive::<R>(&mut self.ec.commands(), *entity, self.world);
         }
     }
@@ -167,11 +164,8 @@ impl<'c, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
 
         self.duplicate_checker.test(key);
 
-        match self.remaining_old_entities.remove(&key) {
-            Some((_index, entity)) => {
-                self.ec.commands().entity(entity).despawn_recursive();
-            }
-            None => {} //Entity was not present - do nothing
+        if let Some((_index, entity)) = self.remaining_old_entities.remove(&key) {
+            self.ec.commands().entity(entity).despawn_recursive();
         }
     }
 
@@ -281,7 +275,7 @@ impl<'c, 'a, 'world, 'alloc, R: MavericRoot> OrderedChildCommands<'c, 'a, 'world
         };
 
         //remove all remaining old entities
-        for (_key, (old_deleted_index, entity)) in self.remaining_old_entities.iter() {
+        for (_key, (old_deleted_index, entity)) in &self.remaining_old_entities {
             let Some(lingering_entity) =
                 delete_recursive::<R>(&mut self.ec.commands(), *entity, self.world)
             else {
@@ -472,12 +466,12 @@ mod tests {
         leaves
     }
 
-    #[derive(Debug, Clone, PartialEq, Resource, Default)]
+    #[derive(Debug, Clone, PartialEq, Eq, Resource, Default)]
     pub struct TreeState(Vec<u32>);
 
     impl MavericContext for TreeState {}
 
-    #[derive(Debug, Clone, PartialEq, Resource, Default)]
+    #[derive(Debug, Clone, PartialEq, Eq, Resource, Default)]
     pub struct LingerState(HashSet<u32>);
 
     impl MavericContext for LingerState {}
@@ -512,7 +506,7 @@ mod tests {
                         let linger = context.1 .0.contains(&number);
                         commands.add_child(number, Leaf { number, linger }, &());
                     }
-                })
+                });
         }
     }
 

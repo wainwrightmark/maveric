@@ -27,12 +27,7 @@ impl<'w, 's, 'b, 'w1, 'q: 'w1, 'alloc, R: MavericRoot> RootCommands<'w, 's, 'b, 
             &'alloc Allocator,
         > = HashMap::new_in(allocator);
 
-        remaining_old_entities.extend(
-            query
-                .into_iter()
-                .map(|x| (x.1.key, x.0))
-                .map(|(key, entity)| (key, entity)),
-        );
+        remaining_old_entities.extend(query.into_iter().map(|x| (x.1.key, x.0)));
 
         Self {
             commands,
@@ -43,7 +38,7 @@ impl<'w, 's, 'b, 'w1, 'q: 'w1, 'alloc, R: MavericRoot> RootCommands<'w, 's, 'b, 
     }
 
     pub(crate) fn finish(self) {
-        for (_key, er) in self.remaining_old_entities.iter() {
+        for (_key, er) in &self.remaining_old_entities {
             let _ = delete_recursive::<R>(self.commands, *er, self.world);
         }
     }
@@ -55,11 +50,8 @@ impl<'w, 's, 'b, 'q, 'alloc, R: MavericRoot> ChildCommands
     fn remove_child(&mut self, key: impl Into<ChildKey>) {
         let key: ChildKey = key.into();
 
-        match self.remaining_old_entities.remove(&key) {
-            Some(entity) => {
-                self.commands.entity(entity).despawn_recursive();
-            }
-            None => {} //Entity was not present - do nothing
+        if let Some(entity) = self.remaining_old_entities.remove(&key) {
+            self.commands.entity(entity).despawn_recursive();
         }
     }
 
@@ -93,26 +85,16 @@ impl<'w, 's, 'b, 'q, 'alloc, R: MavericRoot> ChildCommands
 
             // The node type has changed - delete this entity and readd
             self.commands.entity(entity).despawn_recursive();
-
-            let cec = self.commands.spawn_empty();
-            create_recursive::<R, NChild>(
-                cec,
-                child,
-                context,
-                key,
-                self.world,
-                self.remaining_old_entities.allocator(),
-            );
-        } else {
-            let cec = self.commands.spawn_empty();
-            create_recursive::<R, NChild>(
-                cec,
-                child,
-                context,
-                key,
-                self.world,
-                self.remaining_old_entities.allocator(),
-            );
         }
+
+        let cec = self.commands.spawn_empty();
+        create_recursive::<R, NChild>(
+            cec,
+            child,
+            context,
+            key,
+            self.world,
+            self.remaining_old_entities.allocator(),
+        );
     }
 }

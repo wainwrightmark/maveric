@@ -33,15 +33,12 @@ impl CanRegisterTransition for App {
         {
             let component_id = self.world.init_component::<Transition<L>>();
 
-            match self.world.get_resource_mut::<RegisteredTransitions>() {
-                Some(mut rt) => {
-                    rt.0.insert(component_id);
-                }
-                None => {
-                    let mut set = HashSet::new();
-                    set.insert(component_id);
-                    self.insert_resource(RegisteredTransitions(set));
-                }
+            if let Some(mut rt) = self.world.get_resource_mut::<RegisteredTransitions>() {
+                rt.0.insert(component_id);
+            } else {
+                let mut set = HashSet::new();
+                set.insert(component_id);
+                self.insert_resource(RegisteredTransitions(set));
             }
         }
 
@@ -98,20 +95,17 @@ fn step_resource_transition<L: Lens + GetValueLens + SetValueLens>(
     L::Object: Resource,
     L::Value: Tweenable,
 {
-    match resource_transition.transition.as_mut() {
-        Some(transition) => {
-            #[cfg(feature = "tracing")]
-            {
-                crate::tracing::TRANSITIONS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            }
-
-            let remaining_delta = time.delta();
-
-            if transition.step(resource.as_mut(), remaining_delta) {
-                resource_transition.transition = None;
-            }
+    if let Some(transition) = resource_transition.transition.as_mut() {
+        #[cfg(feature = "tracing")]
+        {
+            crate::tracing::TRANSITIONS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         }
-        None => {}
+
+        let remaining_delta = time.delta();
+
+        if transition.step(resource.as_mut(), remaining_delta) {
+            resource_transition.transition = None;
+        }
     }
 }
 
@@ -124,12 +118,13 @@ fn step_transition<L: Lens + GetValueLens + SetValueLens>(
     L::Object: Component,
     L::Value: Tweenable,
 {
-    let mut _count: usize = 0;
+    #[cfg(feature = "tracing")]
+    let mut count: usize = 0;
 
-    for (entity, mut transition, mut object) in query.iter_mut() {
+    for (entity, mut transition, mut object) in &mut query {
         #[cfg(feature = "tracing")]
         {
-            _count += 1;
+            count += 1;
         }
 
         let remaining_delta = time.delta();
@@ -141,8 +136,8 @@ fn step_transition<L: Lens + GetValueLens + SetValueLens>(
 
     #[cfg(feature = "tracing")]
     {
-        if _count > 0 {
-            crate::tracing::TRANSITIONS.fetch_add(_count, std::sync::atomic::Ordering::Relaxed);
+        if count > 0 {
+            crate::tracing::TRANSITIONS.fetch_add(count, std::sync::atomic::Ordering::Relaxed);
         }
     }
 }
@@ -166,23 +161,22 @@ fn check_transitions(
     time: Res<Time>,
     mut remaining_time: Local<Duration>,
 ) {
-    match remaining_time.checked_sub(time.delta()) {
-        Some(new_remaining) => *remaining_time = new_remaining,
-        None => {
-            *remaining_time = Duration::from_secs(3);
+    if let Some(new_remaining) = remaining_time.checked_sub(time.delta()) {
+        *remaining_time = new_remaining
+    } else {
+        *remaining_time = Duration::from_secs(3);
 
-            for component in world.components().iter().filter(|x| {
-                x.name()
-                    .starts_with("maveric::transition::step::Transition<")
-            }) {
-                let is_registered = match &transitions {
-                    Some(r) => r.0.contains(&component.id()),
-                    None => false,
-                };
+        for component in world.components().iter().filter(|x| {
+            x.name()
+                .starts_with("maveric::transition::step::Transition<")
+        }) {
+            let is_registered = match &transitions {
+                Some(r) => r.0.contains(&component.id()),
+                None => false,
+            };
 
-                if !is_registered {
-                    warn!("Unregistered Transition: {}", component.name())
-                }
+            if !is_registered {
+                warn!("Unregistered Transition: {}", component.name());
             }
         }
     }

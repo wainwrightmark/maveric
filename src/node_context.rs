@@ -27,13 +27,14 @@ impl NodeContext for () {
 macro_rules! impl_nc_tuples {
     ($($T:tt $t:tt ),+) => {
 
-
+        #[allow(clippy::many_single_char_names)]
         impl<$($T,)+> NodeContext for ($($T,)+)
         where
             $($T: NodeContext,)+
          {
             type Wrapper<'c> = ($($T::Wrapper<'c>,)*);
 
+            #[allow(clippy::many_single_char_names)]
             fn has_changed(wrapper: &Self::Wrapper<'_>) -> bool {
                 let ($($t,)*) = wrapper;
                 $($T::has_changed($t) ||)* false

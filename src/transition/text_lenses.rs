@@ -5,7 +5,7 @@ define_lens!(TextStyleColorLens, TextStyle, Color, color);
 
 pub type TextColorLens<const SECTION: usize> = Prism2<TextStyleLens<SECTION>, TextStyleColorLens>;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TextStyleLens<const SECTION: usize>;
 
 impl<const SECTION: usize> Lens for TextStyleLens<SECTION> {

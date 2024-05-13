@@ -48,7 +48,7 @@ impl MavericNode for SpriteNode {
                         commands.insert(image_handle);
                     }
                 })
-                .finish()
+                .finish();
         });
         commands.insert_with_node(|x| x.sprite.clone());
     }

@@ -83,7 +83,7 @@ impl<const SECTIONS: usize, T: core::fmt::Display + PartialEq + Clone + Send + S
                         commands.insert(bundle);
                     }
                 })
-                .finish()
+                .finish();
         });
     }
 

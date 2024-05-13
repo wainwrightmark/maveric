@@ -71,7 +71,7 @@ impl<T: core::fmt::Display + PartialEq + Clone + Send + Sync + 'static> MavericN
                         commands.insert(bundle);
                     }
                 })
-                .finish()
+                .finish();
         });
     }
 

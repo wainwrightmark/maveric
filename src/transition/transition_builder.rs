@@ -134,7 +134,7 @@ where
     L::Value: Tweenable,
 {
     fn default() -> Self {
-        Self(Default::default())
+        Self(PhantomData::default())
     }
 }
 
@@ -308,11 +308,11 @@ pub struct TransitionBuilderWait<
     phantom: PhantomData<L>,
 }
 
-impl<L: Lens + GetValueLens + SetValueLens, Previous: TransitionBuilderCanThen<L>>
+impl<L: Lens + GetValueLens + SetValueLens, Previous: TransitionBuilderCanThen<L> + TransitionBuilderWithValue<L>>
     TransitionBuilderWithValue<L> for TransitionBuilderWait<L, Previous>
 where
     L::Value: Tweenable,
-    Previous: TransitionBuilderWithValue<L>,
+
 {
     fn get_value(&self) -> &L::Value {
         self.previous.get_value()

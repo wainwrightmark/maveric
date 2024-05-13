@@ -15,40 +15,41 @@ impl Plugin for ScheduledChangePlugin {
     }
 }
 
+#[allow(clippy::needless_pass_by_value)]
 fn handle_scheduled_changes(
     mut commands: Commands,
     mut query: Query<(Entity, &mut ScheduledChange)>,
     time: Res<Time>,
 ) {
-    let mut _count: usize = 0;
+    #[cfg(feature = "tracing")]
+    let mut count: usize = 0;
 
-    for (entity, mut schedule) in query.iter_mut() {
-        match schedule.remaining.checked_sub(time.delta()) {
-            Some(new_remaining) => schedule.remaining = new_remaining,
-            None => {
-                #[cfg(feature = "tracing")]
-                {
-                    _count += 1;
-                }
-
-                let mut ec = commands.entity(entity);
-                ec.remove::<ScheduledChange>();
-
-                let mut f: Box<
-                    dyn FnOnce(&mut bevy::ecs::system::EntityCommands) + 'static + Sync + Send,
-                > = Box::new(|_| {});
-
-                std::mem::swap(&mut f, &mut schedule.boxed_change);
-                f(&mut ec);
+    for (entity, mut schedule) in &mut query {
+        if let Some(new_remaining) = schedule.remaining.checked_sub(time.delta()) {
+            schedule.remaining = new_remaining
+        } else {
+            #[cfg(feature = "tracing")]
+            {
+                count += 1;
             }
+
+            let mut ec = commands.entity(entity);
+            ec.remove::<ScheduledChange>();
+
+            let mut f: Box<
+                dyn FnOnce(&mut bevy::ecs::system::EntityCommands) + 'static + Sync + Send,
+            > = Box::new(|_| {});
+
+            std::mem::swap(&mut f, &mut schedule.boxed_change);
+            f(&mut ec);
         }
     }
 
     #[cfg(feature = "tracing")]
     {
-        if _count > 0 {
+        if count > 0 {
             crate::tracing::SCHEDULED_CHANGES
-                .fetch_add(_count, std::sync::atomic::Ordering::Relaxed);
+                .fetch_add(count, std::sync::atomic::Ordering::Relaxed);
         }
     }
 }

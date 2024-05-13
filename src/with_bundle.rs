@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WithBundle<N: MavericNode, B: IntoBundle + PartialEq> {
     pub node: N,
     pub bundle: B,
@@ -15,7 +15,7 @@ impl<N: MavericNode, B: IntoBundle + PartialEq> MavericNode for WithBundle<N, B>
         world: &World,
         entity_commands: &mut bevy::ecs::system::EntityCommands,
     ) {
-        N::on_changed(&self.node, &previous.node, context, world, entity_commands)
+        N::on_changed(&self.node, &previous.node, context, world, entity_commands);
     }
 
     fn on_created(
@@ -24,20 +24,20 @@ impl<N: MavericNode, B: IntoBundle + PartialEq> MavericNode for WithBundle<N, B>
         world: &World,
         entity_commands: &mut bevy::ecs::system::EntityCommands,
     ) {
-        N::on_created(&self.node, context, world, entity_commands)
+        N::on_created(&self.node, context, world, entity_commands);
     }
 
     fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
         commands.scope(|commands| {
             let commands = commands.map_node(|x| &x.node);
-            N::set_components(commands)
+            N::set_components(commands);
         });
 
         commands
             .ignore_context()
             .map_node(|x| &x.bundle)
             .insert_bundle()
-            .finish()
+            .finish();
     }
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {

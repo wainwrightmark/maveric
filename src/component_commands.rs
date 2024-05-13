@@ -42,7 +42,7 @@ impl<'c, 'a, 'world> ComponentCommands<'c, 'a, 'world> {
 
     /// Gets a resource.
     /// This resource usage is not tracked, meaning changes to this resource will not result in recalculating components
-    pub fn get_res_untracked<R: Resource>(&self) -> Option<&R> {
+    #[must_use] pub fn get_res_untracked<R: Resource>(&self) -> Option<&R> {
         self.world.get_resource()
     }
 
@@ -62,11 +62,11 @@ impl<'c, 'a, 'world> ComponentCommands<'c, 'a, 'world> {
             return;
         };
 
-        for child_entity in children.iter() {
+        for child_entity in children {
             if let Some(child) = self.world.get_entity(*child_entity) {
                 let mut commands = self.ec.commands();
                 let child_ec = commands.entity(*child_entity);
-                action(child, child_ec)
+                action(child, child_ec);
             }
         }
     }

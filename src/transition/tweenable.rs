@@ -62,7 +62,7 @@ impl Tweenable for f32 {
         let change = speed.amount_per_second * delta_seconds;
         if change < distance.abs() {
             *self += change * distance.signum();
-            return None;
+            None
         } else {
             *self = *destination;
             Some(delta_seconds - (distance.abs() / speed.amount_per_second))
@@ -88,7 +88,7 @@ impl Tweenable for Vec2 {
         let change = speed.units_per_second * delta_seconds;
         if change < distance.length() {
             *self += change * distance.normalize_or_zero();
-            return None;
+            None
         } else {
             *self = *destination;
             Some(delta_seconds - (distance.length() / speed.units_per_second))
@@ -126,7 +126,7 @@ impl Tweenable for Vec3 {
         let change = speed.units_per_second * delta_seconds;
         if change < distance.length() {
             *self += change * distance.normalize_or_zero();
-            return None;
+            None
         } else {
             *self = *destination;
             Some(delta_seconds - (distance.length() / speed.units_per_second))
@@ -164,7 +164,7 @@ impl Tweenable for Quat {
         let change = speed.radians_per_second * delta_seconds;
         if change < radians {
             *self = self.lerp(*destination, change / radians);
-            return None;
+            None
         } else {
             *self = *destination;
             Some(delta_seconds - (radians / speed.radians_per_second))
@@ -221,7 +221,7 @@ impl Tweenable for Transform {
         self.rotation = tuple.1;
         self.scale = tuple.2;
 
-        return result;
+        result
     }
 
     fn lerp_value(&self, rhs: &Self, s: f32) -> Self {
@@ -243,12 +243,12 @@ impl Tweenable for Val {
         speed: &Self::Speed,
     ) -> Result<Duration, TryFromFloatSecsError> {
         match (self, rhs) {
-            (Val::Px(l), Val::Px(r))
-            | (Val::Percent(l), Val::Percent(r))
-            | (Val::Vw(l), Val::Vw(r))
-            | (Val::Vh(l), Val::Vh(r))
-            | (Val::VMin(l), Val::VMin(r))
-            | (Val::VMax(l), Val::VMax(r)) => <f32 as Tweenable>::duration_to(l, r, speed),
+            (Self::Px(l), Self::Px(r))
+            | (Self::Percent(l), Self::Percent(r))
+            | (Self::Vw(l), Self::Vw(r))
+            | (Self::Vh(l), Self::Vh(r))
+            | (Self::VMin(l), Self::VMin(r))
+            | (Self::VMax(l), Self::VMax(r)) => <f32 as Tweenable>::duration_to(l, r, speed),
             _ => Ok(Duration::ZERO),
         }
     }
@@ -260,27 +260,27 @@ impl Tweenable for Val {
         delta_seconds: &f32,
     ) -> Option<f32> {
         match (self, rhs) {
-            (Val::Px(l), Val::Px(r)) => {
+            (Self::Px(l), Self::Px(r)) => {
                 <f32 as Tweenable>::transition_towards(l, r, speed, delta_seconds)
             }
 
-            (Val::Percent(l), Val::Percent(r)) => {
+            (Self::Percent(l), Self::Percent(r)) => {
                 <f32 as Tweenable>::transition_towards(l, r, speed, delta_seconds)
             }
 
-            (Val::Vw(l), Val::Vw(r)) => {
+            (Self::Vw(l), Self::Vw(r)) => {
                 <f32 as Tweenable>::transition_towards(l, r, speed, delta_seconds)
             }
 
-            (Val::Vh(l), Val::Vh(r)) => {
+            (Self::Vh(l), Self::Vh(r)) => {
                 <f32 as Tweenable>::transition_towards(l, r, speed, delta_seconds)
             }
 
-            (Val::VMin(l), Val::VMin(r)) => {
+            (Self::VMin(l), Self::VMin(r)) => {
                 <f32 as Tweenable>::transition_towards(l, r, speed, delta_seconds)
             }
 
-            (Val::VMax(l), Val::VMax(r)) => {
+            (Self::VMax(l), Self::VMax(r)) => {
                 <f32 as Tweenable>::transition_towards(l, r, speed, delta_seconds)
             }
 
@@ -293,13 +293,13 @@ impl Tweenable for Val {
 
     fn lerp_value(&self, rhs: &Self, s: f32) -> Self {
         match (self, rhs) {
-            (Val::Auto, Val::Auto) => Val::Auto,
-            (Val::Px(l), Val::Px(r)) => Val::Px(l.lerp_value(r, s)),
-            (Val::Percent(l), Val::Percent(r)) => Val::Percent(l.lerp_value(r, s)),
-            (Val::Vw(l), Val::Vw(r)) => Val::Vw(l.lerp_value(r, s)),
-            (Val::Vh(l), Val::Vh(r)) => Val::Vh(l.lerp_value(r, s)),
-            (Val::VMin(l), Val::VMin(r)) => Val::VMin(l.lerp_value(r, s)),
-            (Val::VMax(l), Val::VMax(r)) => Val::VMax(l.lerp_value(r, s)),
+            (Self::Auto, Self::Auto) => Self::Auto,
+            (Self::Px(l), Self::Px(r)) => Self::Px(l.lerp_value(r, s)),
+            (Self::Percent(l), Self::Percent(r)) => Self::Percent(l.lerp_value(r, s)),
+            (Self::Vw(l), Self::Vw(r)) => Self::Vw(l.lerp_value(r, s)),
+            (Self::Vh(l), Self::Vh(r)) => Self::Vh(l.lerp_value(r, s)),
+            (Self::VMin(l), Self::VMin(r)) => Self::VMin(l.lerp_value(r, s)),
+            (Self::VMax(l), Self::VMax(r)) => Self::VMax(l.lerp_value(r, s)),
             (lhs, rhs) => {
                 if s < 0.5 {
                     *lhs
@@ -322,13 +322,13 @@ impl Tweenable for Color {
     ) -> Result<Duration, TryFromFloatSecsError> {
         let differences: [f32; 4] = match (self, rhs) {
             (
-                Color::Rgba {
+                Self::Rgba {
                     red,
                     green,
                     blue,
                     alpha,
                 },
-                Color::Rgba {
+                Self::Rgba {
                     red: red2,
                     green: green2,
                     blue: blue2,
@@ -341,13 +341,13 @@ impl Tweenable for Color {
                 (alpha - alpha2).abs(),
             ],
             (
-                Color::RgbaLinear {
+                Self::RgbaLinear {
                     red,
                     green,
                     blue,
                     alpha,
                 },
-                Color::RgbaLinear {
+                Self::RgbaLinear {
                     red: red2,
                     green: green2,
                     blue: blue2,
@@ -361,13 +361,13 @@ impl Tweenable for Color {
             ],
 
             (
-                Color::Hsla {
+                Self::Hsla {
                     hue,
                     saturation,
                     lightness,
                     alpha,
                 },
-                Color::Hsla {
+                Self::Hsla {
                     hue: hue2,
                     saturation: saturation2,
                     lightness: lightness2,
@@ -380,13 +380,13 @@ impl Tweenable for Color {
                 (alpha - alpha2).abs(),
             ],
             (
-                Color::Lcha {
+                Self::Lcha {
                     lightness,
                     chroma,
                     hue,
                     alpha,
                 },
-                Color::Lcha {
+                Self::Lcha {
                     lightness: lightness2,
                     chroma: chroma2,
                     hue: hue2,
@@ -418,13 +418,13 @@ impl Tweenable for Color {
     ) -> Option<f32> {
         match (self, destination) {
             (
-                Color::Rgba {
+                Self::Rgba {
                     red,
                     green,
                     blue,
                     alpha,
                 },
-                Color::Rgba {
+                Self::Rgba {
                     red: red2,
                     green: green2,
                     blue: blue2,
@@ -437,13 +437,13 @@ impl Tweenable for Color {
                 delta_seconds,
             ),
             (
-                Color::RgbaLinear {
+                Self::RgbaLinear {
                     red,
                     green,
                     blue,
                     alpha,
                 },
-                Color::RgbaLinear {
+                Self::RgbaLinear {
                     red: red2,
                     green: green2,
                     blue: blue2,
@@ -457,13 +457,13 @@ impl Tweenable for Color {
             ),
 
             (
-                Color::Hsla {
+                Self::Hsla {
                     hue,
                     saturation,
                     lightness,
                     alpha,
                 },
-                Color::Hsla {
+                Self::Hsla {
                     hue: hue2,
                     saturation: saturation2,
                     lightness: lightness2,
@@ -476,13 +476,13 @@ impl Tweenable for Color {
                 delta_seconds,
             ),
             (
-                Color::Lcha {
+                Self::Lcha {
                     lightness,
                     chroma,
                     hue,
                     alpha,
                 },
-                Color::Lcha {
+                Self::Lcha {
                     lightness: lightness2,
                     chroma: chroma2,
                     hue: hue2,
@@ -505,81 +505,81 @@ impl Tweenable for Color {
     fn lerp_value(&self, rhs: &Self, s: f32) -> Self {
         match (self, rhs) {
             (
-                Color::Rgba {
+                Self::Rgba {
                     red,
                     green,
                     blue,
                     alpha,
                 },
-                Color::Rgba {
+                Self::Rgba {
                     red: red2,
                     green: green2,
                     blue: blue2,
                     alpha: alpha2,
                 },
-            ) => Color::Rgba {
-                red: red.lerp_value(&red2, s),
-                green: green.lerp_value(&green2, s),
-                blue: blue.lerp_value(&blue2, s),
-                alpha: alpha.lerp_value(&alpha2, s),
+            ) => Self::Rgba {
+                red: red.lerp_value(red2, s),
+                green: green.lerp_value(green2, s),
+                blue: blue.lerp_value(blue2, s),
+                alpha: alpha.lerp_value(alpha2, s),
             },
             (
-                Color::RgbaLinear {
+                Self::RgbaLinear {
                     red,
                     green,
                     blue,
                     alpha,
                 },
-                Color::RgbaLinear {
+                Self::RgbaLinear {
                     red: red2,
                     green: green2,
                     blue: blue2,
                     alpha: alpha2,
                 },
-            ) => Color::RgbaLinear {
-                red: red.lerp_value(&red2, s),
-                green: green.lerp_value(&green2, s),
-                blue: blue.lerp_value(&blue2, s),
-                alpha: alpha.lerp_value(&alpha2, s),
+            ) => Self::RgbaLinear {
+                red: red.lerp_value(red2, s),
+                green: green.lerp_value(green2, s),
+                blue: blue.lerp_value(blue2, s),
+                alpha: alpha.lerp_value(alpha2, s),
             },
 
             (
-                Color::Hsla {
+                Self::Hsla {
                     hue,
                     saturation,
                     lightness,
                     alpha,
                 },
-                Color::Hsla {
+                Self::Hsla {
                     hue: hue2,
                     saturation: saturation2,
                     lightness: lightness2,
                     alpha: alpha2,
                 },
-            ) => Color::Hsla {
-                lightness: lightness.lerp_value(&lightness2, s),
-                saturation: saturation.lerp_value(&saturation2, s),
-                hue: hue.lerp_value(&hue2, s),
-                alpha: alpha.lerp_value(&alpha2, s),
+            ) => Self::Hsla {
+                lightness: lightness.lerp_value(lightness2, s),
+                saturation: saturation.lerp_value(saturation2, s),
+                hue: hue.lerp_value(hue2, s),
+                alpha: alpha.lerp_value(alpha2, s),
             },
             (
-                Color::Lcha {
+                Self::Lcha {
                     lightness,
                     chroma,
                     hue,
                     alpha,
                 },
-                Color::Lcha {
+                Self::Lcha {
                     lightness: lightness2,
                     chroma: chroma2,
                     hue: hue2,
                     alpha: alpha2,
                 },
-            ) => Color::Lcha {
-                lightness: lightness.lerp_value(&lightness2, s),
-                chroma: chroma.lerp_value(&chroma2, s),
-                hue: hue.lerp_value(&hue2, s),
-                alpha: alpha.lerp_value(&alpha2, s),
+            ) => Self::Lcha {
+                lightness: lightness.lerp_value(lightness2, s),
+                chroma: chroma.lerp_value(chroma2, s),
+                hue: hue.lerp_value(hue2, s),
+                alpha: alpha.lerp_value(alpha2, s),
             },
             (lhs, rhs) => {
                 //TODO convert self to the other color and then lerp as normal
@@ -739,9 +739,9 @@ mod tests {
         assert_eq!(r1, None);
 
         let expected = Transform {
-            translation: Vec3::new(3.7071068, 4.0, 4.2928934),
-            rotation: Quat::from_xyzw(0.9060874, 0.4230905, 0.0, -5.8100213e-8),
-            scale: Vec3::new(3.7071068, 4.0, 4.2928934),
+            translation: Vec3::new(3.707_106_8, 4.0, 4.292_893_4),
+            rotation: Quat::from_xyzw(0.906_087_4, 0.423_090_5, 0.0, -5.810_021_3e-8),
+            scale: Vec3::new(3.707_106_8, 4.0, 4.292_893_4),
         };
 
         assert_eq!(value, expected);

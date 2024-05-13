@@ -4,8 +4,8 @@ use crate::prelude::*;
 
 pub trait MavericRoot: MavericRootChildren {
     type ContextParam<'c>: ReadOnlySystemParam;
-    fn get_context<'a, 'w, 's>(
-        param: StaticSystemParam<'w, 's, Self::ContextParam<'a>>,
+    fn get_context<'w>(
+        param: StaticSystemParam<'w, '_, Self::ContextParam<'_>>,
     ) -> <Self::Context as NodeContext>::Wrapper<'w>;
 }
 

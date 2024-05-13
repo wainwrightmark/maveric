@@ -38,7 +38,7 @@ macro_rules! define_lens {
 #[macro_export]
 macro_rules! define_lens_transparent {
     ($L:ident, $O:ident, $V:ident) => {
-        #[derive(Debug, Clone, PartialEq)]
+        #[derive(Debug, Clone, PartialEq, Eq)]
         pub struct $L;
 
         impl $crate::transition::prelude::Lens for $L {
@@ -72,7 +72,7 @@ define_lens!(TransformScaleLens, Transform, Vec3, scale);
 
 const EULER_ROT: EulerRot = EulerRot::YXZ;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct QuatXLens;
 
 impl Lens for QuatXLens {
@@ -91,11 +91,11 @@ impl SetValueLens for QuatXLens {
     fn try_set(object: &mut <Self as Lens>::Object, value: <Self as Lens>::Value) {
         let (y, _x, z) = object.to_euler(EULER_ROT);
         let new_quat = Quat::from_euler(EULER_ROT, y, value, z);
-        *object = new_quat
+        *object = new_quat;
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct QuatYLens;
 
 impl Lens for QuatYLens {
@@ -114,11 +114,11 @@ impl SetValueLens for QuatYLens {
     fn try_set(object: &mut <Self as Lens>::Object, value: <Self as Lens>::Value) {
         let (_y, x, z) = object.to_euler(EULER_ROT);
         let new_quat = Quat::from_euler(EULER_ROT, value, x, z);
-        *object = new_quat
+        *object = new_quat;
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct QuatZLens;
 
 impl Lens for QuatZLens {
@@ -137,7 +137,7 @@ impl SetValueLens for QuatZLens {
     fn try_set(object: &mut <Self as Lens>::Object, value: <Self as Lens>::Value) {
         let (y, x, _) = object.to_euler(EULER_ROT);
         let new_quat = Quat::from_euler(EULER_ROT, y, x, value);
-        *object = new_quat
+        *object = new_quat;
     }
 }
 
@@ -151,19 +151,19 @@ pub type TransformRotationZLens = Prism2<TransformRotationLens, QuatZLens>;
 
 impl SetValueLens for TransformRotationXLens {
     fn try_set(object: &mut <Self as Lens>::Object, value: <Self as Lens>::Value) {
-        QuatXLens::try_set(&mut object.rotation, value)
+        QuatXLens::try_set(&mut object.rotation, value);
     }
 }
 
 impl SetValueLens for TransformRotationYLens {
     fn try_set(object: &mut <Self as Lens>::Object, value: <Self as Lens>::Value) {
-        QuatYLens::try_set(&mut object.rotation, value)
+        QuatYLens::try_set(&mut object.rotation, value);
     }
 }
 
 impl SetValueLens for TransformRotationZLens {
     fn try_set(object: &mut <Self as Lens>::Object, value: <Self as Lens>::Value) {
-        QuatZLens::try_set(&mut object.rotation, value)
+        QuatZLens::try_set(&mut object.rotation, value);
     }
 }
 
@@ -180,7 +180,7 @@ pub const fn transform_speed(
     )
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct ElementAtLens<
     const INDEX: usize,
     const ARRAY_LEN: usize,
@@ -216,7 +216,7 @@ impl<
     > GetValueLens for ElementAtLens<INDEX, ARRAY_LEN, Element>
 {
     fn try_get_value(object: &<Self as Lens>::Object) -> Option<<Self as Lens>::Value> {
-        object.get(INDEX).map(|x| *x)
+        object.get(INDEX).copied()
     }
 }
 
@@ -244,15 +244,15 @@ pub mod tests {
 
         QuatZLens::try_set(&mut quat, 2.0);
 
-        assert_eq!(QuatZLens::try_get_value(&quat), Some(2.0000002));
+        assert_eq!(QuatZLens::try_get_value(&quat), Some(2.000_000_2));
 
-        assert_eq!(QuatXLens::try_get_value(&quat), Some(1.0000001));
+        assert_eq!(QuatXLens::try_get_value(&quat), Some(1.000_000_1));
 
         QuatYLens::try_set(&mut quat, 3.0);
 
         assert_eq!(QuatZLens::try_get_value(&quat), Some(2.0));
 
-        assert_eq!(QuatXLens::try_get_value(&quat), Some(1.0000001));
+        assert_eq!(QuatXLens::try_get_value(&quat), Some(1.000_000_1));
         assert_eq!(QuatYLens::try_get_value(&quat), Some(3.0));
     }
 

@@ -8,7 +8,7 @@ pub struct ScheduledForDeletion {
 }
 
 impl ScheduledForDeletion {
-    pub fn from_secs(seconds: f32) -> Self {
+    #[must_use] pub fn from_secs(seconds: f32) -> Self {
         Self {
             remaining: Duration::from_secs_f32(seconds),
         }
@@ -31,7 +31,7 @@ fn handle_scheduled_for_deletion(
     mut query: Query<(Entity, &mut ScheduledForDeletion)>,
 ) {
     let mut _count: usize = 0;
-    for (entity, mut schedule) in query.iter_mut() {
+    for (entity, mut schedule) in &mut query {
         match schedule.remaining.checked_sub(time.delta()) {
             Some(new_remaining) => schedule.remaining = new_remaining,
             None => {

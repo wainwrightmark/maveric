@@ -38,8 +38,8 @@ impl CanRegisterMaveric for App {
 
 fn should_run<R: MavericRoot>(param: StaticSystemParam<R::ContextParam<'_>>) -> bool {
     let context = R::get_context(param);
-    let changed = <R::Context as NodeContext>::has_changed(&context);
-    changed
+    
+    <R::Context as NodeContext>::has_changed(&context)
 }
 
 #[allow(clippy::needless_pass_by_value)]
@@ -144,7 +144,7 @@ mod tests {
         assert_eq!(blues, expected_blues);
     }
 
-    #[derive(Debug, Clone, PartialEq, Resource, Default)]
+    #[derive(Debug, Clone, PartialEq, Eq, Resource, Default)]
     pub struct TreeState {
         branch_count: u32,
         blue_leaf_count: u32,

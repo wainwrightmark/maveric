@@ -67,7 +67,7 @@ mod tests {
             <f32 as Tweenable>::transition_towards(&mut value, &1.0, &ScalarSpeed::new(1.0), &3.0);
 
         assert_eq!(result, Some(1.0));
-        assert_eq!(value, 1.0)
+        assert_eq!(value, 1.0);
     }
 
     #[test]
