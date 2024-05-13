@@ -50,7 +50,7 @@ pub trait CanHaveTransition: MavericNode + Sized {
         in_duration: Duration,
         out_duration: Duration,
         in_ease: Option<Ease>,
-        out_ease: Option<Ease>
+        out_ease: Option<Ease>,
     ) -> WithTransition<Self, L, DurationDeletionPathMaker<L>>
     where
         L::Value: Tweenable,
@@ -110,7 +110,7 @@ pub trait CanHaveTransition: MavericNode + Sized {
     #[must_use]
     fn with_transition<L: Lens + GetValueLens + SetValueLens, P: DeletionPathMaker<L>>(
         self,
-        initial_value: L::Value,
+        initial_value: L::Value, //todo make this optional
         update_transition: Transition<L>,
         deletion: P,
     ) -> WithTransition<Self, L, P>
@@ -285,8 +285,11 @@ where
         DeletionPolicy::Linger(duration)
     }
 
-
-    fn should_recreate(&self, previous: &Self, context: &<Self::Context as NodeContext>::Wrapper<'_>,)-> bool {
+    fn should_recreate(
+        &self,
+        previous: &Self,
+        context: &<Self::Context as NodeContext>::Wrapper<'_>,
+    ) -> bool {
         self.node.should_recreate(&previous.node, context)
     }
 }

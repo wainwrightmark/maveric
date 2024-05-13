@@ -10,11 +10,11 @@ pub mod transition_value;
 pub mod tweenable;
 pub mod with;
 
+#[cfg(any(feature = "bevy_text", test))]
+pub mod text_lenses;
 pub mod transition_builder;
 #[cfg(any(feature = "bevy_ui", test))]
 pub mod ui_lenses;
-#[cfg(any(feature = "bevy_text", test))]
-pub mod text_lenses;
 
 pub mod prelude {
     pub use crate::transition::deletion_path_maker::*;
@@ -267,7 +267,7 @@ mod tests {
                             Duration::from_millis(200),
                             Duration::from_millis(400),
                             None,
-                            None
+                            None,
                         );
 
                     commands.add_child(0, child, &());

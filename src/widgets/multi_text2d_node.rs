@@ -3,13 +3,15 @@ use bevy::{
     text::{Text2dBounds, TextLayoutInfo},
 };
 
-
 pub use crate::prelude::*;
 
 /// A text node in 2d space.
 /// Note that you will need to attach a transform as well
 #[derive(Debug, Clone)]
-pub struct MultiText2DNode<const SECTIONS: usize, T: core::fmt::Display + PartialEq + Clone + Send + Sync + 'static> {
+pub struct MultiText2DNode<
+    const SECTIONS: usize,
+    T: core::fmt::Display + PartialEq + Clone + Send + Sync + 'static,
+> {
     pub sections: [Option<TextSectionData<T>>; SECTIONS],
     pub justify_text: JustifyText,
     pub linebreak_behavior: bevy::text::BreakLineOn,
@@ -17,7 +19,9 @@ pub struct MultiText2DNode<const SECTIONS: usize, T: core::fmt::Display + Partia
     pub text_2d_bounds: Text2dBounds,
 }
 
-impl<const SECTIONS: usize, T: core::fmt::Display + PartialEq + Clone + Send + Sync + 'static> PartialEq for MultiText2DNode<SECTIONS, T> {
+impl<const SECTIONS: usize, T: core::fmt::Display + PartialEq + Clone + Send + Sync + 'static>
+    PartialEq for MultiText2DNode<SECTIONS, T>
+{
     fn eq(&self, other: &Self) -> bool {
         self.sections == other.sections
             && self.justify_text == other.justify_text
@@ -39,8 +43,8 @@ fn text_2d_bound_compare(l: &Text2dBounds, r: &Text2dBounds) -> bool {
     l.size == r.size
 }
 
-impl<const SECTIONS: usize,T: core::fmt::Display + PartialEq + Clone + Send + Sync + 'static> MavericNode
-    for MultiText2DNode<SECTIONS, T>
+impl<const SECTIONS: usize, T: core::fmt::Display + PartialEq + Clone + Send + Sync + 'static>
+    MavericNode for MultiText2DNode<SECTIONS, T>
 {
     type Context = ();
 
@@ -61,18 +65,20 @@ impl<const SECTIONS: usize,T: core::fmt::Display + PartialEq + Clone + Send + Sy
                         let mut bundle = Text::default().with_justify(node.justify_text);
                         bundle.linebreak_behavior = node.linebreak_behavior;
 
-                        for section in node.sections.iter().flatten(){
+                        for section in node.sections.iter().flatten() {
                             let font = server.load(section.font);
 
-                                let style = TextStyle {
-                                    font,
-                                    font_size: section.font_size,
-                                    color: section.color,
-                                };
+                            let style = TextStyle {
+                                font,
+                                font_size: section.font_size,
+                                color: section.color,
+                            };
 
-                                bundle.sections.push(TextSection { value: section.text.to_string(), style });
+                            bundle.sections.push(TextSection {
+                                value: section.text.to_string(),
+                                style,
+                            });
                         }
-
 
                         commands.insert(bundle);
                     }

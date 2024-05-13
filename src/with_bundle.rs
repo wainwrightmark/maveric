@@ -48,7 +48,11 @@ impl<N: MavericNode, B: IntoBundle + PartialEq> MavericNode for WithBundle<N, B>
         self.node.on_deleted(commands)
     }
 
-    fn should_recreate(&self, previous: &Self, context: &<Self::Context as NodeContext>::Wrapper<'_>,)-> bool {
+    fn should_recreate(
+        &self,
+        previous: &Self,
+        context: &<Self::Context as NodeContext>::Wrapper<'_>,
+    ) -> bool {
         self.node.should_recreate(&previous.node, context)
     }
 }

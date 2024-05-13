@@ -14,4 +14,3 @@ define_lens!(StyleRightLens, Style, Val, right);
 
 define_lens_transparent!(BackgroundColorLens, BackgroundColor, Color);
 define_lens_transparent!(BorderColorLens, BorderColor, Color);
-

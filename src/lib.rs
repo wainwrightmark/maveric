@@ -15,8 +15,8 @@ pub mod deleter;
 pub mod helpers;
 pub mod into_components;
 pub mod node;
+pub mod with_previous;
 
-pub mod allocator;
 pub mod node_args;
 pub mod node_context;
 pub mod plugin;

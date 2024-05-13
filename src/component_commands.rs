@@ -48,7 +48,7 @@ impl<'c, 'a, 'world> ComponentCommands<'c, 'a, 'world> {
 
     /// Insert a resource into the world.
     /// You probably shouldn't use this unless you know what you are doing but it can be useful in implementing `on_deleted`
-    pub fn insert_resource<R: Resource>(&mut self, resource: R){
+    pub fn insert_resource<R: Resource>(&mut self, resource: R) {
         self.ec.commands().insert_resource(resource);
     }
 
@@ -64,7 +64,7 @@ impl<'c, 'a, 'world> ComponentCommands<'c, 'a, 'world> {
 
         for child_entity in children.iter() {
             if let Some(child) = self.world.get_entity(*child_entity) {
-                let mut commands =  self.ec.commands();
+                let mut commands = self.ec.commands();
                 let child_ec = commands.entity(*child_entity);
                 action(child, child_ec)
             }

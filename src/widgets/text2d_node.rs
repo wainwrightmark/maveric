@@ -19,7 +19,9 @@ pub struct Text2DNode<T: core::fmt::Display + PartialEq + Clone + Send + Sync + 
     pub text_2d_bounds: Text2dBounds,
 }
 
-impl<T: core::fmt::Display + PartialEq + Clone + Send + Sync + 'static> PartialEq for Text2DNode<T> {
+impl<T: core::fmt::Display + PartialEq + Clone + Send + Sync + 'static> PartialEq
+    for Text2DNode<T>
+{
     fn eq(&self, other: &Self) -> bool {
         self.text == other.text
             && self.font == other.font
@@ -36,12 +38,14 @@ fn text_2d_bound_compare(l: &Text2dBounds, r: &Text2dBounds) -> bool {
     l.size == r.size
 }
 
-impl<T: core::fmt::Display + PartialEq + Clone + Send + Sync + 'static> MavericNode for Text2DNode<T> {
+impl<T: core::fmt::Display + PartialEq + Clone + Send + Sync + 'static> MavericNode
+    for Text2DNode<T>
+{
     type Context = ();
 
     fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
         commands.insert_static_bundle((SpatialBundle::default(), TextLayoutInfo::default()));
-        commands.node_to_bundle(|x|&x.text_anchor);
+        commands.node_to_bundle(|x| &x.text_anchor);
         commands.node_to_component(|x| &x.text_2d_bounds, text_2d_bound_compare);
 
         commands.scope(|commands| {

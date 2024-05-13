@@ -2,14 +2,14 @@ use super::super::prelude::*;
 pub use super::prelude::*;
 use bevy::prelude::*;
 
-impl<'c,  'a, 'world> ComponentCommands<'c,  'a, 'world> {
+impl<'c, 'a, 'world> ComponentCommands<'c, 'a, 'world> {
     /// Inserts a transition to a particular value
     /// Returns the value that the property should be set to
     pub fn transition_value<L: Lens + GetValueLens + SetValueLens>(
         &mut self,
         destination: L::Value,
         speed: <L::Value as Tweenable>::Speed,
-        ease: Option<Ease>
+        ease: Option<Ease>,
     ) -> L::Value
     where
         L::Value: Tweenable,
@@ -20,10 +20,12 @@ impl<'c,  'a, 'world> ComponentCommands<'c,  'a, 'world> {
         };
 
         if let Some(previous_path) = self.get::<Transition<L>>() {
-            if previous_path.destination().is_some_and(|d| d == &destination){
+            if previous_path
+                .destination()
+                .is_some_and(|d| d == &destination)
+            {
                 return current_value; //same destination - no need to change anything
             }
-
 
             // if let Transition::TweenValue {
             //     destination: old_to,
@@ -44,12 +46,12 @@ impl<'c,  'a, 'world> ComponentCommands<'c,  'a, 'world> {
             return current_value;
         }
 
-        let new_transition = match ease{
-            Some(ease) => Transition::<L>::ThenEase  {
+        let new_transition = match ease {
+            Some(ease) => Transition::<L>::ThenEase {
                 destination,
                 speed,
                 next: None,
-                ease
+                ease,
             },
             None => Transition::<L>::TweenValue {
                 destination,

@@ -64,6 +64,11 @@ name = "graph"
 path = "examples/graph.rs"
 required-features = ["widgets", "derive", "bevy_ui"]
 
+[[example]]
+name = "change_watching"
+path = "examples/change_watching.rs"
+required-features = ["widgets", "derive", "bevy_ui"]
+
 
 [[bench]]
 name = "unordered_benchmark"

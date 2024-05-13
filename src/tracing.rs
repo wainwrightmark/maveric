@@ -3,7 +3,7 @@ use std::sync::atomic::AtomicUsize;
 use bevy::prelude::*;
 
 #[derive(Debug, Default)]
-pub (crate) struct TracingPlugin;
+pub(crate) struct TracingPlugin;
 
 impl Plugin for TracingPlugin {
     fn build(&self, app: &mut App) {
@@ -12,10 +12,10 @@ impl Plugin for TracingPlugin {
 }
 
 /// TODO count different types of updates separately
-pub (crate) static GRAPH_UPDATES: AtomicUsize = AtomicUsize::new(0);
-pub (crate) static SCHEDULED_DELETIONS: AtomicUsize = AtomicUsize::new(0);
-pub (crate) static SCHEDULED_CHANGES: AtomicUsize = AtomicUsize::new(0);
-pub (crate) static TRANSITIONS: AtomicUsize = AtomicUsize::new(0);
+pub(crate) static GRAPH_UPDATES: AtomicUsize = AtomicUsize::new(0);
+pub(crate) static SCHEDULED_DELETIONS: AtomicUsize = AtomicUsize::new(0);
+pub(crate) static SCHEDULED_CHANGES: AtomicUsize = AtomicUsize::new(0);
+pub(crate) static TRANSITIONS: AtomicUsize = AtomicUsize::new(0);
 
 /// Counts maveric graph updates
 pub fn count_graph_updates() -> usize {

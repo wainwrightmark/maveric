@@ -17,13 +17,12 @@ impl CanRegisterMaveric for App {
             self.add_plugins(ScheduledChangePlugin);
         }
 
-        #[cfg(feature="tracing")]
+        #[cfg(feature = "tracing")]
         {
             if !self.is_plugin_added::<crate::tracing::TracingPlugin>() {
                 self.add_plugins(crate::tracing::TracingPlugin::default());
             }
         }
-
 
         #[cfg(debug_assertions)]
         {
