@@ -55,7 +55,7 @@ mod tests {
     pub fn test_transition() {
         let mut value = -10.0;
 
-        let result = <f32 as Tweenable>::transition_towards(&mut value, &10.0, &20.0.into(), &0.5);
+        let result = <f32 as Tweenable>::transition_towards(&mut value, &10.0, &20.0.into(), 0.5);
         assert_eq!(result, None);
         assert_eq!(value, 0.0);
     }
@@ -64,7 +64,7 @@ mod tests {
     pub fn test_complete_transition() {
         let mut value = -1.0;
         let result =
-            <f32 as Tweenable>::transition_towards(&mut value, &1.0, &ScalarSpeed::new(1.0), &3.0);
+            <f32 as Tweenable>::transition_towards(&mut value, &1.0, &ScalarSpeed::new(1.0), 3.0);
 
         assert_eq!(result, Some(1.0));
         assert_eq!(value, 1.0);

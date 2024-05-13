@@ -123,7 +123,7 @@ where
                         let transition_result = from.transition_towards(
                             destination,
                             speed,
-                            &remaining_delta.as_secs_f32(),
+                            remaining_delta.as_secs_f32(),
                         );
                         L::try_set(object, from);
                         if let Some(remaining_seconds) = transition_result {
