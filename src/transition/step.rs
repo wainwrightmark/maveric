@@ -365,7 +365,7 @@ where
             .is_some_and(|x| Some(x) == other.destination())
     }
 
-    pub fn destination(&self) -> Option<&L::Value> {
+    pub const fn destination(&self) -> Option<&L::Value> {
         let mut next: Option<&Self> = Some(self);
         let mut result: Option<&L::Value> = None;
 
@@ -382,6 +382,12 @@ where
                     destination,
                     speed: _,
                     next,
+                }
+                | Self::EaseValue {
+                    destination, next, ..
+                }
+                | Self::ThenEase {
+                    destination, next, ..
                 } => {
                     result = Some(destination);
                     match next {
@@ -394,24 +400,6 @@ where
                     None => None,
                 },
                 Self::Loop(_) => return None,
-                Self::EaseValue {
-                    destination, next, ..
-                } => {
-                    result = Some(destination);
-                    match next {
-                        Some(b) => Some(b),
-                        None => None,
-                    }
-                }
-                Self::ThenEase {
-                    destination, next, ..
-                } => {
-                    result = Some(destination);
-                    match next {
-                        Some(b) => Some(b),
-                        None => None,
-                    }
-                }
             }
         }
 

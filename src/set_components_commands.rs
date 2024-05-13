@@ -160,7 +160,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
     }
 }
 
-impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq + IntoBundle>
+impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'a, N: PartialEq + IntoBundle>
     SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'a, N, ()>
 {
     #[allow(clippy::return_self_not_must_use, clippy::must_use_candidate)]
@@ -173,7 +173,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq + IntoBundle>
     }
 }
 
-impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: Clone + PartialEq>
+impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'a, N: Clone + PartialEq>
     SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'a, N, ()>
 {
     /// Animate a property based on the node value
@@ -198,7 +198,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: Clone + PartialEq>
     }
 }
 
-impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a>
+impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'a>
     SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'a, (), ()>
 {
     #[allow(clippy::return_self_not_must_use)]
@@ -207,7 +207,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a>
     }
 }
 
-impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq>
+impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'a, N: PartialEq>
     SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'a, N, ()>
 {
     #[allow(clippy::return_self_not_must_use)]
@@ -216,7 +216,7 @@ impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'w, 's, 'a, N: PartialEq>
     }
 }
 
-impl<'n, 'p, 'c1, 'c2, 'world, 'ec, '_w, '_s, 'a, C: NodeContext>
+impl<'n, 'p, 'c1, 'c2, 'world, 'ec, 'a, C: NodeContext>
     SetComponentCommands<'n, 'p, 'c1, 'c2, 'world, 'ec, 'a, (), C>
 {
     #[allow(clippy::return_self_not_must_use)]

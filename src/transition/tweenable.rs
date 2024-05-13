@@ -33,6 +33,7 @@ pub trait Tweenable: Debug + Clone + Send + Sync + PartialEq + 'static {
     /// When `s` is `0.0`, the result will be equal to `self`.  When `s` is `1.0`, the result
     /// will be equal to `rhs`. When `s` is outside of range `[0, 1]`, the result is linearly
     /// extrapolated.
+    #[must_use]
     fn lerp_value(&self, rhs: &Self, s: f32) -> Self;
 }
 

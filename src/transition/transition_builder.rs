@@ -134,7 +134,7 @@ where
     L::Value: Tweenable,
 {
     fn default() -> Self {
-        Self(PhantomData::default())
+        Self(PhantomData)
     }
 }
 

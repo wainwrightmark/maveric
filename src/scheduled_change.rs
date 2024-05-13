@@ -26,7 +26,7 @@ fn handle_scheduled_changes(
 
     for (entity, mut schedule) in &mut query {
         if let Some(new_remaining) = schedule.remaining.checked_sub(time.delta()) {
-            schedule.remaining = new_remaining
+            schedule.remaining = new_remaining;
         } else {
             #[cfg(feature = "tracing")]
             {

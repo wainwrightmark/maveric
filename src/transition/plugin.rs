@@ -87,6 +87,7 @@ where
     }
 }
 
+#[allow(clippy::needless_pass_by_value)]
 fn step_resource_transition<L: Lens + GetValueLens + SetValueLens>(
     mut resource: ResMut<L::Object>,
     mut resource_transition: ResMut<ResourceTransition<L>>,
@@ -155,6 +156,7 @@ impl Plugin for CheckTransitionsPlugin {
     }
 }
 
+#[allow(clippy::needless_pass_by_value)]
 fn check_transitions(
     world: &World,
     transitions: Option<Res<RegisteredTransitions>>,
@@ -162,7 +164,7 @@ fn check_transitions(
     mut remaining_time: Local<Duration>,
 ) {
     if let Some(new_remaining) = remaining_time.checked_sub(time.delta()) {
-        *remaining_time = new_remaining
+        *remaining_time = new_remaining;
     } else {
         *remaining_time = Duration::from_secs(3);
 
