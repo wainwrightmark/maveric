@@ -154,7 +154,7 @@ where
 
     fn on_created(
         &self,
-        context: &<Self::Context as MavericContext>::Wrapper<'_,'_>,
+        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
         world: &World,
         entity_commands: &mut bevy::ecs::system::EntityCommands,
     ) {
@@ -164,7 +164,7 @@ where
     fn on_changed(
         &self,
         previous: &Self,
-        context: &<Self::Context as MavericContext>::Wrapper<'_,'_>,
+        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
         world: &World,
         entity_commands: &mut bevy::ecs::system::EntityCommands,
     ) {
@@ -208,16 +208,18 @@ where
                                 Some(update_transition.clone())
                             };
 
-                            transition.map(|t| if let Some(current_value) =
-                                        commands.get::<L::Object>().and_then(L::try_get_value)
-                                    {
-                                        Transition::SetValue {
-                                            value: current_value,
-                                            next: Some(Box::new(t)),
-                                        }
-                                    } else {
-                                        t
-                                    })
+                            transition.map(|t| {
+                                if let Some(current_value) =
+                                    commands.get::<L::Object>().and_then(L::try_get_value)
+                                {
+                                    Transition::SetValue {
+                                        value: current_value,
+                                        next: Some(Box::new(t)),
+                                    }
+                                } else {
+                                    t
+                                }
+                            })
                         } else {
                             None
                         }
@@ -283,7 +285,7 @@ where
     fn should_recreate(
         &self,
         previous: &Self,
-        context: &<Self::Context as MavericContext>::Wrapper<'_,'_>,
+        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
     ) -> bool {
         self.node.should_recreate(&previous.node, context)
     }

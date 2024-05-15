@@ -6,9 +6,7 @@ use crate::{has_changed::HasChanged, prelude::*};
 
 pub trait CacheableResource: Send + Sync + 'static {
     type Argument<'world, 'state>: SystemParam + ReadOnlySystemParam;
-    fn calculate<'w, 's>(
-        arg: &<Self::Argument<'w, 's> as SystemParam>::Item<'w, 's>,
-    ) -> Self;
+    fn calculate<'w, 's>(arg: &<Self::Argument<'w, 's> as SystemParam>::Item<'w, 's>) -> Self;
 }
 
 pub struct Cached<'w, 's, T: CacheableResource> {

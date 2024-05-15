@@ -37,7 +37,7 @@ impl MavericRootChildren for Root {
     type Context = GraphState;
 
     fn set_children(
-        context: &<Self::Context as MavericContext>::Wrapper<'_,'_>,
+        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
         commands: &mut impl ChildCommands,
     ) {
         commands.add_child("Buttons", Buttons, &());
@@ -193,8 +193,6 @@ impl MavericNode for NumberNode {
 pub struct GraphState {
     number: u32,
 }
-
-
 
 fn organize_graph(time: Res<Time>, mut nodes: Query<(&mut Transform, &GraphNode)>) {
     const ATTRACTION: f32 = 0.01;

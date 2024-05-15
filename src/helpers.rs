@@ -5,7 +5,7 @@ pub use bevy::prelude::*;
 pub(crate) fn create_recursive<R: MavericRoot, N: MavericNode>(
     mut entity_commands: EntityCommands,
     node: N,
-    context: &<N::Context as MavericContext>::Wrapper<'_,'_>,
+    context: &<N::Context as MavericContext>::Wrapper<'_, '_>,
     key: ChildKey,
     world: &World,
     alloc: &Allocator,
@@ -75,7 +75,7 @@ pub(crate) fn update_recursive<R: MavericRoot, N: MavericNode>(
     commands: &mut Commands,
     entity: Entity,
     node: N,
-    context: &<N::Context as MavericContext>::Wrapper<'_,'_>,
+    context: &<N::Context as MavericContext>::Wrapper<'_, '_>,
     world: &World,
     alloc: &Allocator,
 ) {

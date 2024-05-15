@@ -5,7 +5,7 @@ pub trait ChildTuple: PartialEq + Send + Sync + 'static {
 
     fn add_children(
         &self,
-        context: &<Self::Context as MavericContext>::Wrapper<'_,'_>,
+        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
         commands: &mut impl ChildCommands,
     );
 }

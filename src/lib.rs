@@ -13,14 +13,14 @@ pub mod child_tuple;
 pub mod component_commands;
 pub mod components;
 pub mod deleter;
+pub mod has_changed;
 pub mod helpers;
 pub mod into_components;
 pub mod node;
 pub mod with_previous;
-pub mod has_changed;
 
-pub mod node_args;
 pub mod maveric_context;
+pub mod node_args;
 pub mod plugin;
 pub mod root;
 pub mod root_commands;
@@ -46,9 +46,9 @@ pub mod prelude {
 
     pub use crate::deleter::*;
     pub use crate::into_components::*;
+    pub use crate::maveric_context::*;
     pub use crate::node::*;
     pub use crate::node_args::*;
-    pub use crate::maveric_context::*;
     pub use crate::plugin::*;
     pub use crate::root::*;
     pub use crate::scheduled_change::*;

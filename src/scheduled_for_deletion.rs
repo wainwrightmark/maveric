@@ -8,7 +8,8 @@ pub struct ScheduledForDeletion {
 }
 
 impl ScheduledForDeletion {
-    #[must_use] pub fn from_secs(seconds: f32) -> Self {
+    #[must_use]
+    pub fn from_secs(seconds: f32) -> Self {
         Self {
             remaining: Duration::from_secs_f32(seconds),
         }

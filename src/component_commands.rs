@@ -42,7 +42,8 @@ impl<'c, 'a, 'world> ComponentCommands<'c, 'a, 'world> {
 
     /// Gets a resource.
     /// This resource usage is not tracked, meaning changes to this resource will not result in recalculating components
-    #[must_use] pub fn get_res_untracked<R: Resource>(&self) -> Option<&R> {
+    #[must_use]
+    pub fn get_res_untracked<R: Resource>(&self) -> Option<&R> {
         self.world.get_resource()
     }
 

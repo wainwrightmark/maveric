@@ -43,7 +43,6 @@ fn clear_color_transition(
 #[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
 pub struct Root;
 
-
 #[derive(MavericContextCompound)]
 pub struct MyContext {
     pub counter_state: CounterState,

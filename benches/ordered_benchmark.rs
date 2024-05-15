@@ -53,7 +53,7 @@ impl MavericRootChildren for Root {
     type Context = (TreeState, LingerState);
 
     fn set_children(
-        context: &<Self::Context as MavericContext>::Wrapper<'_,'_>,
+        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
         commands: &mut impl ChildCommands,
     ) {
         commands.add_child("branch", Branch, context);

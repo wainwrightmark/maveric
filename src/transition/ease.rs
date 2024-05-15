@@ -37,7 +37,8 @@ pub enum Ease {
 }
 
 impl Ease {
-    #[must_use] pub fn ease(&self, t: f32) -> f32 {
+    #[must_use]
+    pub fn ease(&self, t: f32) -> f32 {
         match self {
             Self::Linear => simple_easing::linear(t),
             Self::BackIn => simple_easing::back_in(t),

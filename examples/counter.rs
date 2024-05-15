@@ -25,7 +25,6 @@ pub struct Marker;
 #[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
 pub struct Root;
 
-
 #[derive(Resource, MavericContextResource)]
 pub struct MyContext {
     pub counter_state: CounterState,
@@ -35,7 +34,7 @@ impl MavericRootChildren for Root {
     type Context = MyContext;
 
     fn set_children(
-        context: &<Self::Context as MavericContext>::Wrapper<'_,'_>,
+        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
         commands: &mut impl ChildCommands,
     ) {
         let text = context.counter_state.number.to_string();
