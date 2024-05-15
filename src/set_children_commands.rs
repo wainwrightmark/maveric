@@ -14,7 +14,7 @@ pub struct SetChildrenCommands<
     'a,
     'alloc,
     N: PartialEq,
-    C: NodeContext,
+    C: MavericContext,
     R: MavericRoot,
 > {
     args: NodeArgs<'n, 'p, 'c1, 'cw, 'cs, N, C>,
@@ -35,7 +35,7 @@ impl<
         'a,
         'alloc,
         N: PartialEq,
-        C: NodeContext,
+        C: MavericContext,
         R: MavericRoot,
     > SetChildrenCommands<'n, 'p, 'c1, 'cw, 'cs, 'world, 'ec, 'a, 'alloc, N, C, R>
 {
@@ -81,7 +81,7 @@ impl<
         }
     }
 
-    pub fn map_context<C2: NodeContext>(
+    pub fn map_context<C2: MavericContext>(
         self,
         map: impl FnOnce(&'c1 C::Wrapper<'cw, 'cs>) -> &'c1 C2::Wrapper<'cw, 'cs>,
     ) -> SetChildrenCommands<'n, 'p, 'c1, 'cw, 'cs, 'world, 'ec, 'a, 'alloc, N, C2, R> {
@@ -106,7 +106,7 @@ impl<
         'a,
         'alloc,
         N: ChildTuple<Context = C>,
-        C: NodeContext,
+        C: MavericContext,
         R: MavericRoot,
     > SetChildrenCommands<'n, 'p, 'c1, 'cw, 'cs, 'world, 'ec, 'a, 'alloc, N, C, R>
 {
@@ -128,7 +128,7 @@ impl<
         'a,
         'alloc,
         N: PartialEq,
-        C: NodeContext,
+        C: MavericContext,
         R: MavericRoot,
     > SetChildrenCommands<'n, 'p, 'c1, 'cw, 'cs, 'world, 'ec, 'a, 'alloc, N, C, R>
 {
@@ -207,7 +207,7 @@ impl<'n, 'p, 'c1, 'cw, 'cs, 'world, 'ec, 'a, 'alloc, N: PartialEq, R: MavericRoo
     }
 }
 
-impl<'n, 'p, 'c1, 'cw, 'cs, 'world, 'ec, 'a, 'alloc, C: NodeContext, R: MavericRoot>
+impl<'n, 'p, 'c1, 'cw, 'cs, 'world, 'ec, 'a, 'alloc, C: MavericContext, R: MavericRoot>
     SetChildrenCommands<'n, 'p, 'c1, 'cw, 'cs, 'world, 'ec, 'a, 'alloc, (), C, R>
 {
     pub fn ordered_children_with_context(

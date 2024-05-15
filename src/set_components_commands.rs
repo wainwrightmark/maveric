@@ -2,13 +2,13 @@ use bevy::ecs::system::EntityCommands;
 
 use crate::prelude::*;
 
-pub struct SetComponentCommands<'n, 'p, 'c1, 'cw,'cs, 'world, 'ec, 'a, N: PartialEq, C: NodeContext> {
+pub struct SetComponentCommands<'n, 'p, 'c1, 'cw,'cs, 'world, 'ec, 'a, N: PartialEq, C: MavericContext> {
     args: NodeArgs<'n, 'p, 'c1, 'cw,'cs, N, C>,
     world: &'world World,
     ec: &'ec mut EntityCommands<'a>,
 }
 
-impl<'n, 'p, 'c1, 'cw,'cs, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext>
+impl<'n, 'p, 'c1, 'cw,'cs, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: MavericContext>
     SetComponentCommands<'n, 'p, 'c1, 'cw,'cs, 'world, 'ec, 'a, N, C>
 {
     pub(crate) fn new(
@@ -64,7 +64,7 @@ impl<'n, 'p, 'c1, 'cw,'cs, 'world, 'ec, 'w, 's, 'a, N: PartialEq, C: NodeContext
         }
     }
 
-    pub fn map_context<C2: NodeContext>(
+    pub fn map_context<C2: MavericContext>(
         self,
         map: impl FnOnce(&'c1 C::Wrapper<'cw, 'cs>) -> &'c1 C2::Wrapper<'cw,'cs>,
     ) -> SetComponentCommands<'n, 'p, 'c1, 'cw,'cs, 'world, 'ec, 'a, N, C2> {
@@ -216,7 +216,7 @@ impl<'n, 'p, 'c1, 'cw,'cs, 'world, 'ec, 'a, N: PartialEq>
     }
 }
 
-impl<'n, 'p, 'c1, 'cw,'cs, 'world, 'ec, 'a, C: NodeContext>
+impl<'n, 'p, 'c1, 'cw,'cs, 'world, 'ec, 'a, C: MavericContext>
     SetComponentCommands<'n, 'p, 'c1, 'cw,'cs, 'world, 'ec, 'a, (), C>
 {
     #[allow(clippy::return_self_not_must_use)]

@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use maveric::prelude::*;
-use maveric_macro::NodeContext;
 
 use std::string::ToString;
 
@@ -27,7 +26,7 @@ pub struct Marker;
 pub struct Root;
 
 
-#[derive(NodeContext)]
+#[derive(Resource, MavericContextResource)]
 pub struct MyContext {
     pub counter_state: CounterState,
 }
@@ -36,7 +35,7 @@ impl MavericRootChildren for Root {
     type Context = MyContext;
 
     fn set_children(
-        context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
+        context: &<Self::Context as MavericContext>::Wrapper<'_,'_>,
         commands: &mut impl ChildCommands,
     ) {
         let text = context.counter_state.number.to_string();
@@ -62,12 +61,10 @@ impl MavericRootChildren for Root {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Resource, Default)]
+#[derive(Debug, Clone, PartialEq, Resource, Default, MavericContextResource)]
 pub struct CounterState {
     number: usize,
 }
-
-impl MavericContext for CounterState {}
 
 fn button_system(
     mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<Button>)>,

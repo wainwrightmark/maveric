@@ -243,10 +243,8 @@ mod tests {
 
     #[test]
     fn test_transition_in_out() {
-        #[derive(Debug, Resource)]
+        #[derive(Debug, Resource, MavericContextResource)]
         struct ShouldHaveNodeResource(bool);
-
-        impl MavericContext for ShouldHaveNodeResource {}
 
         #[derive(MavericRoot)]
         struct MyRoot;
@@ -255,7 +253,10 @@ mod tests {
             type Context = ShouldHaveNodeResource;
 
             fn set_children(
-                context: &<Self::Context as crate::widgets::prelude::NodeContext>::Wrapper<'_,'_>,
+                context: &<Self::Context as crate::widgets::prelude::MavericContext>::Wrapper<
+                    '_,
+                    '_,
+                >,
                 commands: &mut impl crate::widgets::prelude::ChildCommands,
             ) {
                 if context.0 {

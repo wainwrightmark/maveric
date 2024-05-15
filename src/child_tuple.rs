@@ -1,11 +1,11 @@
 pub use crate::prelude::*;
 
 pub trait ChildTuple: PartialEq + Send + Sync + 'static {
-    type Context: NodeContext;
+    type Context: MavericContext;
 
     fn add_children(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
+        context: &<Self::Context as MavericContext>::Wrapper<'_,'_>,
         commands: &mut impl ChildCommands,
     );
 }
@@ -15,7 +15,7 @@ macro_rules! impl_child_tuple {
         impl<$T0: Clone + MavericNode, $($T :Clone + MavericNode<Context = $T0::Context>,)*> ChildTuple for ($T0, $($T,)*){
             type Context = $T0::Context;
 
-            fn add_children(&self, context: &<Self::Context as NodeContext>::Wrapper<'_,'_>, commands: &mut impl ChildCommands,) {
+            fn add_children(&self, context: &<Self::Context as MavericContext>::Wrapper<'_,'_>, commands: &mut impl ChildCommands,) {
                 commands.add_child(0, self.0.clone(), &context);
 
                 $(

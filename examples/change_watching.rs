@@ -32,7 +32,7 @@ impl MavericRootChildren for Root {
     type Context = CounterState;
 
     fn set_children(
-        context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
+        context: &<Self::Context as MavericContext>::Wrapper<'_,'_>,
         commands: &mut impl ChildCommands,
     ) {
         let text = context.number.to_string();
@@ -84,7 +84,7 @@ impl MavericNode for ChangeWatcher {
     fn on_changed(
         &self,
         _previous: &Self,
-        _context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
+        _context: &<Self::Context as MavericContext>::Wrapper<'_,'_>,
         world: &World,
         entity_commands: &mut bevy::ecs::system::EntityCommands,
     ) {
@@ -125,12 +125,10 @@ impl MavericNode for ChangeWatcher {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Resource, Default)]
+#[derive(Debug, Clone, PartialEq, Resource, Default, MavericContextResource)]
 pub struct CounterState {
     number: usize,
 }
-
-impl MavericContext for CounterState {}
 
 fn button_system(
     mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<Button>)>,

@@ -20,7 +20,7 @@ pub mod with_previous;
 pub mod has_changed;
 
 pub mod node_args;
-pub mod node_context;
+pub mod maveric_context;
 pub mod plugin;
 pub mod root;
 pub mod root_commands;
@@ -48,7 +48,7 @@ pub mod prelude {
     pub use crate::into_components::*;
     pub use crate::node::*;
     pub use crate::node_args::*;
-    pub use crate::node_context::*;
+    pub use crate::maveric_context::*;
     pub use crate::plugin::*;
     pub use crate::root::*;
     pub use crate::scheduled_change::*;
@@ -68,7 +68,7 @@ pub mod prelude {
     pub(crate) use crate::root_commands::*;
 
     #[cfg(any(feature = "derive", test))]
-    pub use maveric_macro::{MavericContext, MavericRoot, NodeContext};
+    pub use maveric_macro::{MavericContextCompound, MavericContextResource, MavericRoot};
 
     #[cfg(feature = "bumpalo")]
     pub(crate) type Allocator = bumpalo::Bump;

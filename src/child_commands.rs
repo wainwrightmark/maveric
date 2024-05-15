@@ -15,7 +15,7 @@ pub trait ChildCommands {
         &mut self,
         key: impl Into<ChildKey>,
         child: NChild,
-        context: &<NChild::Context as NodeContext>::Wrapper<'_,'_>,
+        context: &<NChild::Context as MavericContext>::Wrapper<'_,'_>,
     );
 
     /// Remove a child immediately if it was previously present
@@ -64,7 +64,7 @@ impl<'c, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
         &mut self,
         key: impl Into<ChildKey>,
         child: NChild,
-        context: &<NChild::Context as NodeContext>::Wrapper<'_,'_>,
+        context: &<NChild::Context as MavericContext>::Wrapper<'_,'_>,
     ) {
         let key = key.into();
 
@@ -173,7 +173,7 @@ impl<'c, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
         &mut self,
         key: impl Into<ChildKey>,
         child: NChild,
-        context: &<NChild::Context as NodeContext>::Wrapper<'_,'_>,
+        context: &<NChild::Context as MavericContext>::Wrapper<'_,'_>,
     ) {
         let key = key.into();
 
@@ -329,6 +329,7 @@ mod tests {
     use crate as maveric;
     use crate::prelude::*;
     use bevy::{time::TimePlugin, utils::HashSet};
+    use maveric_macro::MavericContextResource;
 
     #[test]
     pub fn test_ordering() {
@@ -466,15 +467,11 @@ mod tests {
         leaves
     }
 
-    #[derive(Debug, Clone, PartialEq, Eq, Resource, Default)]
+    #[derive(Debug, Clone, PartialEq, Eq, Resource, Default, MavericContextResource)]
     pub struct TreeState(Vec<u32>);
 
-    impl MavericContext for TreeState {}
-
-    #[derive(Debug, Clone, PartialEq, Eq, Resource, Default)]
+    #[derive(Debug, Clone, PartialEq, Eq, Resource, Default, MavericContextResource)]
     pub struct LingerState(HashSet<u32>);
-
-    impl MavericContext for LingerState {}
 
     #[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
     struct Root;
@@ -483,7 +480,7 @@ mod tests {
         type Context = (TreeState, LingerState);
 
         fn set_children(
-            context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
+            context: &<Self::Context as MavericContext>::Wrapper<'_,'_>,
             commands: &mut impl ChildCommands,
         ) {
             commands.add_child("branch", Branch, context);

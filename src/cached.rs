@@ -6,8 +6,8 @@ use crate::{has_changed::HasChanged, prelude::*};
 
 pub trait CacheableResource: Send + Sync + 'static {
     type Argument<'world, 'state>: SystemParam + ReadOnlySystemParam;
-    fn calculate<'a, 'w, 's>(
-        arg: &'a <Self::Argument<'w, 's> as SystemParam>::Item<'w, 's>,
+    fn calculate<'w, 's>(
+        arg: &<Self::Argument<'w, 's> as SystemParam>::Item<'w, 's>,
     ) -> Self;
 }
 
@@ -37,7 +37,7 @@ impl<'w, 's, T: CacheableResource> AsRef<T> for Cached<'w, 's, T> {
 }
 
 impl<'w, 's, T: CacheableResource> Cached<'w, 's, T> {
-    fn get_data<'a>(&'a self) -> &'a T {
+    fn get_data(&self) -> &T {
         let d = self.data.get_or_init(|| T::calculate(&self.item));
         d
     }

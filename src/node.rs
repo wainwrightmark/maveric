@@ -3,7 +3,7 @@ use bevy::ecs::system::EntityCommands;
 use crate::prelude::*;
 
 pub trait MavericNode: Send + Sync + Sized + PartialEq + 'static {
-    type Context: NodeContext;
+    type Context: MavericContext;
     const DELETER: &'static dyn Deleter = &NodeDeleter::<Self>::new();
 
     fn set_components(commands: SetComponentCommands<Self, Self::Context>);
@@ -18,7 +18,7 @@ pub trait MavericNode: Send + Sync + Sized + PartialEq + 'static {
     fn on_changed(
         &self,
         previous: &Self,
-        context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
+        context: &<Self::Context as MavericContext>::Wrapper<'_,'_>,
         world: &World,
         entity_commands: &mut EntityCommands,
     ) {
@@ -27,7 +27,7 @@ pub trait MavericNode: Send + Sync + Sized + PartialEq + 'static {
     #[allow(unused_variables)]
     fn on_created(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
+        context: &<Self::Context as MavericContext>::Wrapper<'_,'_>,
         world: &World,
         entity_commands: &mut EntityCommands,
     ) {
@@ -37,7 +37,7 @@ pub trait MavericNode: Send + Sync + Sized + PartialEq + 'static {
     fn should_recreate(
         &self,
         _previous: &Self,
-        _context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
+        _context: &<Self::Context as MavericContext>::Wrapper<'_,'_>,
     ) -> bool {
         false
     }

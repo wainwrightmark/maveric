@@ -30,7 +30,7 @@ impl MavericRootChildren for Root {
     type Context = CounterState;
 
     fn set_children (
-        context: &<Self::Context as NodeContext>::Wrapper<'_, '_>,
+        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
         commands: &mut impl ChildCommands,
     ) {
         let text = context.number.to_string();
@@ -56,12 +56,10 @@ impl MavericRootChildren for Root {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Resource, Default)]
+#[derive(Debug, Clone, PartialEq, Resource, Default, MavericContextResource)]
 pub struct CounterState {
     number: usize,
 }
-
-impl MavericContext for CounterState {}
 
 fn button_system(
     mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<Button>)>,
@@ -85,7 +83,7 @@ impl MavericRootChildren for Root2 {
     type Context = CounterState;
 
     fn set_children(
-        context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
+        context: &<Self::Context as MavericContext>::Wrapper<'_,'_>,
         commands: &mut impl ChildCommands,
     ) {
         let path = match context.number % 4 {

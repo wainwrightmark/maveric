@@ -59,7 +59,7 @@ impl<'w, 's, 'b, 'q, 'alloc, R: MavericRoot> ChildCommands
         &mut self,
         key: impl Into<ChildKey>,
         child: NChild,
-        context: &<NChild::Context as NodeContext>::Wrapper<'_,'_>,
+        context: &<NChild::Context as MavericContext>::Wrapper<'_,'_>,
     ) {
         let key = key.into();
 

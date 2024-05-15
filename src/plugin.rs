@@ -144,14 +144,15 @@ mod tests {
         assert_eq!(blues, expected_blues);
     }
 
-    #[derive(Debug, Clone, PartialEq, Eq, Resource, Default)]
+
+    #[derive(Debug, Clone, PartialEq, Eq, Resource, Default, MavericContextResource)]
     pub struct TreeState {
         branch_count: u32,
         blue_leaf_count: u32,
         red_leaf_count: u32,
     }
 
-    impl MavericContext for TreeState {}
+
 
     #[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
     struct Root;
@@ -160,7 +161,7 @@ mod tests {
         type Context = TreeState;
 
         fn set_children(
-            context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
+            context: &<Self::Context as MavericContext>::Wrapper<'_,'_>,
             commands: &mut impl ChildCommands,
         ) {
             for x in 0..(context.branch_count) {

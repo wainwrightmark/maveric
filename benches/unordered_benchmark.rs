@@ -1,7 +1,7 @@
 use bevy::{prelude::*, time::TimePlugin};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use maveric::prelude::*;
-use maveric_macro::MavericRoot;
+use maveric_macro::{MavericContextResource, MavericRoot};
 
 criterion_group!(
     benches,
@@ -102,14 +102,12 @@ fn update_state(app: &mut App, new_state: TreeState) {
     *state = new_state;
 }
 
-#[derive(Debug, Clone, PartialEq, Resource, Default)]
+#[derive(Debug, Clone, PartialEq, Resource, MavericContextResource, Default)]
 pub struct TreeState {
     branch_count: u32,
     blue_leaf_count: u32,
     red_leaf_count: u32,
 }
-
-impl MavericContext for TreeState {}
 
 #[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
 struct Root;
@@ -118,7 +116,7 @@ impl MavericRootChildren for Root {
     type Context = TreeState;
 
     fn set_children(
-        context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
+        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
         commands: &mut impl ChildCommands,
     ) {
         for x in 0..(context.branch_count) {

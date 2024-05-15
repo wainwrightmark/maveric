@@ -26,13 +26,11 @@ fn main() {
     app.run();
 }
 
-#[derive(Debug, Clone, Resource, Default)]
+#[derive(Debug, Clone, Resource, Default, MavericContextResource)]
 pub struct UIState {
     pub next_button: u32,
     pub dynamic_buttons: Vec<u32>,
 }
-
-impl MavericContext for UIState {}
 
 impl UIState {
     pub fn remove_or_readd(&mut self, next_number: u32) {
@@ -85,7 +83,7 @@ impl MavericRootChildren for Root {
     type Context = UIState;
 
     fn set_children(
-        context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
+        context: &<Self::Context as MavericContext>::Wrapper<'_,'_>,
         commands: &mut impl ChildCommands,
     ) {
         commands.add_child(0, CommandGrid, &());

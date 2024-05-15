@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use maveric::{define_lens_transparent, prelude::*};
-use maveric_macro::NodeContext;
+use maveric_macro::{MavericContextCompound, MavericContextResource};
 
 use std::string::ToString;
 
@@ -44,7 +44,7 @@ fn clear_color_transition(
 pub struct Root;
 
 
-#[derive(NodeContext)]
+#[derive(MavericContextCompound)]
 pub struct MyContext {
     pub counter_state: CounterState,
     pub color_state: ColorState,
@@ -54,7 +54,7 @@ impl MavericRootChildren for Root {
     type Context = MyContext;
 
     fn set_children<'r>(
-        context: &<Self::Context as NodeContext>::Wrapper<'_, '_>,
+        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
         commands: &mut impl ChildCommands,
     ) {
         let text = context.counter_state.number.to_string();
@@ -103,12 +103,12 @@ impl MavericRootChildren for Root {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Resource, Default, MavericContext)]
+#[derive(Debug, Clone, PartialEq, Resource, Default, MavericContextResource)]
 pub struct CounterState {
     number: usize,
 }
 
-#[derive(Debug, Clone, PartialEq, Resource, Default, MavericContext)]
+#[derive(Debug, Clone, PartialEq, Resource, Default, MavericContextResource)]
 pub struct ColorState {
     color_index: usize,
 }

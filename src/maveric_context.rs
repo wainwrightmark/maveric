@@ -1,18 +1,10 @@
-use bevy::prelude::*;
-
 use crate::has_changed::HasChanged;
 
-pub trait NodeContext {
-    type Wrapper<'w,'s>: HasChanged;
+pub trait MavericContext {
+    type Wrapper<'w, 's>: HasChanged;
 }
 
-pub trait MavericContext {}
-
-impl<R: Resource + MavericContext> NodeContext for R {
-    type Wrapper<'w, 's> = Res<'w, R>;
-}
-
-impl NodeContext for () {
+impl MavericContext for () {
     type Wrapper<'w, 's> = ();
 }
 
@@ -20,9 +12,9 @@ macro_rules! impl_nc_tuples {
     ($($T:tt $t:tt ),+) => {
 
         #[allow(clippy::many_single_char_names)]
-        impl<$($T,)+> NodeContext for ($($T,)+)
+        impl<$($T,)+> MavericContext for ($($T,)+)
         where
-            $($T: NodeContext,)+
+            $($T: MavericContext,)+
          {
             type Wrapper<'w, 's> = ($($T::Wrapper<'w, 's>,)*);
         }

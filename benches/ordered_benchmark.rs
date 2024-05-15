@@ -1,7 +1,7 @@
 use bevy::{prelude::*, time::TimePlugin};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use maveric::prelude::*;
-use maveric_macro::{MavericContext, MavericRoot};
+use maveric_macro::{MavericContextResource, MavericRoot};
 
 fn reverse_leaves_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("reverse_leaves");
@@ -40,10 +40,10 @@ fn update_state(app: &mut App, new_state: TreeState) {
     let mut state = app.world.resource_mut::<TreeState>();
     *state = new_state;
 }
-#[derive(Debug, Clone, PartialEq, Resource, Default, MavericContext)]
+#[derive(Debug, Clone, PartialEq, Resource, Default, MavericContextResource)]
 pub struct TreeState(Vec<u32>);
 
-#[derive(Debug, Clone, PartialEq, Resource, Default, MavericContext)]
+#[derive(Debug, Clone, PartialEq, Resource, Default, MavericContextResource)]
 pub struct LingerState(bool);
 
 #[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
@@ -53,7 +53,7 @@ impl MavericRootChildren for Root {
     type Context = (TreeState, LingerState);
 
     fn set_children(
-        context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
+        context: &<Self::Context as MavericContext>::Wrapper<'_,'_>,
         commands: &mut impl ChildCommands,
     ) {
         commands.add_child("branch", Branch, context);

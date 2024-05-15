@@ -61,15 +61,13 @@ fn button_system(
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Resource, EnumIs)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Resource, EnumIs, MavericContextResource)]
 pub enum MenuState {
     #[default]
     Closed,
     ShowMainMenu,
     ShowLevelsPage(u32),
 }
-
-impl MavericContext for MenuState {}
 
 #[derive(Debug, Clone, Copy, PartialEq, Default, MavericRoot)]
 pub struct MenuRoot;
@@ -78,7 +76,7 @@ impl MavericRootChildren for MenuRoot {
     type Context = MenuState;
 
     fn set_children(
-        context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
+        context: &<Self::Context as MavericContext>::Wrapper<'_,'_>,
         commands: &mut impl ChildCommands,
     ) {
         let transition_duration: Duration = Duration::from_secs_f32(0.5);
