@@ -76,29 +76,36 @@ fn impl_node_context(ast: &syn::DeriveInput) -> TokenStream {
         quote!(pub #field_name: <#field_type as maveric::node_context::NodeContext>::Wrapper<'w> )
     });
 
-
     let has_changed = fields_named.named.iter().map(|field| {
         let field_name = field.ident.clone().unwrap();
-        let field_type = &field.ty;
-        quote!(<#field_type as maveric::node_context::NodeContext>::has_changed(&wrapper.#field_name) )
+        quote!(maveric::has_changed::HasChanged::has_changed(&self.#field_name) )
     });
 
     quote!(
 
-        #[derive(bevy::ecs::system::SystemParam)]
-        #visibility struct #wrapper_name<'w>{
-            #(#wrapper_fields),*
-        }
-
-
-        #[automatically_derived]
-        impl maveric::node_context::NodeContext for #name {
-            type Wrapper<'c> = #wrapper_name<'c>;
-
-            fn has_changed(wrapper: &Self::Wrapper<'_>) -> bool {
-                #(#has_changed)||*
+            #[derive(bevy::ecs::system::SystemParam)]
+            #visibility struct #wrapper_name<'w>{
+                #(#wrapper_fields),*
             }
-        }
-    )
+
+
+            #[automatically_derived]
+            impl maveric::node_context::NodeContext for #name {
+                type Wrapper<'c> = #wrapper_name<'c>;
+
+                // fn has_changed(wrapper: &Self::Wrapper<'_>) -> bool {
+                //     #(#has_changed)||*
+                // }
+            }
+
+            #[automatically_derived]
+            impl<'c> maveric::has_changed::HasChanged for #wrapper_name<'c>
+            {
+                fn has_changed(&self) -> bool {
+                    #(#has_changed)||*
+                }
+            }
+
+        )
     .into()
 }

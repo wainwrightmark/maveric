@@ -5,6 +5,7 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::option_if_let_else)]
 
+pub mod cached;
 pub mod child_commands;
 pub mod child_deletion_policy;
 pub mod child_key;
@@ -16,6 +17,7 @@ pub mod helpers;
 pub mod into_components;
 pub mod node;
 pub mod with_previous;
+pub mod has_changed;
 
 pub mod node_args;
 pub mod node_context;

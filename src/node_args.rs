@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{has_changed::HasChanged, prelude::*};
 
 #[derive(Debug)]
 pub struct NodeArgs<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext> {
@@ -40,7 +40,7 @@ impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext> NodeArgs<'n, 'p, 'c1, 'c2, 
         match self.event {
             SetEvent::Created | SetEvent::Undeleted => true,
             SetEvent::Updated => {
-                C::has_changed(self.context) || self.previous.map_or(true, |p| !p.eq(self.node))
+                self.context.has_changed() || self.previous.map_or(true, |p| !p.eq(self.node))
             }
         }
     }

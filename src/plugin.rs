@@ -1,6 +1,6 @@
 use std::borrow::BorrowMut;
 
-use crate::prelude::*;
+use crate::{has_changed::HasChanged, prelude::*};
 use bevy::{ecs::system::StaticSystemParam, prelude::*};
 
 pub trait CanRegisterMaveric {
@@ -38,8 +38,8 @@ impl CanRegisterMaveric for App {
 
 fn should_run<R: MavericRoot>(param: StaticSystemParam<R::ContextParam<'_>>) -> bool {
     let context = R::get_context(param);
-    
-    <R::Context as NodeContext>::has_changed(&context)
+
+    context.has_changed()
 }
 
 #[allow(clippy::needless_pass_by_value)]
@@ -52,7 +52,7 @@ fn sync_state<R: MavericRoot>(
 ) {
     let context = R::get_context(param);
 
-    let changed = <R::Context as NodeContext>::has_changed(&context);
+    let changed = &context.has_changed();
     if !changed {
         return;
     }

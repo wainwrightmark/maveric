@@ -1,27 +1,24 @@
 use bevy::prelude::*;
 
-pub trait NodeContext {
-    type Wrapper<'c>;
+use crate::has_changed::HasChanged;
 
-    fn has_changed(wrapper: &Self::Wrapper<'_>) -> bool;
+pub trait NodeContext {
+    type Wrapper<'c> : HasChanged;
+
+    //fn has_changed(wrapper: &Self::Wrapper<'_>) -> bool;
 }
 
 pub trait MavericContext {}
 
+
+
 impl<R: Resource + MavericContext> NodeContext for R {
     type Wrapper<'c> = Res<'c, R>;
 
-    fn has_changed<'c>(wrapper: &'c Self::Wrapper<'c>) -> bool {
-        DetectChanges::is_changed(wrapper)
-    }
 }
 
 impl NodeContext for () {
     type Wrapper<'c> = ();
-
-    fn has_changed(_wrapper: &Self::Wrapper<'_>) -> bool {
-        false
-    }
 }
 
 macro_rules! impl_nc_tuples {
@@ -33,12 +30,6 @@ macro_rules! impl_nc_tuples {
             $($T: NodeContext,)+
          {
             type Wrapper<'c> = ($($T::Wrapper<'c>,)*);
-
-            #[allow(clippy::many_single_char_names)]
-            fn has_changed(wrapper: &Self::Wrapper<'_>) -> bool {
-                let ($($t,)*) = wrapper;
-                $($T::has_changed($t) ||)* false
-            }
         }
 
 
