@@ -16,6 +16,12 @@ pub struct Cached<'w, 's, T: CacheableResource> {
     item: <<T as CacheableResource>::Argument<'w, 's> as SystemParam>::Item<'w, 's>,
 }
 
+impl<'w, 's, T: CacheableResource + std::fmt::Debug> std::fmt::Debug for Cached<'w, 's, T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.get_data().fmt(f)
+    }
+}
+
 impl<'w, 's, T: CacheableResource> Deref for Cached<'w, 's, T> {
     type Target = T;
 
