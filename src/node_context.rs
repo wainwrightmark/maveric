@@ -3,18 +3,13 @@ use bevy::prelude::*;
 use crate::has_changed::HasChanged;
 
 pub trait NodeContext {
-    type Wrapper<'c> : HasChanged;
-
-    //fn has_changed(wrapper: &Self::Wrapper<'_>) -> bool;
+    type Wrapper<'c>: HasChanged;
 }
 
 pub trait MavericContext {}
 
-
-
 impl<R: Resource + MavericContext> NodeContext for R {
     type Wrapper<'c> = Res<'c, R>;
-
 }
 
 impl NodeContext for () {

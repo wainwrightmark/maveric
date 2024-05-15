@@ -92,10 +92,6 @@ fn impl_node_context(ast: &syn::DeriveInput) -> TokenStream {
             #[automatically_derived]
             impl maveric::node_context::NodeContext for #name {
                 type Wrapper<'c> = #wrapper_name<'c>;
-
-                // fn has_changed(wrapper: &Self::Wrapper<'_>) -> bool {
-                //     #(#has_changed)||*
-                // }
             }
 
             #[automatically_derived]
