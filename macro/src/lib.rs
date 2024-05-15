@@ -30,11 +30,11 @@ fn impl_maveric_root(ast: &syn::DeriveInput) -> TokenStream {
     quote!(
         #[automatically_derived]
         impl MavericRoot for #name {
-            type ContextParam<'c> = <<Self as maveric::prelude::MavericRootChildren>::Context as maveric::prelude::NodeContext>::Wrapper<'c>;
+            type ContextParam<'w,'s> = <<Self as maveric::prelude::MavericRootChildren>::Context as maveric::prelude::NodeContext>::Wrapper<'w, 's>;
 
-            fn get_context<'a, 'w, 's>(
-                param: bevy::ecs::system::StaticSystemParam<'w, 's, Self::ContextParam<'a>>,
-            ) -> <<Self as MavericRootChildren>::Context as maveric::prelude::NodeContext>::Wrapper<'w> {
+            fn get_context<'w1, 's1, 'w, 's>(
+                param: bevy::ecs::system::StaticSystemParam<'w, 's, Self::ContextParam<'w1, 's1>>,
+            ) -> <<Self as MavericRootChildren>::Context as maveric::prelude::NodeContext>::Wrapper<'w,'s> {
                 param.into_inner()
             }
         }
@@ -73,7 +73,7 @@ fn impl_node_context(ast: &syn::DeriveInput) -> TokenStream {
     let wrapper_fields = fields_named.named.iter().map(|field| {
         let field_name = field.ident.clone().unwrap();
         let field_type = &field.ty;
-        quote!(pub #field_name: <#field_type as maveric::node_context::NodeContext>::Wrapper<'w> )
+        quote!(pub #field_name: <#field_type as maveric::node_context::NodeContext>::Wrapper<'w,'s> )
     });
 
     let has_changed = fields_named.named.iter().map(|field| {
@@ -84,18 +84,18 @@ fn impl_node_context(ast: &syn::DeriveInput) -> TokenStream {
     quote!(
 
             #[derive(bevy::ecs::system::SystemParam)]
-            #visibility struct #wrapper_name<'w>{
+            #visibility struct #wrapper_name<'w, 's>{
                 #(#wrapper_fields),*
             }
 
 
             #[automatically_derived]
             impl maveric::node_context::NodeContext for #name {
-                type Wrapper<'c> = #wrapper_name<'c>;
+                type Wrapper<'w, 's> = #wrapper_name<'w, 's>;
             }
 
             #[automatically_derived]
-            impl<'c> maveric::has_changed::HasChanged for #wrapper_name<'c>
+            impl<'w, 's> maveric::has_changed::HasChanged for #wrapper_name<'w, 's>
             {
                 fn has_changed(&self) -> bool {
                     #(#has_changed)||*

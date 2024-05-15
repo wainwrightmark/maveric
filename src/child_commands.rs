@@ -15,7 +15,7 @@ pub trait ChildCommands {
         &mut self,
         key: impl Into<ChildKey>,
         child: NChild,
-        context: &<NChild::Context as NodeContext>::Wrapper<'_>,
+        context: &<NChild::Context as NodeContext>::Wrapper<'_,'_>,
     );
 
     /// Remove a child immediately if it was previously present
@@ -64,7 +64,7 @@ impl<'c, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
         &mut self,
         key: impl Into<ChildKey>,
         child: NChild,
-        context: &<NChild::Context as NodeContext>::Wrapper<'_>,
+        context: &<NChild::Context as NodeContext>::Wrapper<'_,'_>,
     ) {
         let key = key.into();
 
@@ -173,7 +173,7 @@ impl<'c, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
         &mut self,
         key: impl Into<ChildKey>,
         child: NChild,
-        context: &<NChild::Context as NodeContext>::Wrapper<'_>,
+        context: &<NChild::Context as NodeContext>::Wrapper<'_,'_>,
     ) {
         let key = key.into();
 
@@ -483,7 +483,7 @@ mod tests {
         type Context = (TreeState, LingerState);
 
         fn set_children(
-            context: &<Self::Context as NodeContext>::Wrapper<'_>,
+            context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
             commands: &mut impl ChildCommands,
         ) {
             commands.add_child("branch", Branch, context);

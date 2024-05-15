@@ -118,7 +118,7 @@ impl MavericRootChildren for Root {
     type Context = TreeState;
 
     fn set_children(
-        context: &<Self::Context as NodeContext>::Wrapper<'_>,
+        context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
         commands: &mut impl ChildCommands,
     ) {
         for x in 0..(context.branch_count) {

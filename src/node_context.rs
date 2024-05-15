@@ -3,17 +3,17 @@ use bevy::prelude::*;
 use crate::has_changed::HasChanged;
 
 pub trait NodeContext {
-    type Wrapper<'c>: HasChanged;
+    type Wrapper<'w,'s>: HasChanged;
 }
 
 pub trait MavericContext {}
 
 impl<R: Resource + MavericContext> NodeContext for R {
-    type Wrapper<'c> = Res<'c, R>;
+    type Wrapper<'w, 's> = Res<'w, R>;
 }
 
 impl NodeContext for () {
-    type Wrapper<'c> = ();
+    type Wrapper<'w, 's> = ();
 }
 
 macro_rules! impl_nc_tuples {
@@ -24,7 +24,7 @@ macro_rules! impl_nc_tuples {
         where
             $($T: NodeContext,)+
          {
-            type Wrapper<'c> = ($($T::Wrapper<'c>,)*);
+            type Wrapper<'w, 's> = ($($T::Wrapper<'w, 's>,)*);
         }
 
 

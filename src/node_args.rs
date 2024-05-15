@@ -1,14 +1,14 @@
 use crate::{has_changed::HasChanged, prelude::*};
 
 #[derive(Debug)]
-pub struct NodeArgs<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext> {
-    pub context: &'c1 C::Wrapper<'c2>,
+pub struct NodeArgs<'n, 'p, 'c1, 'cw,'cs, N: PartialEq, C: NodeContext> {
+    pub context: &'c1 C::Wrapper<'cw, 'cs>,
     pub event: SetEvent,
     pub node: &'n N,
     pub previous: Option<&'p N>,
 }
 
-impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext> Clone for NodeArgs<'n, 'p, 'c1, 'c2, N, C> {
+impl<'n, 'p, 'c1, 'cw,'cs, N: PartialEq, C: NodeContext> Clone for NodeArgs<'n, 'p, 'c1, 'cw,'cs, N, C> {
     fn clone(&self) -> Self {
         Self {
             context: self.context,
@@ -19,9 +19,9 @@ impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext> Clone for NodeArgs<'n, 'p, 
     }
 }
 
-impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext> NodeArgs<'n, 'p, 'c1, 'c2, N, C> {
+impl<'n, 'p, 'c1, 'cw,'cs, N: PartialEq, C: NodeContext> NodeArgs<'n, 'p, 'c1, 'cw,'cs, N, C> {
     pub(crate) const fn new(
-        context: &'c1 C::Wrapper<'c2>,
+        context: &'c1 C::Wrapper<'cw, 'cs>,
         event: SetEvent,
         node: &'n N,
         previous: Option<&'p N>,
@@ -48,7 +48,7 @@ impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext> NodeArgs<'n, 'p, 'c1, 'c2, 
     pub fn map_node<N2: PartialEq>(
         self,
         map: impl Fn(&N) -> &N2,
-    ) -> NodeArgs<'n, 'p, 'c1, 'c2, N2, C> {
+    ) -> NodeArgs<'n, 'p, 'c1, 'cw,'cs, N2, C> {
         NodeArgs {
             node: map(self.node),
             previous: self.previous.map(map),
@@ -59,8 +59,8 @@ impl<'n, 'p, 'c1, 'c2, N: PartialEq, C: NodeContext> NodeArgs<'n, 'p, 'c1, 'c2, 
 
     pub fn map_context<C2: NodeContext>(
         self,
-        map: impl FnOnce(&'c1 C::Wrapper<'c2>) -> &'c1 C2::Wrapper<'c2>,
-    ) -> NodeArgs<'n, 'p, 'c1, 'c2, N, C2> {
+        map: impl FnOnce(&'c1 C::Wrapper<'cw, 'cs>) -> &'c1 C2::Wrapper<'cw,'cs>,
+    ) -> NodeArgs<'n, 'p, 'c1, 'cw,'cs, N, C2> {
         NodeArgs {
             node: self.node,
             previous: self.previous,

@@ -31,8 +31,8 @@ pub struct Root;
 impl MavericRootChildren for Root {
     type Context = CounterState;
 
-    fn set_children<'r>(
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+    fn set_children(
+        context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
         commands: &mut impl ChildCommands,
     ) {
         let text = context.number.to_string();
@@ -84,7 +84,7 @@ impl MavericNode for ChangeWatcher {
     fn on_changed(
         &self,
         _previous: &Self,
-        _context: &<Self::Context as NodeContext>::Wrapper<'_>,
+        _context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
         world: &World,
         entity_commands: &mut bevy::ecs::system::EntityCommands,
     ) {

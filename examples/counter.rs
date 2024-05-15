@@ -23,18 +23,9 @@ fn setup(mut commands: Commands) {
 #[derive(Debug, Clone, PartialEq, Default, Component)]
 pub struct Marker;
 
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
 pub struct Root;
 
-impl MavericRoot for Root {
-    type ContextParam<'c> = <<Self as maveric::prelude::MavericRootChildren>::Context as maveric::prelude::NodeContext>::Wrapper<'c>;
-
-    fn get_context<'a, 'w, 's>(
-        param: bevy::ecs::system::StaticSystemParam<'w, 's, Self::ContextParam<'a>>,
-    ) -> <Self::Context as NodeContext>::Wrapper<'w> {
-        param.into_inner()
-    }
-}
 
 #[derive(NodeContext)]
 pub struct MyContext {
@@ -44,8 +35,8 @@ pub struct MyContext {
 impl MavericRootChildren for Root {
     type Context = MyContext;
 
-    fn set_children<'r>(
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+    fn set_children(
+        context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
         commands: &mut impl ChildCommands,
     ) {
         let text = context.counter_state.number.to_string();

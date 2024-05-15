@@ -36,7 +36,7 @@ impl CanRegisterMaveric for App {
     }
 }
 
-fn should_run<R: MavericRoot>(param: StaticSystemParam<R::ContextParam<'_>>) -> bool {
+fn should_run<R: MavericRoot>(param: StaticSystemParam<R::ContextParam<'_,'_>>) -> bool {
     let context = R::get_context(param);
 
     context.has_changed()
@@ -45,7 +45,7 @@ fn should_run<R: MavericRoot>(param: StaticSystemParam<R::ContextParam<'_>>) -> 
 #[allow(clippy::needless_pass_by_value)]
 fn sync_state<R: MavericRoot>(
     mut commands: Commands,
-    param: StaticSystemParam<R::ContextParam<'_>>,
+    param: StaticSystemParam<R::ContextParam<'_,'_>>,
     root_query: Query<(Entity, &MavericChildComponent<R>), Without<Parent>>,
     world: &World,
     mut allocator: Local<Allocator>,
@@ -160,7 +160,7 @@ mod tests {
         type Context = TreeState;
 
         fn set_children(
-            context: &<Self::Context as NodeContext>::Wrapper<'_>,
+            context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
             commands: &mut impl ChildCommands,
         ) {
             for x in 0..(context.branch_count) {

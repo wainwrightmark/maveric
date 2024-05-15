@@ -36,8 +36,8 @@ pub struct Root;
 impl MavericRootChildren for Root {
     type Context = GraphState;
 
-    fn set_children<'r>(
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+    fn set_children(
+        context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
         commands: &mut impl ChildCommands,
     ) {
         commands.add_child("Buttons", Buttons, &());

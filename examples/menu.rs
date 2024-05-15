@@ -78,7 +78,7 @@ impl MavericRootChildren for MenuRoot {
     type Context = MenuState;
 
     fn set_children(
-        context: &<Self::Context as NodeContext>::Wrapper<'_>,
+        context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
         commands: &mut impl ChildCommands,
     ) {
         let transition_duration: Duration = Duration::from_secs_f32(0.5);

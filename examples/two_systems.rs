@@ -29,8 +29,8 @@ pub struct Root;
 impl MavericRootChildren for Root {
     type Context = CounterState;
 
-    fn set_children<'r>(
-        context: &<Self::Context as NodeContext>::Wrapper<'r>,
+    fn set_children (
+        context: &<Self::Context as NodeContext>::Wrapper<'_, '_>,
         commands: &mut impl ChildCommands,
     ) {
         let text = context.number.to_string();
@@ -85,7 +85,7 @@ impl MavericRootChildren for Root2 {
     type Context = CounterState;
 
     fn set_children(
-        context: &<Self::Context as NodeContext>::Wrapper<'_>,
+        context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
         commands: &mut impl ChildCommands,
     ) {
         let path = match context.number % 4 {

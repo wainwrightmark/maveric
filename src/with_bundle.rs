@@ -11,7 +11,7 @@ impl<N: MavericNode, B: IntoBundle + PartialEq> MavericNode for WithBundle<N, B>
     fn on_changed(
         &self,
         previous: &Self,
-        context: &<Self::Context as NodeContext>::Wrapper<'_>,
+        context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
         world: &World,
         entity_commands: &mut bevy::ecs::system::EntityCommands,
     ) {
@@ -20,7 +20,7 @@ impl<N: MavericNode, B: IntoBundle + PartialEq> MavericNode for WithBundle<N, B>
 
     fn on_created(
         &self,
-        context: &<Self::Context as NodeContext>::Wrapper<'_>,
+        context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
         world: &World,
         entity_commands: &mut bevy::ecs::system::EntityCommands,
     ) {
@@ -51,7 +51,7 @@ impl<N: MavericNode, B: IntoBundle + PartialEq> MavericNode for WithBundle<N, B>
     fn should_recreate(
         &self,
         previous: &Self,
-        context: &<Self::Context as NodeContext>::Wrapper<'_>,
+        context: &<Self::Context as NodeContext>::Wrapper<'_,'_>,
     ) -> bool {
         self.node.should_recreate(&previous.node, context)
     }
