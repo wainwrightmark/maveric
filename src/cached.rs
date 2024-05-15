@@ -119,7 +119,7 @@ pub mod tests {
     use crate::cached::{CacheableResource, Cached};
 
     #[test]
-    pub fn go() {
+    pub fn test_with_one_arg() {
         #[derive(Debug, Resource, Default, PartialEq)]
         pub struct Counter(usize);
 
@@ -185,6 +185,95 @@ pub mod tests {
             let mut r = app.world.resource_mut::<Counter>();
 
             r.set_if_neq(Counter(new_count));
+        }
+    }
+
+    #[test]
+    pub fn test_with_two_args() {
+        #[derive(Debug, Resource, Default, PartialEq)]
+        pub struct Counter1(usize);
+        #[derive(Debug, Resource, Default, PartialEq)]
+        pub struct Counter2(usize);
+
+        pub struct CounterMult(usize);
+
+        static TIMES_UPDATED: AtomicUsize = AtomicUsize::new(0);
+
+        fn assert_times_updated(expected: usize) {
+            let v = TIMES_UPDATED.load(std::sync::atomic::Ordering::SeqCst);
+
+            assert_eq!(v, expected);
+        }
+
+        impl CacheableResource for CounterMult {
+            type Argument<'world, 'state> = (Res<'world, Counter1>, Res<'world, Counter2>);
+
+            fn calculate<'a, 'w, 's>(
+                arg: &'a <Self::Argument<'w, 's> as bevy::ecs::system::SystemParam>::Item<'w, 's>,
+            ) -> Self {
+                TIMES_UPDATED.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                Self(arg.0 .0 * arg.1 .0)
+            }
+        }
+
+        let mut app = App::new();
+
+        app.init_resource::<Counter1>();
+        app.init_resource::<Counter2>();
+
+        app.add_systems(Update, check_count_and_multiple);
+
+        fn check_count_and_multiple(
+            count1: Res<Counter1>,
+            count2: Res<Counter2>,
+            cached_product: Cached<CounterMult>,
+        ) {
+            let product = count1.0 * count2.0;
+
+            assert_eq!(product, cached_product.0);
+        }
+
+        assert_times_updated(0);
+        app.update();
+        assert_times_updated(1);
+
+        set_counts(&mut app, 1, 1);
+
+        app.update();
+        assert_times_updated(2);
+        app.update();
+        assert_times_updated(2);
+        set_counts(&mut app, 1, 1);
+
+        app.update();
+
+        assert_times_updated(2);
+
+        set_counts(&mut app, 2, 2);
+        set_counts(&mut app, 3, 3);
+
+        app.update();
+
+        assert_times_updated(3);
+
+        set_counts(&mut app, 4, 3);
+
+        app.update();
+
+        assert_times_updated(4);
+
+        set_counts(&mut app, 4, 4);
+
+        app.update();
+
+        assert_times_updated(5);
+
+        fn set_counts(app: &mut App, new_count1: usize, new_count2: usize) {
+            let mut counter1 = app.world.resource_mut::<Counter1>();
+            counter1.set_if_neq(Counter1(new_count1));
+            let mut counter2 = app.world.resource_mut::<Counter2>();
+
+            counter2.set_if_neq(Counter2(new_count2));
         }
     }
 }
