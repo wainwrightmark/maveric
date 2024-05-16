@@ -1,7 +1,6 @@
 use bevy::{prelude::*, time::TimePlugin};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use maveric::prelude::*;
-use maveric_macro::{MavericContextResource, MavericRoot};
 
 criterion_group!(
     benches,
@@ -102,23 +101,20 @@ fn update_state(app: &mut App, new_state: TreeState) {
     *state = new_state;
 }
 
-#[derive(Debug, Clone, PartialEq, Resource, MavericContextResource, Default)]
+#[derive(Debug, Clone, PartialEq, Resource, Default)]
 pub struct TreeState {
     branch_count: u32,
     blue_leaf_count: u32,
     red_leaf_count: u32,
 }
 
-#[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
+#[derive(Debug, Clone, PartialEq, Default)]
 struct Root;
 
-impl MavericRootChildren for Root {
-    type Context = TreeState;
+impl MavericRoot for Root {
+    type Context<'w, 's> = Res<'w, TreeState>;
 
-    fn set_children(
-        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
-        commands: &mut impl ChildCommands,
-    ) {
+    fn set_children(context: &Self::Context<'_, '_>, commands: &mut impl ChildCommands) {
         for x in 0..(context.branch_count) {
             commands.add_child(x, Branch, context);
         }
@@ -129,11 +125,11 @@ impl MavericRootChildren for Root {
 struct Branch;
 
 impl MavericNode for Branch {
-    type Context = TreeState;
+    type Context<'w, 's> = Res<'w, TreeState>;
 
-    fn set_components(_commands: SetComponentCommands<Self, Self::Context>) {}
+    fn set_components(_commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {}
 
-    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>) {
         commands
             .ignore_node()
             .unordered_children_with_context(|context, commands| {

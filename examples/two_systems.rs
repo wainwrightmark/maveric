@@ -23,16 +23,13 @@ fn setup(mut commands: Commands) {
 #[derive(Debug, Clone, PartialEq, Default, Component)]
 pub struct Marker;
 
-#[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Root;
 
-impl MavericRootChildren for Root {
-    type Context = CounterState;
+impl MavericRoot for Root {
+    type Context<'w, 's> = Res<'w, CounterState>;
 
-    fn set_children(
-        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
-        commands: &mut impl ChildCommands,
-    ) {
+    fn set_children(context: &Self::Context<'_, '_>, commands: &mut impl ChildCommands) {
         let text = context.number.to_string();
         commands.add_child(
             0,
@@ -56,7 +53,7 @@ impl MavericRootChildren for Root {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Resource, Default, MavericContextResource)]
+#[derive(Debug, Clone, PartialEq, Resource, Default)]
 pub struct CounterState {
     number: usize,
 }
@@ -76,16 +73,13 @@ fn button_system(
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Root2;
 
-impl MavericRootChildren for Root2 {
-    type Context = CounterState;
+impl MavericRoot for Root2 {
+    type Context<'w, 's> = Res<'w, CounterState>;
 
-    fn set_children(
-        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
-        commands: &mut impl ChildCommands,
-    ) {
+    fn set_children(context: &Self::Context<'_, '_>, commands: &mut impl ChildCommands) {
         let path = match context.number % 4 {
             0 => r#"images\MedalsBlack.png"#,
             1 => r#"images\MedalsBronze.png"#,

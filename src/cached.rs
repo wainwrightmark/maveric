@@ -2,7 +2,7 @@ use std::{ops::Deref, sync::OnceLock};
 
 use bevy::ecs::system::{ReadOnlySystemParam, SystemParam};
 
-use crate::{has_changed::HasChanged, prelude::*};
+use crate::{has_changed::HasChanged, has_item_changed::HasItemChanged, prelude::*};
 
 pub trait CacheableResource: Send + Sync + 'static {
     type Argument<'world, 'state>: SystemParam + ReadOnlySystemParam;
@@ -12,6 +12,29 @@ pub trait CacheableResource: Send + Sync + 'static {
 pub struct Cached<'w, 's, T: CacheableResource> {
     data: std::sync::Arc<OnceLock<T>>,
     item: <<T as CacheableResource>::Argument<'w, 's> as SystemParam>::Item<'w, 's>,
+}
+
+impl<'w, 's, T: CacheableResource> HasItemChanged for Cached<'w, 's, T>
+where
+    <T::Argument<'static, 'static> as SystemParam>::Item<'static, 'static>: HasChanged,
+{
+    fn has_item_changed<'a, 'w1, 's1>(item: &'a Self::Item<'w1, 's1>) -> bool {
+        unsafe {
+            let item: &'a <T::Argument<'static, 'static> as SystemParam>::Item<'static, 'static> =
+                std::mem::transmute(item);
+
+            item.has_changed()
+        }
+    }
+}
+
+impl<'w, 's, T: CacheableResource> HasChanged for Cached<'w, 's, T>
+where
+    <T::Argument<'w, 's> as SystemParam>::Item<'w, 's>: HasChanged,
+{
+    fn has_changed(&self) -> bool {
+        self.item.has_changed()
+    }
 }
 
 impl<'w, 's, T: CacheableResource + std::fmt::Debug> std::fmt::Debug for Cached<'w, 's, T> {
@@ -38,15 +61,6 @@ impl<'w, 's, T: CacheableResource> Cached<'w, 's, T> {
     fn get_data(&self) -> &T {
         let d = self.data.get_or_init(|| T::calculate(&self.item));
         d
-    }
-}
-
-impl<'w, 's, T: CacheableResource> HasChanged for Cached<'w, 's, T>
-where
-    <T::Argument<'w, 's> as SystemParam>::Item<'w, 's>: HasChanged,
-{
-    fn has_changed(&self) -> bool {
-        self.item.has_changed()
     }
 }
 
@@ -94,7 +108,7 @@ where
         );
 
         let item: <T::Argument<'static, 'static> as SystemParam>::Item<'static, 'static> =
-            std::mem::transmute(item);
+            std::mem::transmute(item); //todo use HasItemChanged
 
         if item.has_changed() {
             if let Some(mut r) = world.get_resource_mut::<CachedLazyCell<T>>() {

@@ -150,11 +150,11 @@ where
     L::Value: Tweenable,
     L::Object: Component,
 {
-    type Context = N::Context;
+    type Context<'w, 's> = N::Context<'w, 's>;
 
     fn on_created(
         &self,
-        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
+        context: &Self::Context<'_, '_>,
         world: &World,
         entity_commands: &mut bevy::ecs::system::EntityCommands,
     ) {
@@ -164,14 +164,14 @@ where
     fn on_changed(
         &self,
         previous: &Self,
-        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
+        context: &Self::Context<'_, '_>,
         world: &World,
         entity_commands: &mut bevy::ecs::system::EntityCommands,
     ) {
         N::on_changed(&self.node, &previous.node, context, world, entity_commands);
     }
 
-    fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
+    fn set_components(mut commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {
         commands.scope(|commands| N::set_components(commands.map_node(|x| &x.node)));
 
         commands
@@ -247,7 +247,7 @@ where
             });
     }
 
-    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>) {
         N::set_children(commands.map_args(|x| &x.node));
     }
 
@@ -282,11 +282,7 @@ where
         DeletionPolicy::Linger(duration)
     }
 
-    fn should_recreate(
-        &self,
-        previous: &Self,
-        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
-    ) -> bool {
+    fn should_recreate(&self, previous: &Self, context: &Self::Context<'_, '_>) -> bool {
         self.node.should_recreate(&previous.node, context)
     }
 }

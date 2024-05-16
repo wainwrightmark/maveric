@@ -30,9 +30,9 @@ fn anchor_compare(l: &Anchor, r: &Anchor) -> bool {
 }
 
 impl MavericNode for SpriteNode {
-    type Context = ();
+    type Context<'w, 's> = ();
 
-    fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
+    fn set_components(mut commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {
         commands.insert_static_bundle(SpatialBundle::default());
 
         commands.scope(|commands| {
@@ -53,5 +53,8 @@ impl MavericNode for SpriteNode {
         commands.insert_with_node(|x| x.sprite.clone());
     }
 
-    fn set_children<R: MavericRoot>(_commands: SetChildrenCommands<Self, Self::Context, R>) {}
+    fn set_children<R: MavericRoot>(
+        _commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>,
+    ) {
+    }
 }

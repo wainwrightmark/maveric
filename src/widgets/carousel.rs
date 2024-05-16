@@ -42,9 +42,9 @@ impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Pa
 impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> MavericNode
     for Carousel<Child, F>
 {
-    type Context = <Child as MavericNode>::Context;
+    type Context<'w, 's> = <Child as MavericNode>::Context<'w, 's>;
 
-    fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
+    fn set_components(commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {
         commands.ignore_node().ignore_context().insert(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
@@ -55,7 +55,7 @@ impl<Child: MavericNode, F: Send + Sync + 'static + Fn(u32) -> Option<Child>> Ma
         });
     }
 
-    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>) {
         commands.ordered(|args, commands| {
             const CENTER: f32 = 50.0;
             const PAGE_WIDTH: f32 = 200.0;

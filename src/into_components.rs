@@ -16,12 +16,15 @@ impl<T: Bundle + PartialEq + Clone> IntoBundle for T {
 }
 
 impl<T: IntoBundle> MavericNode for T {
-    type Context = ();
+    type Context<'w, 's> = ();
 
-    fn set_components(data: SetComponentCommands<Self, Self::Context>) {
+    fn set_components(data: SetComponentCommands<Self, Self::Context<'_, '_>>) {
         data.ignore_context()
             .insert_with_node(|a| a.clone().into_bundle());
     }
 
-    fn set_children<R: MavericRoot>(_commands: SetChildrenCommands<Self, Self::Context, R>) {}
+    fn set_children<R: MavericRoot>(
+        _commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>,
+    ) {
+    }
 }

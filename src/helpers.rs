@@ -2,15 +2,15 @@ pub use crate::prelude::*;
 use bevy::ecs::system::EntityCommands;
 pub use bevy::prelude::*;
 
-pub(crate) fn create_recursive<R: MavericRoot, N: MavericNode>(
+pub(crate) fn create_recursive<'w, 's, R: MavericRoot, N: MavericNode>(
     mut entity_commands: EntityCommands,
     node: N,
-    context: &<N::Context as MavericContext>::Wrapper<'_, '_>,
+    context: &N::Context<'w, 's>,
     key: ChildKey,
     world: &World,
     alloc: &Allocator,
 ) -> Entity {
-    let component_commands = SetComponentCommands::<N, N::Context>::new(
+    let component_commands = SetComponentCommands::<N, N::Context<'w, 's>>::new(
         NodeArgs::new(context, SetEvent::Created, &node, None),
         world,
         &mut entity_commands,
@@ -18,7 +18,7 @@ pub(crate) fn create_recursive<R: MavericRoot, N: MavericNode>(
 
     N::set_components(component_commands);
 
-    let children_commands = SetChildrenCommands::<N, N::Context, R>::new(
+    let children_commands = SetChildrenCommands::<N, N::Context<'w, 's>, R>::new(
         NodeArgs::new(context, SetEvent::Created, &node, None),
         world,
         &mut entity_commands,
@@ -37,7 +37,7 @@ pub(crate) fn create_recursive<R: MavericRoot, N: MavericNode>(
 
 /// Recursively delete an entity. Returns the entity id if it is to linger.
 #[must_use]
-pub(crate) fn delete_recursive<R: MavericRootChildren>(
+pub(crate) fn delete_recursive<R: MavericRoot>(
     commands: &mut Commands,
     entity: Entity,
     world: &World,
@@ -71,11 +71,11 @@ pub(crate) fn delete_recursive<R: MavericRootChildren>(
     }
 }
 
-pub(crate) fn update_recursive<R: MavericRoot, N: MavericNode>(
+pub(crate) fn update_recursive<'w, 's, R: MavericRoot, N: MavericNode>(
     commands: &mut Commands,
     entity: Entity,
     node: N,
-    context: &<N::Context as MavericContext>::Wrapper<'_, '_>,
+    context: &N::Context<'w, 's>,
     world: &World,
     alloc: &Allocator,
 ) {
@@ -97,7 +97,7 @@ pub(crate) fn update_recursive<R: MavericRoot, N: MavericNode>(
         SetEvent::Updated
     };
 
-    let component_commands = SetComponentCommands::<N, N::Context>::new(
+    let component_commands = SetComponentCommands::<N, N::Context<'w, 's>>::new(
         NodeArgs::new(context, event, &node, previous),
         world,
         &mut ec,
@@ -105,7 +105,7 @@ pub(crate) fn update_recursive<R: MavericRoot, N: MavericNode>(
 
     N::set_components(component_commands);
 
-    let children_commands = SetChildrenCommands::<N, N::Context, R>::new(
+    let children_commands = SetChildrenCommands::<N, N::Context<'w, 's>, R>::new(
         NodeArgs::new(context, event, &node, previous),
         world,
         &mut ec,

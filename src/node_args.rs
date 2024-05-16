@@ -1,16 +1,14 @@
-use crate::{has_changed::HasChanged, prelude::*};
+use crate::prelude::*;
 
 #[derive(Debug)]
-pub struct NodeArgs<'n, 'p, 'c1, 'cw, 'cs, N: PartialEq, C: MavericContext> {
-    pub context: &'c1 C::Wrapper<'cw, 'cs>,
+pub struct NodeArgs<'n, 'p, 'c1, N: PartialEq, C: MavericContext> {
+    pub context: &'c1 C,
     pub event: SetEvent,
     pub node: &'n N,
     pub previous: Option<&'p N>,
 }
 
-impl<'n, 'p, 'c1, 'cw, 'cs, N: PartialEq, C: MavericContext> Clone
-    for NodeArgs<'n, 'p, 'c1, 'cw, 'cs, N, C>
-{
+impl<'n, 'p, 'c1, 'cw, 'cs, N: PartialEq, C: MavericContext> Clone for NodeArgs<'n, 'p, 'c1, N, C> {
     fn clone(&self) -> Self {
         Self {
             context: self.context,
@@ -21,9 +19,9 @@ impl<'n, 'p, 'c1, 'cw, 'cs, N: PartialEq, C: MavericContext> Clone
     }
 }
 
-impl<'n, 'p, 'c1, 'cw, 'cs, N: PartialEq, C: MavericContext> NodeArgs<'n, 'p, 'c1, 'cw, 'cs, N, C> {
+impl<'n, 'p, 'c1, 'cw, 'cs, N: PartialEq, C: MavericContext> NodeArgs<'n, 'p, 'c1, N, C> {
     pub(crate) const fn new(
-        context: &'c1 C::Wrapper<'cw, 'cs>,
+        context: &'c1 C,
         event: SetEvent,
         node: &'n N,
         previous: Option<&'p N>,
@@ -47,10 +45,7 @@ impl<'n, 'p, 'c1, 'cw, 'cs, N: PartialEq, C: MavericContext> NodeArgs<'n, 'p, 'c
         }
     }
 
-    pub fn map_node<N2: PartialEq>(
-        self,
-        map: impl Fn(&N) -> &N2,
-    ) -> NodeArgs<'n, 'p, 'c1, 'cw, 'cs, N2, C> {
+    pub fn map_node<N2: PartialEq>(self, map: impl Fn(&N) -> &N2) -> NodeArgs<'n, 'p, 'c1, N2, C> {
         NodeArgs {
             node: map(self.node),
             previous: self.previous.map(map),
@@ -61,8 +56,8 @@ impl<'n, 'p, 'c1, 'cw, 'cs, N: PartialEq, C: MavericContext> NodeArgs<'n, 'p, 'c
 
     pub fn map_context<C2: MavericContext>(
         self,
-        map: impl FnOnce(&'c1 C::Wrapper<'cw, 'cs>) -> &'c1 C2::Wrapper<'cw, 'cs>,
-    ) -> NodeArgs<'n, 'p, 'c1, 'cw, 'cs, N, C2> {
+        map: impl FnOnce(&'c1 C) -> &'c1 C2,
+    ) -> NodeArgs<'n, 'p, 'c1, N, C2> {
         NodeArgs {
             node: self.node,
             previous: self.previous,

@@ -14,9 +14,9 @@ pub struct ButtonNode<Marker: IntoBundle, S: IntoBundle<B = Style>, C: ChildTupl
 impl<Marker: IntoBundle, S: IntoBundle<B = Style>, C: ChildTuple> MavericNode
     for ButtonNode<Marker, S, C>
 {
-    type Context = C::Context;
+    type Context<'w, 's> = C::Context<'w, 's>;
 
-    fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
+    fn set_components(commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {
         let mut commands = commands.ignore_context();
 
         commands.insert_static_bundle(ButtonBundle::default());
@@ -36,7 +36,7 @@ impl<Marker: IntoBundle, S: IntoBundle<B = Style>, C: ChildTuple> MavericNode
         });
     }
 
-    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>) {
         commands.map_args(|x| &x.children).add_children();
     }
 }

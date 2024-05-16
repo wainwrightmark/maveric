@@ -26,7 +26,7 @@ fn main() {
     app.run();
 }
 
-#[derive(Debug, Clone, Resource, Default, MavericContextResource)]
+#[derive(Debug, Clone, Resource, Default)]
 pub struct UIState {
     pub next_button: u32,
     pub dynamic_buttons: Vec<u32>,
@@ -76,16 +76,13 @@ pub enum Command {
 #[derive(Debug, Eq, PartialEq, Component, Hash, Clone, Copy)]
 pub struct DynamicButtonComponent(u32);
 
-#[derive(Eq, PartialEq, Debug, Default, MavericRoot)]
+#[derive(Eq, PartialEq, Debug, Default)]
 pub struct Root;
 
-impl MavericRootChildren for Root {
-    type Context = UIState;
+impl MavericRoot for Root {
+    type Context<'w, 's> = Res<'w, UIState>;
 
-    fn set_children(
-        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
-        commands: &mut impl ChildCommands,
-    ) {
+    fn set_children(context: &Self::Context<'_, '_>, commands: &mut impl ChildCommands) {
         commands.add_child(0, CommandGrid, &());
         commands.add_child(1, DynamicGrid, context);
     }
@@ -95,9 +92,9 @@ impl MavericRootChildren for Root {
 pub struct CommandGrid;
 
 impl MavericNode for CommandGrid {
-    type Context = ();
+    type Context<'w, 's> = ();
 
-    fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
+    fn set_components(commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {
         commands.ignore_node().ignore_context().insert(NodeBundle {
             style: Style {
                 height: Val::Percent(10.0),
@@ -112,7 +109,7 @@ impl MavericNode for CommandGrid {
         });
     }
 
-    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>) {
         commands
             .ignore_node()
             .unordered_children_with_context(|context, commands| {
@@ -144,9 +141,9 @@ impl MavericNode for CommandGrid {
 pub struct DynamicGrid;
 
 impl MavericNode for DynamicGrid {
-    type Context = UIState;
+    type Context<'w, 's> = Res<'w, UIState>;
 
-    fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
+    fn set_components(commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {
         commands.ignore_node().ignore_context().insert(NodeBundle {
             style: Style {
                 top: Val::Percent(10.0),
@@ -162,7 +159,7 @@ impl MavericNode for DynamicGrid {
         });
     }
 
-    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>) {
         commands
             .ignore_node()
             .ordered_children_with_context(|context, commands| {

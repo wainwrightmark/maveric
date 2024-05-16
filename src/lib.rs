@@ -14,6 +14,7 @@ pub mod component_commands;
 pub mod components;
 pub mod deleter;
 pub mod has_changed;
+pub mod has_item_changed;
 pub mod helpers;
 pub mod into_components;
 pub mod node;
@@ -68,7 +69,7 @@ pub mod prelude {
     pub(crate) use crate::root_commands::*;
 
     #[cfg(any(feature = "derive", test))]
-    pub use maveric_macro::{MavericContextCompound, MavericContextResource, MavericRoot};
+    pub use maveric_macro::HasChanged;
 
     #[cfg(feature = "bumpalo")]
     pub(crate) type Allocator = bumpalo::Bump;

@@ -61,7 +61,7 @@ fn button_system(
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Resource, EnumIs, MavericContextResource)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Resource, EnumIs)]
 pub enum MenuState {
     #[default]
     Closed,
@@ -69,16 +69,13 @@ pub enum MenuState {
     ShowLevelsPage(u32),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Default, MavericRoot)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct MenuRoot;
 
-impl MavericRootChildren for MenuRoot {
-    type Context = MenuState;
+impl MavericRoot for MenuRoot {
+    type Context<'w, 's> = Res<'w, MenuState>;
 
-    fn set_children(
-        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
-        commands: &mut impl ChildCommands,
-    ) {
+    fn set_children(context: &Self::Context<'_, '_>, commands: &mut impl ChildCommands) {
         let transition_duration: Duration = Duration::from_secs_f32(0.5);
 
         fn get_carousel_child(page: u32) -> Option<MainOrLevelMenu> {
@@ -109,7 +106,7 @@ impl MavericRootChildren for MenuRoot {
     }
 }
 
-fn menu_button_node() -> impl MavericNode<Context = ()> {
+fn menu_button_node<'w, 's>() -> impl MavericNode<Context<'w, 's> = ()> {
     ButtonNode {
         style: OpenMenuButtonStyle,
         visibility: Visibility::Visible,
@@ -127,7 +124,7 @@ fn menu_button_node() -> impl MavericNode<Context = ()> {
     }
 }
 
-fn icon_button_node(button_action: ButtonAction) -> impl MavericNode<Context = ()> {
+fn icon_button_node<'w, 's>(button_action: ButtonAction) -> impl MavericNode<Context<'w, 's> = ()> {
     ButtonNode {
         style: IconNodeStyle,
         visibility: Visibility::Visible,
@@ -145,7 +142,7 @@ fn icon_button_node(button_action: ButtonAction) -> impl MavericNode<Context = (
     }
 }
 
-fn text_button_node(button_action: ButtonAction) -> impl MavericNode<Context = ()> {
+fn text_button_node<'w, 's>(button_action: ButtonAction) -> impl MavericNode<Context<'w, 's> = ()> {
     ButtonNode {
         style: TextButtonStyle,
         visibility: Visibility::Visible,
@@ -163,10 +160,10 @@ fn text_button_node(button_action: ButtonAction) -> impl MavericNode<Context = (
     }
 }
 
-fn text_and_image_button_node(
+fn text_and_image_button_node<'w, 's>(
     button_action: ButtonAction,
     image_path: &'static str,
-) -> impl MavericNode<Context = ()> {
+) -> impl MavericNode<Context<'w, 's> = ()> {
     ButtonNode {
         style: TextButtonStyle,
         visibility: Visibility::Visible,
@@ -198,9 +195,9 @@ pub enum MainOrLevelMenu {
 }
 
 impl MavericNode for MainOrLevelMenu {
-    type Context = MenuState;
+    type Context<'w, 's> = Res<'w, MenuState>;
 
-    fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
+    fn set_components(commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {
         commands.ignore_node().ignore_context().insert(NodeBundle {
             style: Style {
                 position_type: PositionType::Absolute,
@@ -217,7 +214,7 @@ impl MavericNode for MainOrLevelMenu {
         });
     }
 
-    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>) {
         commands
             .ignore_context()
             .unordered_children_with_node(|node, commands| match node {
@@ -269,9 +266,9 @@ impl MavericNode for MainOrLevelMenu {
 pub struct LevelMenuArrows(u32);
 
 impl MavericNode for LevelMenuArrows {
-    type Context = ();
+    type Context<'w, 's> = ();
 
-    fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
+    fn set_components(commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {
         commands.ignore_node().ignore_context().insert(NodeBundle {
             style: Style {
                 position_type: PositionType::Relative,
@@ -301,7 +298,7 @@ impl MavericNode for LevelMenuArrows {
         });
     }
 
-    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>) {
         commands.unordered_children_with_node_and_context(|args, context, commands| {
             if args.0 == 0 {
                 commands.add_child("left", icon_button_node(ButtonAction::OpenMenu), context)

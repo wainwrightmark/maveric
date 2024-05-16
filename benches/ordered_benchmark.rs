@@ -1,7 +1,6 @@
 use bevy::{prelude::*, time::TimePlugin};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use maveric::prelude::*;
-use maveric_macro::{MavericContextResource, MavericRoot};
 
 fn reverse_leaves_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("reverse_leaves");
@@ -40,22 +39,19 @@ fn update_state(app: &mut App, new_state: TreeState) {
     let mut state = app.world.resource_mut::<TreeState>();
     *state = new_state;
 }
-#[derive(Debug, Clone, PartialEq, Resource, Default, MavericContextResource)]
+#[derive(Debug, Clone, PartialEq, Resource, Default)]
 pub struct TreeState(Vec<u32>);
 
-#[derive(Debug, Clone, PartialEq, Resource, Default, MavericContextResource)]
+#[derive(Debug, Clone, PartialEq, Resource, Default)]
 pub struct LingerState(bool);
 
-#[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
+#[derive(Debug, Clone, PartialEq, Default)]
 struct Root;
 
-impl MavericRootChildren for Root {
-    type Context = (TreeState, LingerState);
+impl MavericRoot for Root {
+    type Context<'w, 's> = (Res<'w, TreeState>, Res<'w, LingerState>);
 
-    fn set_children(
-        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
-        commands: &mut impl ChildCommands,
-    ) {
+    fn set_children(context: &Self::Context<'_, '_>, commands: &mut impl ChildCommands) {
         commands.add_child("branch", Branch, context);
     }
 }
@@ -64,11 +60,11 @@ impl MavericRootChildren for Root {
 struct Branch;
 
 impl MavericNode for Branch {
-    type Context = (TreeState, LingerState);
+    type Context<'w, 's> = (Res<'w, TreeState>, Res<'w, LingerState>);
 
-    fn set_components(_commands: SetComponentCommands<Self, Self::Context>) {}
+    fn set_components(_commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {}
 
-    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>) {
         commands
             .ignore_node()
             .ordered_children_with_context(|context, commands| {
@@ -87,11 +83,14 @@ struct Leaf {
 }
 
 impl MavericNode for Leaf {
-    type Context = ();
+    type Context<'w, 's> = ();
 
-    fn set_components(_commands: SetComponentCommands<Self, Self::Context>) {}
+    fn set_components(_commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {}
 
-    fn set_children<R: MavericRoot>(_commands: SetChildrenCommands<Self, Self::Context, R>) {}
+    fn set_children<R: MavericRoot>(
+        _commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>,
+    ) {
+    }
 
     fn on_deleted<'r>(&self, _commands: &mut ComponentCommands) -> DeletionPolicy {
         if self.linger {

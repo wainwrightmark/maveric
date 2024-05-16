@@ -30,16 +30,13 @@ pub enum ButtonMarker {
     Reset,
 }
 
-#[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Root;
 
-impl MavericRootChildren for Root {
-    type Context = GraphState;
+impl MavericRoot for Root {
+    type Context<'w, 's> = Res<'w, GraphState>;
 
-    fn set_children(
-        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
-        commands: &mut impl ChildCommands,
-    ) {
+    fn set_children(context: &Self::Context<'_, '_>, commands: &mut impl ChildCommands) {
         commands.add_child("Buttons", Buttons, &());
 
         for i in get_factors(context.number) {
@@ -64,16 +61,16 @@ impl MavericRootChildren for Root {
 pub struct Buttons;
 
 impl MavericNode for Buttons {
-    type Context = ();
+    type Context<'w, 's> = ();
 
-    fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
+    fn set_components(commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {
         commands
             .ignore_context()
             .ignore_node()
             .insert(NodeBundle::default());
     }
 
-    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>) {
         commands
             .ignore_node()
             .unordered_children_with_context(|context, commands| {
@@ -130,9 +127,9 @@ struct NumberNode(u32);
 struct GraphNode(u32);
 
 impl MavericNode for NumberNode {
-    type Context = ();
+    type Context<'w, 's> = ();
 
-    fn set_components(commands: SetComponentCommands<Self, Self::Context>) {
+    fn set_components(commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {
         commands
             .ignore_context()
             .insert_with_node(|a| GraphNode(a.0))
@@ -154,7 +151,7 @@ impl MavericNode for NumberNode {
             });
     }
 
-    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>) {
         commands.unordered_children_with_node_and_context(|args, context, commands| {
             commands.add_child(
                 0,
@@ -189,7 +186,7 @@ impl MavericNode for NumberNode {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Resource, Default, MavericContextResource)]
+#[derive(Debug, Clone, PartialEq, Resource, Default)]
 pub struct GraphState {
     number: u32,
 }

@@ -1,6 +1,6 @@
-use bevy::prelude::*;
-use maveric::{define_lens_transparent, prelude::*};
-use maveric_macro::{MavericContextCompound, MavericContextResource};
+use bevy::{ecs::system::SystemParam, prelude::*};
+use maveric::{define_lens_transparent, has_changed::HasChanged, prelude::*};
+use maveric_macro::HasChanged;
 
 use std::string::ToString;
 
@@ -40,22 +40,19 @@ fn clear_color_transition(
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Root;
 
-#[derive(MavericContextCompound)]
-pub struct MyContext {
-    pub counter_state: CounterState,
-    pub color_state: ColorState,
+#[derive(SystemParam, HasChanged)]
+pub struct MyContext<'w> {
+    pub counter_state: Res<'w, CounterState>,
+    pub color_state: Res<'w, ColorState>,
 }
 
-impl MavericRootChildren for Root {
-    type Context = MyContext;
+impl MavericRoot for Root {
+    type Context<'w, 's> = MyContext<'w>;
 
-    fn set_children<'r>(
-        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
-        commands: &mut impl ChildCommands,
-    ) {
+    fn set_children<'r>(context: &Self::Context<'_, '_>, commands: &mut impl ChildCommands) {
         let text = context.counter_state.number.to_string();
         let (color, color_name) = context.color_state.get_color_and_name();
         commands.add_child(
@@ -102,12 +99,12 @@ impl MavericRootChildren for Root {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Resource, Default, MavericContextResource)]
+#[derive(Debug, Clone, PartialEq, Resource, Default)]
 pub struct CounterState {
     number: usize,
 }
 
-#[derive(Debug, Clone, PartialEq, Resource, Default, MavericContextResource)]
+#[derive(Debug, Clone, PartialEq, Resource, Default)]
 pub struct ColorState {
     color_index: usize,
 }

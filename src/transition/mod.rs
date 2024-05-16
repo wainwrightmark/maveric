@@ -40,7 +40,7 @@ pub mod prelude {
 mod tests {
     #![allow(clippy::nursery)]
     use super::speed::calculate_speed;
-    use crate as maveric;
+    
     use crate::{transition::prelude::*, transition::speed::*, widgets::prelude::*};
     use bevy::{prelude::*, time::TimePlugin, time::TimeUpdateStrategy};
     use std::{fmt::Debug, time::Duration};
@@ -243,20 +243,17 @@ mod tests {
 
     #[test]
     fn test_transition_in_out() {
-        #[derive(Debug, Resource, MavericContextResource)]
+        #[derive(Debug, Resource)]
         struct ShouldHaveNodeResource(bool);
 
-        #[derive(MavericRoot)]
+        #[derive(Debug)]
         struct MyRoot;
 
-        impl MavericRootChildren for MyRoot {
-            type Context = ShouldHaveNodeResource;
+        impl MavericRoot for MyRoot {
+            type Context<'w, 's> = Res<'w, ShouldHaveNodeResource>;
 
             fn set_children(
-                context: &<Self::Context as crate::widgets::prelude::MavericContext>::Wrapper<
-                    '_,
-                    '_,
-                >,
+                context: &Self::Context<'_, '_>,
                 commands: &mut impl crate::widgets::prelude::ChildCommands,
             ) {
                 if context.0 {

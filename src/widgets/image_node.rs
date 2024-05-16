@@ -11,9 +11,9 @@ pub struct ImageNode<S: IntoBundle<B = Style>> {
 }
 
 impl<S: IntoBundle<B = Style>> MavericNode for ImageNode<S> {
-    type Context = ();
+    type Context<'w, 's> = ();
 
-    fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
+    fn set_components(mut commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {
         commands.insert_static_bundle(ImageBundle::default());
 
         commands.scope(|commands| {
@@ -40,5 +40,8 @@ impl<S: IntoBundle<B = Style>> MavericNode for ImageNode<S> {
             .insert_with_node(|color| BackgroundColor(*color));
     }
 
-    fn set_children<R: MavericRoot>(_commands: SetChildrenCommands<Self, Self::Context, R>) {}
+    fn set_children<R: MavericRoot>(
+        _commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>,
+    ) {
+    }
 }

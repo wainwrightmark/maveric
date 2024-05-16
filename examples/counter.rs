@@ -22,21 +22,18 @@ fn setup(mut commands: Commands) {
 #[derive(Debug, Clone, PartialEq, Default, Component)]
 pub struct Marker;
 
-#[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Root;
 
-#[derive(Resource, MavericContextResource)]
+#[derive(Resource)]
 pub struct MyContext {
     pub counter_state: CounterState,
 }
 
-impl MavericRootChildren for Root {
-    type Context = MyContext;
+impl MavericRoot for Root {
+    type Context<'w, 's> = Res<'w, MyContext>;
 
-    fn set_children(
-        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
-        commands: &mut impl ChildCommands,
-    ) {
+    fn set_children(context: &Self::Context<'_, '_>, commands: &mut impl ChildCommands) {
         let text = context.counter_state.number.to_string();
         commands.add_child(
             0,
@@ -60,7 +57,7 @@ impl MavericRootChildren for Root {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Resource, Default, MavericContextResource)]
+#[derive(Debug, Clone, PartialEq, Resource, Default)]
 pub struct CounterState {
     number: usize,
 }

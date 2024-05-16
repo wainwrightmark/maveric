@@ -1,19 +1,12 @@
-use bevy::ecs::system::{ReadOnlySystemParam, StaticSystemParam};
+use bevy::ecs::system::SystemParam;
 
 use crate::prelude::*;
 
-pub trait MavericRoot: MavericRootChildren {
-    type ContextParam<'w, 's>: ReadOnlySystemParam;
-    fn get_context<'w, 's>(
-        param: StaticSystemParam<'w, 's, Self::ContextParam<'_, '_>>,
-    ) -> <Self::Context as MavericContext>::Wrapper<'w, 's>;
-}
-
-pub trait MavericRootChildren: Send + Sync + 'static {
-    type Context: MavericContext;
+pub trait MavericRoot: Send + Sync + 'static {
+    type Context<'w, 's>: MavericContext;
 
     fn set_children(
-        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
+        context: &<Self::Context<'_, '_> as SystemParam>::Item<'_, '_>,
         commands: &mut impl ChildCommands,
     );
 }

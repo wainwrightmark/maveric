@@ -12,9 +12,9 @@ pub struct TextNode<T: Into<String> + PartialEq + Clone + Send + Sync + 'static>
 } // TODO style
 
 impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode for TextNode<T> {
-    type Context = ();
+    type Context<'w, 's> = ();
 
-    fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
+    fn set_components(mut commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {
         commands.insert_static_bundle(TextBundle::default());
 
         commands.advanced(|args, commands| {
@@ -38,5 +38,8 @@ impl<T: Into<String> + PartialEq + Clone + Send + Sync + 'static> MavericNode fo
         });
     }
 
-    fn set_children<R: MavericRoot>(_commands: SetChildrenCommands<Self, Self::Context, R>) {}
+    fn set_children<R: MavericRoot>(
+        _commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>,
+    ) {
+    }
 }

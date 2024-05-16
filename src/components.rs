@@ -14,13 +14,13 @@ impl<N: MavericNode> MavericNodeComponent<N> {
 }
 
 #[derive(Component)]
-pub(crate) struct MavericChildComponent<R: MavericRootChildren> {
+pub(crate) struct MavericChildComponent<R: MavericRoot> {
     pub key: ChildKey,
     pub deleter: &'static dyn Deleter,
     phantom: PhantomData<R>,
 }
 
-impl<R: MavericRootChildren> MavericChildComponent<R> {
+impl<R: MavericRoot> MavericChildComponent<R> {
     pub(crate) fn new<N: MavericNode>(key: ChildKey) -> Self {
         let deleter = N::DELETER;
         Self {

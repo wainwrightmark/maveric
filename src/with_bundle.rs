@@ -7,11 +7,11 @@ pub struct WithBundle<N: MavericNode, B: IntoBundle + PartialEq> {
 }
 
 impl<N: MavericNode, B: IntoBundle + PartialEq> MavericNode for WithBundle<N, B> {
-    type Context = N::Context;
+    type Context<'w, 's> = N::Context<'w, 's>;
     fn on_changed(
         &self,
         previous: &Self,
-        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
+        context: &Self::Context<'_, '_>,
         world: &World,
         entity_commands: &mut bevy::ecs::system::EntityCommands,
     ) {
@@ -20,14 +20,14 @@ impl<N: MavericNode, B: IntoBundle + PartialEq> MavericNode for WithBundle<N, B>
 
     fn on_created(
         &self,
-        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
+        context: &Self::Context<'_, '_>,
         world: &World,
         entity_commands: &mut bevy::ecs::system::EntityCommands,
     ) {
         N::on_created(&self.node, context, world, entity_commands);
     }
 
-    fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
+    fn set_components(mut commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {
         commands.scope(|commands| {
             let commands = commands.map_node(|x| &x.node);
             N::set_components(commands);
@@ -40,7 +40,7 @@ impl<N: MavericNode, B: IntoBundle + PartialEq> MavericNode for WithBundle<N, B>
             .finish();
     }
 
-    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>) {
         N::set_children(commands.map_args(|x| &x.node));
     }
 
@@ -48,11 +48,7 @@ impl<N: MavericNode, B: IntoBundle + PartialEq> MavericNode for WithBundle<N, B>
         self.node.on_deleted(commands)
     }
 
-    fn should_recreate(
-        &self,
-        previous: &Self,
-        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
-    ) -> bool {
+    fn should_recreate(&self, previous: &Self, context: &Self::Context<'_, '_>) -> bool {
         self.node.should_recreate(&previous.node, context)
     }
 }

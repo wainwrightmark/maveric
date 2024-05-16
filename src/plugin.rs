@@ -1,6 +1,6 @@
 use std::borrow::BorrowMut;
 
-use crate::{has_changed::HasChanged, prelude::*};
+use crate::{has_item_changed::HasItemChanged, prelude::*};
 use bevy::{ecs::system::StaticSystemParam, prelude::*};
 
 pub trait CanRegisterMaveric {
@@ -36,23 +36,24 @@ impl CanRegisterMaveric for App {
     }
 }
 
-fn should_run<R: MavericRoot>(param: StaticSystemParam<R::ContextParam<'_, '_>>) -> bool {
-    let context = R::get_context(param);
+fn should_run<'w, 's, R: MavericRoot>(param: StaticSystemParam<R::Context<'w, 's>>) -> bool {
+    let inner = param.into_inner();
 
-    context.has_changed()
+    let changed = <R::Context<'w, 's>>::has_item_changed(&inner);
+    changed
 }
 
 #[allow(clippy::needless_pass_by_value)]
-fn sync_state<R: MavericRoot>(
+fn sync_state<'w, 's, R: MavericRoot>(
     mut commands: Commands,
-    param: StaticSystemParam<R::ContextParam<'_, '_>>,
+    param: StaticSystemParam<R::Context<'w, 's>>,
     root_query: Query<(Entity, &MavericChildComponent<R>), Without<Parent>>,
     world: &World,
     mut allocator: Local<Allocator>,
 ) {
-    let context = R::get_context(param);
+    let inner = param.into_inner();
 
-    let changed = &context.has_changed();
+    let changed = <R::Context<'w, 's>>::has_item_changed(&inner);
     if !changed {
         return;
     }
@@ -61,7 +62,7 @@ fn sync_state<R: MavericRoot>(
 
     let mut root_commands = RootCommands::new(&mut commands, world, &root_query, allocator);
 
-    R::set_children(&context, &mut root_commands);
+    R::set_children(&inner, &mut root_commands);
     root_commands.finish();
 
     #[cfg(feature = "tracing")]
@@ -73,10 +74,8 @@ fn sync_state<R: MavericRoot>(
 
 #[cfg(test)]
 mod tests {
-    use crate as maveric;
     use crate::prelude::*;
     use bevy::time::TimePlugin;
-    use maveric_macro::MavericRoot;
     #[test]
     pub fn test_plugin() {
         let mut app = App::new();
@@ -144,21 +143,21 @@ mod tests {
         assert_eq!(blues, expected_blues);
     }
 
-    #[derive(Debug, Clone, PartialEq, Eq, Resource, Default, MavericContextResource)]
+    #[derive(Debug, Clone, PartialEq, Eq, Resource, Default)]
     pub struct TreeState {
         branch_count: u32,
         blue_leaf_count: u32,
         red_leaf_count: u32,
     }
 
-    #[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
+    #[derive(Debug, Clone, PartialEq, Default)]
     struct Root;
 
-    impl MavericRootChildren for Root {
-        type Context = TreeState;
+    impl MavericRoot for Root {
+        type Context<'w, 's> = Res<'w, TreeState>;
 
         fn set_children(
-            context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
+            context: &<Self::Context<'_, '_> as bevy::ecs::system::SystemParam>::Item<'_, '_>,
             commands: &mut impl ChildCommands,
         ) {
             for x in 0..(context.branch_count) {
@@ -171,11 +170,13 @@ mod tests {
     struct Branch;
 
     impl MavericNode for Branch {
-        type Context = TreeState;
+        type Context<'w, 's> = Res<'w, TreeState>;
 
-        fn set_components(_commands: SetComponentCommands<Self, Self::Context>) {}
+        fn set_components(_commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {}
 
-        fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
+        fn set_children<R: MavericRoot>(
+            commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>,
+        ) {
             commands
                 .ignore_node()
                 .ordered_children_with_context(|context, commands| {
@@ -199,10 +200,13 @@ mod tests {
     }
 
     impl MavericNode for Leaf {
-        type Context = ();
+        type Context<'w, 's> = ();
 
-        fn set_components(_commands: SetComponentCommands<Self, Self::Context>) {}
+        fn set_components(_commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {}
 
-        fn set_children<R: MavericRoot>(_commands: SetChildrenCommands<Self, Self::Context, R>) {}
+        fn set_children<R: MavericRoot>(
+            _commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>,
+        ) {
+        }
     }
 }

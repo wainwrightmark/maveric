@@ -25,16 +25,13 @@ fn setup(mut commands: Commands) {
 #[derive(Debug, Clone, PartialEq, Default, Component)]
 pub struct Marker;
 
-#[derive(Debug, Clone, PartialEq, Default, MavericRoot)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Root;
 
-impl MavericRootChildren for Root {
-    type Context = CounterState;
+impl MavericRoot for Root {
+    type Context<'w, 's> = Res<'w, CounterState>;
 
-    fn set_children(
-        context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
-        commands: &mut impl ChildCommands,
-    ) {
+    fn set_children(context: &Self::Context<'_, '_>, commands: &mut impl ChildCommands) {
         let text = context.number.to_string();
         commands.add_child(
             0,
@@ -71,20 +68,20 @@ pub struct ChangeWatcher {
 }
 
 impl MavericNode for ChangeWatcher {
-    type Context = ();
+    type Context<'w, 's> = ();
 
-    fn set_components(mut commands: SetComponentCommands<Self, Self::Context>) {
+    fn set_components(mut commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {
         commands.insert_static_bundle(SpatialBundle::default())
     }
 
-    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context, R>) {
+    fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>) {
         commands.no_children()
     }
 
     fn on_changed(
         &self,
         _previous: &Self,
-        _context: &<Self::Context as MavericContext>::Wrapper<'_, '_>,
+        _context: &Self::Context<'_, '_>,
         world: &World,
         entity_commands: &mut bevy::ecs::system::EntityCommands,
     ) {
@@ -125,7 +122,7 @@ impl MavericNode for ChangeWatcher {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Resource, Default, MavericContextResource)]
+#[derive(Debug, Clone, PartialEq, Resource, Default)]
 pub struct CounterState {
     number: usize,
 }
