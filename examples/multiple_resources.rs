@@ -1,5 +1,5 @@
 use bevy::{ecs::system::SystemParam, prelude::*};
-use maveric::{define_lens_transparent, has_changed::HasChanged, prelude::*};
+use maveric::{define_lens_transparent, prelude::*};
 use maveric_macro::HasChanged;
 
 use std::string::ToString;

@@ -89,7 +89,7 @@ pub fn derive_system_param(input: TokenStream) -> TokenStream {
         impl #impl_generics maveric::has_item_changed::HasItemChanged for #struct_name #ty_generics #has_item_changed_where_clause
         {
                 fn has_item_changed<'w1, 's1>(item: &Self::Item<'w1, 's1>) -> bool {
-                    item.has_changed()
+                    maveric::has_changed::HasChanged::has_changed(item)
                 }
         }
     })
