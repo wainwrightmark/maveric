@@ -62,14 +62,6 @@ pub fn derive_system_param(input: TokenStream) -> TokenStream {
             .push(syn::parse_quote!(#field_type: maveric::has_changed::HasChanged));
     }
 
-    let mut has_item_changed_generics = generics.clone();
-    let has_item_changed_where_clause = has_item_changed_generics.make_where_clause();
-    for field_type in &field_types {
-        has_item_changed_where_clause
-            .predicates
-            .push(syn::parse_quote!(#field_type: maveric::has_item_changed::HasItemChanged));
-    }
-
     let struct_name = &ast.ident;
 
     let has_changed_impl = fields
@@ -84,13 +76,6 @@ pub fn derive_system_param(input: TokenStream) -> TokenStream {
             fn has_changed(&self) -> bool {
                 #(#has_changed_impl)||*
             }
-        }
-
-        impl #impl_generics maveric::has_item_changed::HasItemChanged for #struct_name #ty_generics #has_item_changed_where_clause
-        {
-                fn has_item_changed<'w1, 's1>(item: &Self::Item<'w1, 's1>) -> bool {
-                    maveric::has_changed::HasChanged::has_changed(item)
-                }
         }
     })
 }

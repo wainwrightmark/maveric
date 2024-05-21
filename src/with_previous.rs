@@ -6,7 +6,7 @@ use bevy::{
     prelude::*,
 };
 
-use crate::{has_changed::HasChanged, has_item_changed::HasItemChanged};
+use crate::has_changed::HasChanged;
 
 pub struct Cached {}
 
@@ -14,12 +14,6 @@ pub struct Cached {}
 pub struct WithPrevious<'w, 's, T: Resource + Clone> {
     inner: Res<'w, T>,
     previous: &'s T,
-}
-
-impl<'w1, 's1, T: Resource + Clone> HasItemChanged for WithPrevious<'w1, 's1, T> {
-    fn has_item_changed<'w, 's>(item: &Self::Item<'w, 's>) -> bool {
-        item.has_changed()
-    }
 }
 
 impl<'w, 's, T: Resource + Clone> HasChanged for WithPrevious<'w, 's, T> {

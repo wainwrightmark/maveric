@@ -1,7 +1,6 @@
 #![deny(clippy::all)]
 #![warn(clippy::pedantic)]
 #![warn(clippy::nursery)]
-//#![warn(clippy::cargo)]
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::option_if_let_else)]
 
@@ -14,7 +13,6 @@ pub mod component_commands;
 pub mod components;
 pub mod deleter;
 pub mod has_changed;
-pub mod has_item_changed;
 pub mod helpers;
 pub mod into_components;
 pub mod node;

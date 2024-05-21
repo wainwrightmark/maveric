@@ -2,7 +2,7 @@ use std::{ops::Deref, sync::OnceLock};
 
 use bevy::ecs::system::{ReadOnlySystemParam, SystemParam};
 
-use crate::{has_changed::HasChanged, has_item_changed::HasItemChanged, prelude::*};
+use crate::{has_changed::HasChanged,  prelude::*};
 
 pub trait CacheableResource: Send + Sync + 'static {
     type Argument<'world, 'state>: SystemParam + ReadOnlySystemParam;
@@ -14,19 +14,6 @@ pub struct Cached<'w, 's, T: CacheableResource> {
     item: <<T as CacheableResource>::Argument<'w, 's> as SystemParam>::Item<'w, 's>,
 }
 
-impl<'w, 's, T: CacheableResource> HasItemChanged for Cached<'w, 's, T>
-where
-    <T::Argument<'static, 'static> as SystemParam>::Item<'static, 'static>: HasChanged,
-{
-    fn has_item_changed<'a, 'w1, 's1>(item: &'a Self::Item<'w1, 's1>) -> bool {
-        unsafe {
-            let item: &'a <T::Argument<'static, 'static> as SystemParam>::Item<'static, 'static> =
-                std::mem::transmute(item);
-
-            item.has_changed()
-        }
-    }
-}
 
 impl<'w, 's, T: CacheableResource> HasChanged for Cached<'w, 's, T>
 where
@@ -108,7 +95,7 @@ where
         );
 
         let item: <T::Argument<'static, 'static> as SystemParam>::Item<'static, 'static> =
-            std::mem::transmute(item); //todo use HasItemChanged
+            std::mem::transmute(item);
 
         if item.has_changed() {
             if let Some(mut r) = world.get_resource_mut::<CachedLazyCell<T>>() {

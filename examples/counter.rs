@@ -25,16 +25,12 @@ pub struct Marker;
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Root;
 
-#[derive(Resource)]
-pub struct MyContext {
-    pub counter_state: CounterState,
-}
 
 impl MavericRoot for Root {
-    type Context<'w, 's> = Res<'w, MyContext>;
+    type Context<'w, 's> = Res<'w, CounterState>;
 
     fn set_children(context: &Self::Context<'_, '_>, commands: &mut impl ChildCommands) {
-        let text = context.counter_state.number.to_string();
+        let text = context.number.to_string();
         commands.add_child(
             0,
             ButtonNode {
