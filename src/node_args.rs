@@ -8,7 +8,7 @@ pub struct NodeArgs<'n, 'p, 'c1, N: PartialEq, C: MavericContext> {
     pub previous: Option<&'p N>,
 }
 
-impl<'n, 'p, 'c1, 'cw, 'cs, N: PartialEq, C: MavericContext> Clone for NodeArgs<'n, 'p, 'c1, N, C> {
+impl<'n, 'p, 'c1, N: PartialEq, C: MavericContext> Clone for NodeArgs<'n, 'p, 'c1, N, C> {
     fn clone(&self) -> Self {
         Self {
             context: self.context,
@@ -19,7 +19,7 @@ impl<'n, 'p, 'c1, 'cw, 'cs, N: PartialEq, C: MavericContext> Clone for NodeArgs<
     }
 }
 
-impl<'n, 'p, 'c1, 'cw, 'cs, N: PartialEq, C: MavericContext> NodeArgs<'n, 'p, 'c1, N, C> {
+impl<'n, 'p, 'c1, N: PartialEq, C: MavericContext> NodeArgs<'n, 'p, 'c1, N, C> {
     pub(crate) const fn new(
         context: &'c1 C,
         event: SetEvent,

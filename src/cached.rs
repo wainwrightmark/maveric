@@ -99,7 +99,7 @@ where
 
         if item.has_changed() {
             if let Some(mut r) = world.get_resource_mut::<CachedLazyCell<T>>() {
-                *r = Default::default();
+                *r = CachedLazyCell::default();
             }
         }
 
