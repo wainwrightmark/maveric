@@ -39,8 +39,8 @@ impl CanRegisterMaveric for App {
 fn should_run<'w, 's, R: MavericRoot>(param: StaticSystemParam<R::Context<'w, 's>>) -> bool {
     let inner = param.into_inner();
 
-    let changed = <R::Context<'w, 's>>::has_item_changed(&inner);
-    changed
+    
+    <R::Context<'w, 's>>::has_item_changed(&inner)
 }
 
 #[allow(clippy::needless_pass_by_value)]

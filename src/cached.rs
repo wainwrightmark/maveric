@@ -125,7 +125,7 @@ pub mod tests {
 
     #[test]
     pub fn test_with_one_arg() {
-        #[derive(Debug, Resource, Default, PartialEq)]
+        #[derive(Debug, Resource, Default, PartialEq, Eq)]
         pub struct Counter(usize);
 
         pub struct CounterDouble(usize);
@@ -141,8 +141,8 @@ pub mod tests {
         impl CacheableResource for CounterDouble {
             type Argument<'world, 'state> = Res<'world, Counter>;
 
-            fn calculate<'a, 'w, 's>(
-                arg: &'a <Self::Argument<'w, 's> as bevy::ecs::system::SystemParam>::Item<'w, 's>,
+            fn calculate<'w, 's>(
+                arg: &<Self::Argument<'w, 's> as bevy::ecs::system::SystemParam>::Item<'w, 's>,
             ) -> Self {
                 TIMES_UPDATED.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
                 Self(arg.0 * 2)
@@ -195,9 +195,9 @@ pub mod tests {
 
     #[test]
     pub fn test_with_two_args() {
-        #[derive(Debug, Resource, Default, PartialEq)]
+        #[derive(Debug, Resource, Default, PartialEq, Eq)]
         pub struct Counter1(usize);
-        #[derive(Debug, Resource, Default, PartialEq)]
+        #[derive(Debug, Resource, Default, PartialEq, Eq)]
         pub struct Counter2(usize);
 
         pub struct CounterMult(usize);
@@ -213,8 +213,8 @@ pub mod tests {
         impl CacheableResource for CounterMult {
             type Argument<'world, 'state> = (Res<'world, Counter1>, Res<'world, Counter2>);
 
-            fn calculate<'a, 'w, 's>(
-                arg: &'a <Self::Argument<'w, 's> as bevy::ecs::system::SystemParam>::Item<'w, 's>,
+            fn calculate<'w, 's>(
+                arg: &<Self::Argument<'w, 's> as bevy::ecs::system::SystemParam>::Item<'w, 's>,
             ) -> Self {
                 TIMES_UPDATED.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
                 Self(arg.0 .0 * arg.1 .0)

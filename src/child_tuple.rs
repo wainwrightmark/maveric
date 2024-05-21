@@ -9,7 +9,7 @@ pub trait ChildTuple: PartialEq + Send + Sync + 'static {
 impl<T0: Clone + MavericNode> ChildTuple for (T0,) {
     type Context<'w, 's> = T0::Context<'w, 's>;
     fn add_children(&self, context: &Self::Context<'_, '_>, commands: &mut impl ChildCommands) {
-        commands.add_child(0, self.0.clone(), &context);
+        commands.add_child(0, self.0.clone(), context);
     }
 }
 
