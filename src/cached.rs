@@ -10,7 +10,7 @@ pub trait CacheableResource: Send + Sync + 'static {
 }
 
 pub struct Cached<'w, 's, T: CacheableResource> {
-    data: std::sync::Arc<OnceLock<T>>,
+    data: &'w OnceLock<T>,
     item: <<T as CacheableResource>::Argument<'w, 's> as SystemParam>::Item<'w, 's>,
 }
 
@@ -61,7 +61,7 @@ struct CachedLazyCell<T: CacheableResource>(std::sync::Arc<OnceLock<T>>);
 
 impl<T: CacheableResource> Default for CachedLazyCell<T> {
     fn default() -> Self {
-        Self(Default::default())
+        Self( std::sync::Arc::default())
     }
 }
 
@@ -110,7 +110,7 @@ where
 
         Cached::<'world, 'state, T> {
             item,
-            data: cell.0.clone(),
+            data: cell.0.as_ref(),
         }
     }
 }
