@@ -2,7 +2,7 @@ use std::{ops::Deref, sync::OnceLock};
 
 use bevy::ecs::system::{ReadOnlySystemParam, SystemParam};
 
-use crate::{has_changed::HasChanged,  prelude::*};
+use crate::{has_changed::HasChanged, prelude::*};
 
 pub trait CacheableResource: Send + Sync + 'static {
     type Argument<'world, 'state>: SystemParam + ReadOnlySystemParam;
@@ -14,6 +14,17 @@ pub struct Cached<'w, 's, T: CacheableResource> {
     item: <<T as CacheableResource>::Argument<'w, 's> as SystemParam>::Item<'w, 's>,
 }
 
+impl<'w, 's, T: CacheableResource> Clone for Cached<'w, 's, T>
+where
+    <<T as CacheableResource>::Argument<'w, 's> as SystemParam>::Item<'w, 's>: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            data: self.data,
+            item: self.item.clone(),
+        }
+    }
+}
 
 impl<'w, 's, T: CacheableResource> HasChanged for Cached<'w, 's, T>
 where
@@ -61,7 +72,7 @@ struct CachedLazyCell<T: CacheableResource>(std::sync::Arc<OnceLock<T>>);
 
 impl<T: CacheableResource> Default for CachedLazyCell<T> {
     fn default() -> Self {
-        Self( std::sync::Arc::default())
+        Self(std::sync::Arc::default())
     }
 }
 
