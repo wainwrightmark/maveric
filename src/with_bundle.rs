@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{has_changed::HasChanged, prelude::*};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WithBundle<N: MavericNode, B: IntoBundle + PartialEq> {
@@ -15,7 +15,11 @@ impl<N: MavericNode, B: IntoBundle + PartialEq> MavericNode for WithBundle<N, B>
         world: &World,
         entity_commands: &mut bevy::ecs::system::EntityCommands,
     ) {
-        N::on_changed(&self.node, &previous.node, context, world, entity_commands);
+        if context.has_changed() | (!self.node.eq(&previous.node)){
+            N::on_changed(&self.node, &previous.node, context, world, entity_commands);
+        }
+
+
     }
 
     fn on_created(

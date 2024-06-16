@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use bevy::prelude::*;
 
+use crate::has_changed::HasChanged;
 use crate::prelude::*;
 use crate::transition::prelude::*;
 
@@ -168,7 +169,9 @@ where
         world: &World,
         entity_commands: &mut bevy::ecs::system::EntityCommands,
     ) {
-        N::on_changed(&self.node, &previous.node, context, world, entity_commands);
+        if context.has_changed() | (!self.node.eq(&previous.node)) {
+            N::on_changed(&self.node, &previous.node, context, world, entity_commands);
+        }
     }
 
     fn set_components(mut commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {
