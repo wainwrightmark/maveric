@@ -30,11 +30,11 @@ impl<T: core::fmt::Display + PartialEq + Clone + Send + Sync + 'static> PartialE
             && self.justify_text == other.justify_text
             && self.linebreak_behavior == other.linebreak_behavior
             && self.text_anchor == other.text_anchor
-            && text_2d_bound_compare(&self.text_2d_bounds, &other.text_2d_bounds)
+            && text_2d_bound_compare(self.text_2d_bounds, other.text_2d_bounds)
     }
 }
 
-fn text_2d_bound_compare(l: &Text2dBounds, r: &Text2dBounds) -> bool {
+fn text_2d_bound_compare(l: Text2dBounds, r: Text2dBounds) -> bool {
     l.size == r.size
 }
 
@@ -46,7 +46,7 @@ impl<T: core::fmt::Display + PartialEq + Clone + Send + Sync + 'static> MavericN
     fn set_components(mut commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {
         commands.insert_static_bundle((SpatialBundle::default(), TextLayoutInfo::default()));
         commands.node_to_bundle(|x| &x.text_anchor);
-        commands.node_to_component(|x| &x.text_2d_bounds, text_2d_bound_compare);
+        commands.node_to_component(|x| &x.text_2d_bounds, |l, r| text_2d_bound_compare(*l, *r));
 
         commands.scope(|commands| {
             commands

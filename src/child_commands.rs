@@ -439,7 +439,7 @@ mod tests {
         let children = app
             .world_mut()
             .query_filtered::<&Children, With<MavericNodeComponent<Branch>>>()
-            .get_single(&app.world());
+            .get_single(app.world());
 
         let children = match children {
             Ok(children) => children,

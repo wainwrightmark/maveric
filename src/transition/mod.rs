@@ -72,13 +72,6 @@ mod tests {
 
     #[test]
     pub fn test_transition_transform() {
-        let mut app = App::new();
-        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(
-            100,
-        )));
-        app.add_plugins(TimePlugin);
-        app.register_transition::<TransformTranslationLens>();
-
         fn spawn(mut commands: Commands) {
             commands.spawn_empty().insert((
                 Transform::default(),
@@ -87,6 +80,13 @@ mod tests {
                     .build(),
             ));
         }
+
+        let mut app = App::new();
+        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(
+            100,
+        )));
+        app.add_plugins(TimePlugin);
+        app.register_transition::<TransformTranslationLens>();
 
         app.add_systems(Startup, spawn);
         assert_sequence(
@@ -105,13 +105,6 @@ mod tests {
 
     #[test]
     pub fn test_transition_wait() {
-        let mut app = App::new();
-        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(
-            100,
-        )));
-        app.add_plugins(TimePlugin);
-        app.register_transition::<TransformTranslationLens>();
-
         fn spawn(mut commands: Commands) {
             commands.spawn_empty().insert((
                 Transform::default(),
@@ -121,6 +114,13 @@ mod tests {
                     .build(),
             ));
         }
+
+        let mut app = App::new();
+        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(
+            100,
+        )));
+        app.add_plugins(TimePlugin);
+        app.register_transition::<TransformTranslationLens>();
 
         app.add_systems(Startup, spawn);
         assert_sequence(
@@ -141,13 +141,6 @@ mod tests {
 
     #[test]
     pub fn test_transition_transform_set_value() {
-        let mut app = App::new();
-        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(
-            100,
-        )));
-        app.add_plugins(TimePlugin);
-        app.register_transition::<TransformTranslationLens>();
-
         fn spawn(mut commands: Commands) {
             commands.spawn_empty().insert((
                 Transform::default(),
@@ -158,6 +151,13 @@ mod tests {
                     .build(),
             ));
         }
+
+        let mut app = App::new();
+        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(
+            100,
+        )));
+        app.add_plugins(TimePlugin);
+        app.register_transition::<TransformTranslationLens>();
 
         app.add_systems(Startup, spawn);
 
@@ -179,13 +179,6 @@ mod tests {
 
     #[test]
     pub fn test_transition_cyclic() {
-        let mut app = App::new();
-        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(
-            100,
-        )));
-        app.add_plugins(TimePlugin);
-        app.register_transition::<TransformTranslationLens>();
-
         fn spawn(mut commands: Commands) {
             commands.spawn_empty().insert((
                 Transform::default(),
@@ -195,6 +188,13 @@ mod tests {
                     .build_loop(),
             ));
         }
+
+        let mut app = App::new();
+        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(
+            100,
+        )));
+        app.add_plugins(TimePlugin);
+        app.register_transition::<TransformTranslationLens>();
 
         app.add_systems(Startup, spawn);
 
@@ -224,14 +224,14 @@ mod tests {
     ) {
         for (index, expected) in sequence.iter().enumerate() {
             app.update();
-            assert_components(app, expected, format!("{name} {index}"));
+            assert_components(app, expected, format!("{name} {index}").as_str());
         }
     }
 
     fn assert_components<T: Component + Clone + PartialEq + Debug>(
         app: &mut App,
         expected: &[T],
-        message: String,
+        message: &str,
     ) {
         let actual: Vec<T> = query_all(app);
         assert_eq!(actual, expected, "{message}");
@@ -240,7 +240,7 @@ mod tests {
     fn query_all<T: Component + Clone>(app: &mut App) -> Vec<T> {
         app.world_mut()
             .query::<&T>()
-            .iter(&app.world())
+            .iter(app.world())
             .cloned()
             .collect()
     }

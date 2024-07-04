@@ -43,6 +43,7 @@ pub trait CanHaveTransition: MavericNode + Sized {
     /// Transition from `initial_value` to `destination` when the node is first created
     /// Transition to `out_destination` when the node is removed
     #[must_use]
+    #[allow(clippy::too_many_arguments)]
     fn with_transition_in_out<L: Lens + GetValueLens + SetValueLens>(
         self,
         initial_value: L::Value,

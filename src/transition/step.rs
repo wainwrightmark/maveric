@@ -95,6 +95,7 @@ where
     L::Value: Tweenable,
 {
     /// Steps this transition, returns whether the transition is finished and should be deleted
+    #[allow(clippy::too_many_lines)]
     pub fn step(&mut self, object: &mut L::Object, mut remaining_delta: Duration) -> bool {
         enum StepResult<L: Lens + GetValueLens + SetValueLens>
         where

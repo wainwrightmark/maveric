@@ -345,7 +345,7 @@ pub mod tests {
     use super::{TransitionBuilder, TransitionBuilderCanBuild, TransitionBuilderCanThen};
 
     #[test]
-    pub fn test_transition_builder() {
+    fn test_transition_builder() {
         let mut transition: crate::widgets::prelude::Transition<TransformTranslationLens> =
             TransitionBuilder::<TransformTranslationLens>::default()
                 .then_wait(Duration::from_secs(2))
@@ -356,7 +356,10 @@ pub mod tests {
 
         let expected_values: Vec<Vec3> = vec![0, 0, 1, 1, 1, 2, 3]
             .into_iter()
-            .map(|x| x as f32 * Vec3::ONE)
+            .map(
+                #[allow(clippy::cast_precision_loss)]
+                |x| x as f32 * Vec3::ONE,
+            )
             .collect();
 
         let mut actual_values: Vec<Vec3> = vec![];

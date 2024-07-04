@@ -132,7 +132,7 @@ mod tests {
         let world = app.world_mut();
         let mut query = world.query::<&MavericNodeComponent<Leaf>>();
 
-        let leaves: Vec<Leaf> = query.iter(&world).map(|x| x.node.clone()).collect();
+        let leaves: Vec<Leaf> = query.iter(world).map(|x| x.node.clone()).collect();
         let reds = leaves.iter().filter(|x| *x == &Leaf::Red).count();
         let blues = leaves.iter().filter(|x| *x == &Leaf::Blue).count();
 
