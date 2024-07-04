@@ -40,7 +40,7 @@ pub mod prelude {
 mod tests {
     #![allow(clippy::nursery)]
     use super::speed::calculate_speed;
-    
+
     use crate::{transition::prelude::*, transition::speed::*, widgets::prelude::*};
     use bevy::{prelude::*, time::TimePlugin, time::TimeUpdateStrategy};
     use std::{fmt::Debug, time::Duration};
@@ -238,7 +238,11 @@ mod tests {
     }
 
     fn query_all<T: Component + Clone>(app: &mut App) -> Vec<T> {
-        app.world.query::<&T>().iter(&app.world).cloned().collect()
+        app.world_mut()
+            .query::<&T>()
+            .iter(&app.world())
+            .cloned()
+            .collect()
     }
 
     #[test]
@@ -294,7 +298,7 @@ mod tests {
             "transition inward",
         );
 
-        app.world.resource_mut::<ShouldHaveNodeResource>().0 = false;
+        app.world_mut().resource_mut::<ShouldHaveNodeResource>().0 = false;
 
         assert_sequence(
             &mut app,

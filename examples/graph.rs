@@ -7,7 +7,7 @@ use std::time::Duration;
 fn main() {
     let mut app = App::new();
 
-    app.insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
+    app.insert_resource(ClearColor(Color::srgb(0.4, 0.4, 0.4)))
         .add_plugins(DefaultPlugins)
         .init_resource::<GraphState>()
         .register_transition::<BackgroundColorLens>()
@@ -43,9 +43,9 @@ impl MavericRoot for Root {
             commands.add_child(
                 i,
                 NumberNode(i).with_transition_in_out::<BackgroundColorLens>(
-                    Color::WHITE.with_a(0.5),
-                    Color::WHITE.with_a(1.0),
-                    Color::WHITE.with_a(0.0),
+                    Color::WHITE.with_alpha(0.5),
+                    Color::WHITE.with_alpha(1.0),
+                    Color::WHITE.with_alpha(0.0),
                     Duration::from_secs_f32(0.5),
                     Duration::from_secs_f32(2.0),
                     Some(Ease::CubicIn),
@@ -82,6 +82,7 @@ impl MavericNode for Buttons {
                             style: ButtonStyle,
                             background_color: TEXT_BUTTON_BACKGROUND,
                             border_color: BUTTON_BORDER,
+                            border_radius: BorderRadius::all(Val::Percent(5.0)),
                             visibility: Visibility::Visible,
                             marker: button_marker,
                             children: (TextNode {
@@ -175,7 +176,7 @@ impl MavericNode for NumberNode {
             if let Some(text) = child.get::<Text>() {
                 let mut text = text.clone();
                 for section in text.sections.iter_mut() {
-                    section.style.color = Color::PINK;
+                    section.style.color = Color::srgb(1.0, 0.41, 0.71);
                 }
 
                 ec.insert(text);
@@ -296,7 +297,7 @@ pub const FONT_PATH: &str = "fonts/merged-font.ttf";
 pub const BUTTON_FONT_SIZE: f32 = 22.0;
 pub const TEXT_FONT_SIZE: f32 = 32.0;
 pub const BUTTON_BORDER: Color = Color::BLACK;
-pub const BUTTON_TEXT_COLOR: Color = Color::rgb(0.1, 0.1, 0.1);
+pub const BUTTON_TEXT_COLOR: Color = Color::srgb(0.1, 0.1, 0.1);
 
 pub const TEXT_BUTTON_BACKGROUND: Color = Color::WHITE;
 

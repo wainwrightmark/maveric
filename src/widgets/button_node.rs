@@ -7,6 +7,7 @@ pub struct ButtonNode<Marker: IntoBundle, S: IntoBundle<B = Style>, C: ChildTupl
     pub visibility: Visibility,
     pub border_color: Color,
     pub background_color: Color,
+    pub border_radius: BorderRadius,
     pub marker: Marker,
     pub children: C,
 }
@@ -23,6 +24,7 @@ impl<Marker: IntoBundle, S: IntoBundle<B = Style>, C: ChildTuple> MavericNode
         commands.node_to_bundle(|x| &x.style);
         commands.node_to_bundle(|x| &x.visibility);
         commands.node_to_bundle(|x| &x.marker);
+        commands.node_to_bundle(|x| &x.border_radius);
 
         commands.scope(|commands| {
             commands

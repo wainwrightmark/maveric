@@ -15,11 +15,9 @@ impl<N: MavericNode, B: IntoBundle + PartialEq> MavericNode for WithBundle<N, B>
         world: &World,
         entity_commands: &mut bevy::ecs::system::EntityCommands,
     ) {
-        if context.has_changed() | (!self.node.eq(&previous.node)){
+        if context.has_changed() | (!self.node.eq(&previous.node)) {
             N::on_changed(&self.node, &previous.node, context, world, entity_commands);
         }
-
-
     }
 
     fn on_created(

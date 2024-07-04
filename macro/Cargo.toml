@@ -2,7 +2,7 @@
 name = "maveric-macro"
 description = "Proc macro for `maveric`. Do not use directly."
 readme = "../README.md"
-version = "0.1.0"
+version = "0.14.0"
 edition = "2021"
 
 [lib]

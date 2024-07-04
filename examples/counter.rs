@@ -6,7 +6,7 @@ use std::string::ToString;
 fn main() {
     let mut app = App::new();
 
-    app.insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
+    app.insert_resource(ClearColor(Color::srgb(0.4, 0.4, 0.4)))
         .add_plugins(DefaultPlugins)
         .init_resource::<CounterState>()
         .add_systems(Startup, setup)
@@ -25,7 +25,6 @@ pub struct Marker;
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Root;
 
-
 impl MavericRoot for Root {
     type Context<'w, 's> = Res<'w, CounterState>;
 
@@ -38,6 +37,7 @@ impl MavericRoot for Root {
                 background_color: TEXT_BUTTON_BACKGROUND,
                 border_color: BUTTON_BORDER,
                 visibility: Visibility::Visible,
+                border_radius: BorderRadius::all(Val::Percent(5.0)),
                 marker: Marker,
                 children: (TextNode {
                     text,
@@ -108,6 +108,6 @@ pub const FONT_PATH: &str = "fonts/merged-font.ttf";
 
 pub const BUTTON_FONT_SIZE: f32 = 22.0;
 pub const BUTTON_BORDER: Color = Color::BLACK;
-pub const BUTTON_TEXT_COLOR: Color = Color::rgb(0.1, 0.1, 0.1);
+pub const BUTTON_TEXT_COLOR: Color = Color::srgb(0.1, 0.1, 0.1);
 
 pub const TEXT_BUTTON_BACKGROUND: Color = Color::WHITE;

@@ -198,7 +198,7 @@ pub mod tests {
         assert_times_updated(3);
 
         fn set_count(app: &mut App, new_count: usize) {
-            let mut r = app.world.resource_mut::<Counter>();
+            let mut r = app.world_mut().resource_mut::<Counter>();
 
             r.set_if_neq(Counter(new_count));
         }
@@ -285,9 +285,9 @@ pub mod tests {
         assert_times_updated(5);
 
         fn set_counts(app: &mut App, new_count1: usize, new_count2: usize) {
-            let mut counter1 = app.world.resource_mut::<Counter1>();
+            let mut counter1 = app.world_mut().resource_mut::<Counter1>();
             counter1.set_if_neq(Counter1(new_count1));
-            let mut counter2 = app.world.resource_mut::<Counter2>();
+            let mut counter2 = app.world_mut().resource_mut::<Counter2>();
 
             counter2.set_if_neq(Counter2(new_count2));
         }

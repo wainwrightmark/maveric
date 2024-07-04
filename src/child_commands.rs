@@ -424,7 +424,7 @@ mod tests {
     }
 
     fn update_state(app: &mut App, new_state: TreeState) {
-        let mut state = app.world.resource_mut::<TreeState>();
+        let mut state = app.world_mut().resource_mut::<TreeState>();
         *state = new_state;
     }
 
@@ -437,9 +437,9 @@ mod tests {
 
     fn get_leaves(app: &mut App) -> Vec<(u32, bool)> {
         let children = app
-            .world
+            .world_mut()
             .query_filtered::<&Children, With<MavericNodeComponent<Branch>>>()
-            .get_single(&app.world);
+            .get_single(&app.world());
 
         let children = match children {
             Ok(children) => children,
@@ -452,12 +452,12 @@ mod tests {
             .iter()
             .map(|entity| {
                 let number = app
-                    .world
+                    .world()
                     .get::<MavericNodeComponent<Leaf>>(*entity)
                     .expect("Child should be a hnc Leaf")
                     .node
                     .number;
-                let scheduled = app.world.get::<ScheduledForDeletion>(*entity).is_some();
+                let scheduled = app.world().get::<ScheduledForDeletion>(*entity).is_some();
                 (number, scheduled)
             })
             .collect();

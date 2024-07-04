@@ -14,7 +14,7 @@ const BOXES_PER_ROW: usize = 5;
 fn main() {
     let mut app = App::new();
 
-    app.insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
+    app.insert_resource(ClearColor(Color::srgb(0.4, 0.4, 0.4)))
         .add_plugins(DefaultPlugins)
         .register_maveric::<Root>()
         .init_resource::<UIState>()
@@ -120,6 +120,7 @@ impl MavericNode for CommandGrid {
                         visibility: Visibility::Visible,
                         border_color: BUTTON_BORDER,
                         background_color: TEXT_BUTTON_BACKGROUND,
+                        border_radius: BorderRadius::all(Val::Percent(5.0)),
                         marker: command,
                         children: (TextNode {
                             text: command.to_string(),
@@ -169,6 +170,7 @@ impl MavericNode for DynamicGrid {
                         visibility: Visibility::Visible,
                         border_color: BUTTON_BORDER,
                         background_color: TEXT_BUTTON_BACKGROUND,
+                        border_radius: BorderRadius::all(Val::Percent(5.0)),
                         marker: DynamicButtonComponent(number),
                         children: (TextNode {
                             text: number.to_string(),
@@ -197,9 +199,9 @@ impl MavericNode for DynamicGrid {
     }
 }
 
-const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
-const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
-const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
+const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
+const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);
+const PRESSED_BUTTON: Color = Color::srgb(0.35, 0.75, 0.35);
 
 fn button_system(
     mut interaction_query: Query<
@@ -220,7 +222,7 @@ fn button_system(
         match *interaction {
             Interaction::Pressed => {
                 *color = PRESSED_BUTTON.into();
-                border_color.0 = Color::RED;
+                border_color.0 = Color::Srgba(Srgba::RED);
 
                 if let Some(command) = command {
                     match command {

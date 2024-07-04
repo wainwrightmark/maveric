@@ -11,7 +11,6 @@ impl Plugin for TracingPlugin {
     }
 }
 
-/// TODO count different types of updates separately
 pub(crate) static GRAPH_UPDATES: AtomicUsize = AtomicUsize::new(0);
 pub(crate) static SCHEDULED_DELETIONS: AtomicUsize = AtomicUsize::new(0);
 pub(crate) static SCHEDULED_CHANGES: AtomicUsize = AtomicUsize::new(0);

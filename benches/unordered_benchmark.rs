@@ -97,7 +97,7 @@ pub fn run_state_transition(s1: TreeState, s2: TreeState) {
 }
 
 fn update_state(app: &mut App, new_state: TreeState) {
-    let mut state = app.world.resource_mut::<TreeState>();
+    let mut state = app.world_mut().resource_mut::<TreeState>();
     *state = new_state;
 }
 

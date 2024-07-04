@@ -6,7 +6,7 @@ use std::{string::ToString, time::Duration};
 fn main() {
     let mut app = App::new();
 
-    app.insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
+    app.insert_resource(ClearColor(Color::srgb(0.4, 0.4, 0.4)))
         .add_plugins(DefaultPlugins)
         .init_resource::<CounterState>()
         .add_systems(Startup, setup)
@@ -40,6 +40,7 @@ impl MavericRoot for Root {
                 background_color: TEXT_BUTTON_BACKGROUND,
                 border_color: BUTTON_BORDER,
                 visibility: Visibility::Visible,
+                border_radius: BorderRadius::all(Val::Percent(5.0)),
                 marker: Marker,
                 children: (TextNode {
                     text,
@@ -95,7 +96,7 @@ impl MavericNode for ChangeWatcher {
                         TextStyle {
                             font: asset_server.load(FONT_PATH),
                             font_size: 128.0,
-                            color: Color::GREEN,
+                            color: Color::Srgba(Srgba::GREEN),
                         },
                     ),
                     ..default()
@@ -177,6 +178,6 @@ pub const FONT_PATH: &str = "fonts/merged-font.ttf";
 
 pub const BUTTON_FONT_SIZE: f32 = 22.0;
 pub const BUTTON_BORDER: Color = Color::BLACK;
-pub const BUTTON_TEXT_COLOR: Color = Color::rgb(0.1, 0.1, 0.1);
+pub const BUTTON_TEXT_COLOR: Color = Color::srgb(0.1, 0.1, 0.1);
 
 pub const TEXT_BUTTON_BACKGROUND: Color = Color::WHITE;

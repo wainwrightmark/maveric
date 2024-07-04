@@ -7,7 +7,7 @@ use std::string::ToString;
 fn main() {
     let mut app = App::new();
 
-    app.insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
+    app.insert_resource(ClearColor(Color::srgb(0.4, 0.4, 0.4)))
         .add_plugins(DefaultPlugins)
         .init_resource::<CounterState>()
         .init_resource::<ColorState>()
@@ -63,6 +63,7 @@ impl MavericRoot for Root {
                 border_color: BUTTON_BORDER,
                 visibility: Visibility::Visible,
                 marker: ButtonMarker::Number,
+                border_radius: BorderRadius::all(Val::Percent(5.0)),
                 children: (TextNode {
                     text,
                     font_size: BUTTON_FONT_SIZE,
@@ -85,6 +86,7 @@ impl MavericRoot for Root {
                 border_color: BUTTON_BORDER,
                 visibility: Visibility::Visible,
                 marker: ButtonMarker::Color,
+                border_radius: BorderRadius::all(Val::Percent(5.0)),
                 children: (TextNode {
                     text: color_name,
                     font_size: BUTTON_FONT_SIZE,
@@ -112,39 +114,39 @@ pub struct ColorState {
 impl ColorState {
     pub fn get_color_and_name(&self) -> (Color, &'static str) {
         match self.color_index % 4 {
-            0 => (Color::RED, "Red"),
-            1 => (Color::GREEN, "Green"),
-            2 => (Color::BLUE, "Blue"),
-            _ => (Color::GOLD, "Gold"),
+            0 => (Color::Srgba(Srgba::RED), "Red"),
+            1 => (Color::Srgba(Srgba::GREEN), "Green"),
+            2 => (Color::Srgba(Srgba::BLUE), "Blue"),
+            _ => (Color::Srgba(Srgba::rgb(1.0, 0.84, 0.0)), "Gold"),
         }
     }
 
     pub fn get_clear_color(&self) -> Color {
         match self.color_index % 4 {
-            0 => Color::Rgba {
+            0 => Color::Srgba(Srgba {
                 red: 0.6,
                 green: 0.4,
                 blue: 0.4,
                 alpha: 1.0,
-            },
-            1 => Color::Rgba {
+            }),
+            1 => Color::Srgba(Srgba {
                 red: 0.4,
                 green: 0.6,
                 blue: 0.4,
                 alpha: 1.0,
-            },
-            2 => Color::Rgba {
+            }),
+            2 => Color::Srgba(Srgba {
                 red: 0.4,
                 green: 0.4,
                 blue: 0.6,
                 alpha: 1.0,
-            },
-            _ => Color::Rgba {
+            }),
+            _ => Color::Srgba(Srgba {
                 red: 0.6,
                 green: 0.6,
                 blue: 0.2,
                 alpha: 1.0,
-            },
+            }),
         }
     }
 }
@@ -213,4 +215,4 @@ pub const FONT_PATH: &str = "fonts/merged-font.ttf";
 
 pub const BUTTON_FONT_SIZE: f32 = 22.0;
 pub const BUTTON_BORDER: Color = Color::BLACK;
-pub const BUTTON_TEXT_COLOR: Color = Color::rgb(0.1, 0.1, 0.1);
+pub const BUTTON_TEXT_COLOR: Color = Color::srgb(0.1, 0.1, 0.1);

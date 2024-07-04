@@ -75,81 +75,51 @@ impl Tweenable for f32 {
     }
 }
 
-impl Tweenable for Vec2 {
-    type Speed = LinearSpeed;
+macro_rules! impl_tweenable_vec {
+    ($ty: ty) => {
+        impl Tweenable for $ty {
+            type Speed = LinearSpeed;
 
-    fn transition_towards(
-        &mut self,
-        destination: &Self,
-        speed: &Self::Speed,
-        delta_seconds: f32,
-    ) -> Option<f32> {
-        let distance = *destination - *self;
+            fn transition_towards(
+                &mut self,
+                destination: &Self,
+                speed: &Self::Speed,
+                delta_seconds: f32,
+            ) -> Option<f32> {
+                let distance = *destination - *self;
 
-        let change = speed.units_per_second * delta_seconds;
-        if change < distance.length() {
-            *self += change * distance.normalize_or_zero();
-            None
-        } else {
-            *self = *destination;
-            Some(delta_seconds - (distance.length() / speed.units_per_second))
+                let change = speed.units_per_second * delta_seconds;
+                if change < distance.length() {
+                    *self += change * distance.normalize_or_zero();
+                    None
+                } else {
+                    *self = *destination;
+                    Some(delta_seconds - (distance.length() / speed.units_per_second))
+                }
+            }
+
+            fn duration_to(
+                &self,
+                rhs: &Self,
+                speed: &Self::Speed,
+            ) -> Result<Duration, TryFromFloatSecsError> {
+                if self == rhs {
+                    return Ok(Duration::ZERO);
+                }
+
+                Duration::try_from_secs_f32(self.distance(*rhs) / speed.units_per_second)
+            }
+
+            fn lerp_value(&self, rhs: &Self, s: f32) -> Self {
+                self.lerp(*rhs, s)
+            }
         }
-    }
-
-    fn duration_to(
-        &self,
-        rhs: &Self,
-        speed: &Self::Speed,
-    ) -> Result<Duration, TryFromFloatSecsError> {
-        if self == rhs {
-            return Ok(Duration::ZERO);
-        }
-
-        Duration::try_from_secs_f32(self.distance(*rhs) / speed.units_per_second)
-    }
-
-    fn lerp_value(&self, rhs: &Self, s: f32) -> Self {
-        self.lerp(*rhs, s)
-    }
+    };
 }
 
-impl Tweenable for Vec3 {
-    type Speed = LinearSpeed;
-
-    fn transition_towards(
-        &mut self,
-        destination: &Self,
-        speed: &Self::Speed,
-        delta_seconds: f32,
-    ) -> Option<f32> {
-        let distance = *destination - *self;
-
-        let change = speed.units_per_second * delta_seconds;
-        if change < distance.length() {
-            *self += change * distance.normalize_or_zero();
-            None
-        } else {
-            *self = *destination;
-            Some(delta_seconds - (distance.length() / speed.units_per_second))
-        }
-    }
-
-    fn duration_to(
-        &self,
-        rhs: &Self,
-        speed: &Self::Speed,
-    ) -> Result<Duration, TryFromFloatSecsError> {
-        if self == rhs {
-            return Ok(Duration::ZERO);
-        }
-
-        Duration::try_from_secs_f32(self.distance(*rhs) / speed.units_per_second)
-    }
-
-    fn lerp_value(&self, rhs: &Self, s: f32) -> Self {
-        self.lerp(*rhs, s)
-    }
-}
+impl_tweenable_vec!(Vec2);
+impl_tweenable_vec!(Vec3);
+impl_tweenable_vec!(Vec4);
 
 impl Tweenable for Quat {
     type Speed = AngularSpeed;
@@ -312,7 +282,53 @@ impl Tweenable for Val {
     }
 }
 
-#[cfg(any(feature = "bevy_render", test))]
+macro_rules! impl_tweenable_for_color {
+    ($type: ty) => {
+        impl Tweenable for $type {
+            type Speed = ScalarSpeed;
+            fn duration_to(
+                &self,
+                rhs: &Self,
+                speed: &Self::Speed,
+            ) -> Result<Duration, TryFromFloatSecsError> {
+                self.to_f32_array().duration_to(&rhs.to_f32_array(), speed)
+            }
+            fn transition_towards(
+                &mut self,
+                destination: &Self,
+                speed: &Self::Speed,
+                delta_seconds: f32,
+            ) -> Option<f32> {
+                let mut self_as_vec4 = self.to_f32_array();
+                let r: Option<f32> = self_as_vec4.transition_towards(
+                    &destination.to_f32_array(),
+                    speed,
+                    delta_seconds,
+                );
+                *self = Self::from_f32_array(self_as_vec4);
+                r
+            }
+            fn lerp_value(&self, rhs: &Self, s: f32) -> Self {
+                let r = self.to_f32_array().lerp_value(&rhs.to_f32_array(), s);
+                Self::from_f32_array(r)
+            }
+        }
+    };
+}
+
+//todo implement for all colors, use a different color space as default
+
+impl_tweenable_for_color!(LinearRgba);
+impl_tweenable_for_color!(Srgba);
+impl_tweenable_for_color!(Hsla);
+impl_tweenable_for_color!(Hsva);
+impl_tweenable_for_color!(Hwba);
+impl_tweenable_for_color!(Laba);
+impl_tweenable_for_color!(Lcha);
+impl_tweenable_for_color!(Oklaba);
+impl_tweenable_for_color!(Oklcha);
+impl_tweenable_for_color!(Xyza);
+
 impl Tweenable for Color {
     type Speed = ScalarSpeed;
 
@@ -321,89 +337,18 @@ impl Tweenable for Color {
         rhs: &Self,
         speed: &Self::Speed,
     ) -> Result<Duration, TryFromFloatSecsError> {
-        let differences: [f32; 4] = match (self, rhs) {
-            (
-                Self::Rgba {
-                    red,
-                    green,
-                    blue,
-                    alpha,
-                },
-                Self::Rgba {
-                    red: red2,
-                    green: green2,
-                    blue: blue2,
-                    alpha: alpha2,
-                },
-            )
-            | (
-                Self::RgbaLinear {
-                    red,
-                    green,
-                    blue,
-                    alpha,
-                },
-                Self::RgbaLinear {
-                    red: red2,
-                    green: green2,
-                    blue: blue2,
-                    alpha: alpha2,
-                },
-            ) => [
-                (red - red2).abs(),
-                (green - green2).abs(),
-                (blue - blue2).abs(),
-                (alpha - alpha2).abs(),
-            ],
-
-            (
-                Self::Hsla {
-                    hue,
-                    saturation,
-                    lightness,
-                    alpha,
-                },
-                Self::Hsla {
-                    hue: hue2,
-                    saturation: saturation2,
-                    lightness: lightness2,
-                    alpha: alpha2,
-                },
-            ) => [
-                (hue - hue2).abs(),
-                (saturation - saturation2).abs(),
-                (lightness - lightness2).abs(),
-                (alpha - alpha2).abs(),
-            ],
-            (
-                Self::Lcha {
-                    lightness,
-                    chroma,
-                    hue,
-                    alpha,
-                },
-                Self::Lcha {
-                    lightness: lightness2,
-                    chroma: chroma2,
-                    hue: hue2,
-                    alpha: alpha2,
-                },
-            ) => [
-                (hue - hue2).abs(),
-                (chroma - chroma2).abs(),
-                (lightness - lightness2).abs(),
-                (alpha - alpha2).abs(),
-            ],
-            _ => {
-                return Duration::try_from_secs_f32(f32::NAN);
-            }
-        };
-
-        let difference = differences.into_iter().max_by(f32::total_cmp).unwrap();
-
-        let seconds = difference / speed.amount_per_second;
-        //info!("Color transitions {self:?} {rhs:?} {seconds}");
-        Duration::try_from_secs_f32(seconds)
+        match rhs {
+            Color::Srgba(c) => Srgba::from(*self).duration_to(c, speed),
+            Color::LinearRgba(c) => LinearRgba::from(*self).duration_to(c, speed),
+            Color::Hsla(c) => Hsla::from(*self).duration_to(c, speed),
+            Color::Hsva(c) => Hsva::from(*self).duration_to(c, speed),
+            Color::Hwba(c) => Hwba::from(*self).duration_to(c, speed),
+            Color::Laba(c) => Laba::from(*self).duration_to(c, speed),
+            Color::Lcha(c) => Lcha::from(*self).duration_to(c, speed),
+            Color::Oklaba(c) => Oklaba::from(*self).duration_to(c, speed),
+            Color::Oklcha(c) => Oklcha::from(*self).duration_to(c, speed),
+            Color::Xyza(c) => Xyza::from(*self).duration_to(c, speed),
+        }
     }
 
     fn transition_towards(
@@ -412,206 +357,124 @@ impl Tweenable for Color {
         speed: &Self::Speed,
         delta_seconds: f32,
     ) -> Option<f32> {
-        match (self, destination) {
-            (
-                Self::Rgba {
-                    red,
-                    green,
-                    blue,
-                    alpha,
-                },
-                Self::Rgba {
-                    red: red2,
-                    green: green2,
-                    blue: blue2,
-                    alpha: alpha2,
-                },
-            ) => transition_4_tuple(
-                (red, green, blue, alpha),
-                (red2, green2, blue2, alpha2),
-                *speed,
-                delta_seconds,
-            ),
-            (
-                Self::RgbaLinear {
-                    red,
-                    green,
-                    blue,
-                    alpha,
-                },
-                Self::RgbaLinear {
-                    red: red2,
-                    green: green2,
-                    blue: blue2,
-                    alpha: alpha2,
-                },
-            ) => transition_4_tuple(
-                (red, green, blue, alpha),
-                (red2, green2, blue2, alpha2),
-                *speed,
-                delta_seconds,
-            ),
-
-            (
-                Self::Hsla {
-                    hue,
-                    saturation,
-                    lightness,
-                    alpha,
-                },
-                Self::Hsla {
-                    hue: hue2,
-                    saturation: saturation2,
-                    lightness: lightness2,
-                    alpha: alpha2,
-                },
-            ) => transition_4_tuple(
-                (hue, saturation, lightness, alpha),
-                (hue2, saturation2, lightness2, alpha2),
-                *speed,
-                delta_seconds,
-            ),
-            (
-                Self::Lcha {
-                    lightness,
-                    chroma,
-                    hue,
-                    alpha,
-                },
-                Self::Lcha {
-                    lightness: lightness2,
-                    chroma: chroma2,
-                    hue: hue2,
-                    alpha: alpha2,
-                },
-            ) => transition_4_tuple(
-                (lightness, chroma, hue, alpha),
-                (lightness2, chroma2, hue2, alpha2),
-                *speed,
-                delta_seconds,
-            ),
-            (s, destination) => {
-                //TODO convert self to the other color and then transition as normal
-                *s = *destination;
-                Some(delta_seconds)
+        match destination {
+            Color::Srgba(dest) => {
+                if let Color::Srgba(lhs) = self {
+                    lhs.transition_towards(&dest, speed, delta_seconds)
+                } else {
+                    let mut s = Srgba::from(*self);
+                    let r = s.transition_towards(&dest, speed, delta_seconds);
+                    *self = s.into();
+                    r
+                }
+            }
+            Color::LinearRgba(dest) => {
+                if let Color::LinearRgba(lhs) = self {
+                    lhs.transition_towards(&dest, speed, delta_seconds)
+                } else {
+                    let mut s = LinearRgba::from(*self);
+                    let r = s.transition_towards(&dest, speed, delta_seconds);
+                    *self = s.into();
+                    r
+                }
+            }
+            Color::Hsla(dest) => {
+                if let Color::Hsla(lhs) = self {
+                    lhs.transition_towards(&dest, speed, delta_seconds)
+                } else {
+                    let mut s = Hsla::from(*self);
+                    let r = s.transition_towards(&dest, speed, delta_seconds);
+                    *self = s.into();
+                    r
+                }
+            }
+            Color::Hsva(dest) => {
+                if let Color::Hsva(lhs) = self {
+                    lhs.transition_towards(&dest, speed, delta_seconds)
+                } else {
+                    let mut s = Hsva::from(*self);
+                    let r = s.transition_towards(&dest, speed, delta_seconds);
+                    *self = s.into();
+                    r
+                }
+            }
+            Color::Hwba(dest) => {
+                if let Color::Hwba(lhs) = self {
+                    lhs.transition_towards(&dest, speed, delta_seconds)
+                } else {
+                    let mut s = Hwba::from(*self);
+                    let r = s.transition_towards(&dest, speed, delta_seconds);
+                    *self = s.into();
+                    r
+                }
+            }
+            Color::Laba(dest) => {
+                if let Color::Laba(lhs) = self {
+                    lhs.transition_towards(&dest, speed, delta_seconds)
+                } else {
+                    let mut s = Laba::from(*self);
+                    let r = s.transition_towards(&dest, speed, delta_seconds);
+                    *self = s.into();
+                    r
+                }
+            }
+            Color::Lcha(dest) => {
+                if let Color::Lcha(lhs) = self {
+                    lhs.transition_towards(&dest, speed, delta_seconds)
+                } else {
+                    let mut s = Lcha::from(*self);
+                    let r = s.transition_towards(&dest, speed, delta_seconds);
+                    *self = s.into();
+                    r
+                }
+            }
+            Color::Oklaba(dest) => {
+                if let Color::Oklaba(lhs) = self {
+                    lhs.transition_towards(&dest, speed, delta_seconds)
+                } else {
+                    let mut s = Oklaba::from(*self);
+                    let r = s.transition_towards(&dest, speed, delta_seconds);
+                    *self = s.into();
+                    r
+                }
+            }
+            Color::Oklcha(dest) => {
+                if let Color::Oklcha(lhs) = self {
+                    lhs.transition_towards(&dest, speed, delta_seconds)
+                } else {
+                    let mut s = Oklcha::from(*self);
+                    let r = s.transition_towards(&dest, speed, delta_seconds);
+                    *self = s.into();
+                    r
+                }
+            }
+            Color::Xyza(dest) => {
+                if let Color::Xyza(lhs) = self {
+                    lhs.transition_towards(&dest, speed, delta_seconds)
+                } else {
+                    let mut s = Xyza::from(*self);
+                    let r = s.transition_towards(&dest, speed, delta_seconds);
+                    *self = s.into();
+                    r
+                }
             }
         }
     }
 
     fn lerp_value(&self, rhs: &Self, s: f32) -> Self {
-        match (self, rhs) {
-            (
-                Self::Rgba {
-                    red,
-                    green,
-                    blue,
-                    alpha,
-                },
-                Self::Rgba {
-                    red: red2,
-                    green: green2,
-                    blue: blue2,
-                    alpha: alpha2,
-                },
-            ) => Self::Rgba {
-                red: red.lerp_value(red2, s),
-                green: green.lerp_value(green2, s),
-                blue: blue.lerp_value(blue2, s),
-                alpha: alpha.lerp_value(alpha2, s),
-            },
-            (
-                Self::RgbaLinear {
-                    red,
-                    green,
-                    blue,
-                    alpha,
-                },
-                Self::RgbaLinear {
-                    red: red2,
-                    green: green2,
-                    blue: blue2,
-                    alpha: alpha2,
-                },
-            ) => Self::RgbaLinear {
-                red: red.lerp_value(red2, s),
-                green: green.lerp_value(green2, s),
-                blue: blue.lerp_value(blue2, s),
-                alpha: alpha.lerp_value(alpha2, s),
-            },
-
-            (
-                Self::Hsla {
-                    hue,
-                    saturation,
-                    lightness,
-                    alpha,
-                },
-                Self::Hsla {
-                    hue: hue2,
-                    saturation: saturation2,
-                    lightness: lightness2,
-                    alpha: alpha2,
-                },
-            ) => Self::Hsla {
-                lightness: lightness.lerp_value(lightness2, s),
-                saturation: saturation.lerp_value(saturation2, s),
-                hue: hue.lerp_value(hue2, s),
-                alpha: alpha.lerp_value(alpha2, s),
-            },
-            (
-                Self::Lcha {
-                    lightness,
-                    chroma,
-                    hue,
-                    alpha,
-                },
-                Self::Lcha {
-                    lightness: lightness2,
-                    chroma: chroma2,
-                    hue: hue2,
-                    alpha: alpha2,
-                },
-            ) => Self::Lcha {
-                lightness: lightness.lerp_value(lightness2, s),
-                chroma: chroma.lerp_value(chroma2, s),
-                hue: hue.lerp_value(hue2, s),
-                alpha: alpha.lerp_value(alpha2, s),
-            },
-            (lhs, rhs) => {
-                //TODO convert self to the other color and then lerp as normal
-                if s < 0.5 {
-                    *lhs
-                } else {
-                    *rhs
-                }
-            }
+        match rhs {
+            Color::Srgba(c) => Srgba::from(*self).lerp_value(c, s).into(),
+            Color::LinearRgba(c) => LinearRgba::from(*self).lerp_value(c, s).into(),
+            Color::Hsla(c) => Hsla::from(*self).lerp_value(c, s).into(),
+            Color::Hsva(c) => Hsva::from(*self).lerp_value(c, s).into(),
+            Color::Hwba(c) => Hwba::from(*self).lerp_value(c, s).into(),
+            Color::Laba(c) => Laba::from(*self).lerp_value(c, s).into(),
+            Color::Lcha(c) => Lcha::from(*self).lerp_value(c, s).into(),
+            Color::Oklaba(c) => Oklaba::from(*self).lerp_value(c, s).into(),
+            Color::Oklcha(c) => Oklcha::from(*self).lerp_value(c, s).into(),
+            Color::Xyza(c) => Xyza::from(*self).lerp_value(c, s).into(),
         }
     }
-}
-
-fn transition_4_tuple(
-    lhs: (&mut f32, &mut f32, &mut f32, &mut f32),
-    rhs: (&f32, &f32, &f32, &f32),
-    speed: <f32 as Tweenable>::Speed,
-    delta_seconds: f32,
-) -> Option<f32> {
-    let mut remaining: Option<f32> = Some(delta_seconds);
-
-    for pair in [
-        (lhs.0, rhs.0),
-        (lhs.1, rhs.1),
-        (lhs.2, rhs.2),
-        (lhs.3, rhs.3),
-    ] {
-        if let Some(r) = pair.0.transition_towards(pair.1, &speed, delta_seconds) {
-            if remaining.is_some_and(|rem| rem > r) {
-                remaining = Some(r);
-            }
-        } else {
-            remaining = None;
-        }
-    }
-    remaining
 }
 
 macro_rules! impl_tweenable {
@@ -668,11 +531,65 @@ impl_tweenable!(
     (T3, t3, r3, s3)
 );
 
+impl<const N: usize, T: Tweenable> Tweenable for [T; N] {
+    type Speed = T::Speed;
+
+    fn duration_to(
+        &self,
+        rhs: &Self,
+        speed: &Self::Speed,
+    ) -> Result<Duration, TryFromFloatSecsError> {
+        let mut current = Duration::ZERO;
+
+        for (l, r) in self.into_iter().zip(rhs.into_iter()) {
+            let d = l.duration_to(r, speed)?;
+
+            if d > current {
+                current = d;
+            }
+        }
+        Ok(current)
+    }
+
+    fn transition_towards(
+        &mut self,
+        destination: &Self,
+        speed: &Self::Speed,
+        delta_seconds: f32,
+    ) -> Option<f32> {
+        let mut remaining = Some(delta_seconds);
+
+        for (l, r) in self.into_iter().zip(destination.into_iter()) {
+            match l.transition_towards(r, speed, delta_seconds) {
+                Some(new_rem) => {
+                    if let Some(rem1) = remaining {
+                        if new_rem < rem1 {
+                            remaining = Some(new_rem);
+                        }
+                    }
+                }
+                None => remaining = None,
+            }
+        }
+
+        remaining
+    }
+
+    fn lerp_value(&self, rhs: &Self, s: f32) -> Self {
+        let mut l = self.clone();
+
+        for i in 0..N {
+            l[i] = l[i].lerp_value(&rhs[i], s);
+        }
+        l
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use bevy::{
+        color::*,
         math::{Quat, Vec3},
-        render::color::Color,
         transform::components::Transform,
     };
 
@@ -741,30 +658,30 @@ mod tests {
 
     #[test]
     pub fn test_transition_color() {
-        let mut value = Color::Rgba {
+        let mut value = Color::LinearRgba(LinearRgba {
             red: 0.3,
             green: 0.4,
             blue: 0.5,
             alpha: 0.0,
-        };
+        });
 
-        let destination = Color::Rgba {
+        let destination = Color::LinearRgba(LinearRgba {
             red: 0.6,
             green: 0.8,
             blue: 1.0,
             alpha: 1.0,
-        };
+        });
 
         let r1 = Tweenable::transition_towards(&mut value, &destination, &0.1.into(), 1.0);
 
         assert_eq!(r1, None);
 
-        let expected = Color::Rgba {
+        let expected = Color::LinearRgba(LinearRgba {
             red: 0.4,
             green: 0.5,
             blue: 0.6,
             alpha: 0.1,
-        };
+        });
 
         assert_eq!(value, expected);
     }

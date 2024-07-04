@@ -27,6 +27,7 @@ impl<S: IntoBundle<B = Style>> MavericNode for ImageNode<S> {
                     texture,
                     flip_x: false,
                     flip_y: false,
+                    color: Color::WHITE,
                 };
                 commands.insert(bundle);
             });

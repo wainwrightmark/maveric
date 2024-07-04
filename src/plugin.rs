@@ -1,6 +1,6 @@
 use std::borrow::BorrowMut;
 
-use crate::{ prelude::*};
+use crate::prelude::*;
 use bevy::{ecs::system::StaticSystemParam, prelude::*};
 
 pub trait CanRegisterMaveric {
@@ -39,7 +39,6 @@ impl CanRegisterMaveric for App {
 fn should_run<'w, 's, R: MavericRoot>(param: StaticSystemParam<R::Context<'w, 's>>) -> bool {
     let inner = param.into_inner();
 
-    
     <R::Context<'w, 's>>::has_item_changed(&inner)
 }
 
@@ -125,17 +124,15 @@ mod tests {
     }
 
     fn update_state(app: &mut App, new_state: TreeState) {
-        let mut state = app.world.resource_mut::<TreeState>();
+        let mut state = app.world_mut().resource_mut::<TreeState>();
         *state = new_state;
     }
 
     fn check_leaves(app: &mut App, expected_blues: usize, expected_reds: usize) {
-        let leaves: Vec<Leaf> = app
-            .world
-            .query::<&MavericNodeComponent<Leaf>>()
-            .iter(&app.world)
-            .map(|x| x.node.clone())
-            .collect();
+        let world = app.world_mut();
+        let mut query = world.query::<&MavericNodeComponent<Leaf>>();
+
+        let leaves: Vec<Leaf> = query.iter(&world).map(|x| x.node.clone()).collect();
         let reds = leaves.iter().filter(|x| *x == &Leaf::Red).count();
         let blues = leaves.iter().filter(|x| *x == &Leaf::Blue).count();
 

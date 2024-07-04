@@ -8,7 +8,7 @@ use strum::{Display, EnumIs};
 fn main() {
     let mut app = App::new();
 
-    app.insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
+    app.insert_resource(ClearColor(Color::srgb(0.4, 0.4, 0.4)))
         .add_plugins(DefaultPlugins)
         .init_resource::<MenuState>()
         .add_systems(Startup, setup)
@@ -112,6 +112,7 @@ fn menu_button_node<'w, 's>() -> impl MavericNode<Context<'w, 's> = ()> {
         visibility: Visibility::Visible,
         border_color: BUTTON_BORDER,
         background_color: ICON_BUTTON_BACKGROUND,
+        border_radius: BorderRadius::all(Val::Percent(5.0)),
         marker: ButtonAction::OpenMenu,
         children: (TextNode {
             text: ButtonAction::OpenMenu.icon(),
@@ -130,6 +131,7 @@ fn icon_button_node<'w, 's>(button_action: ButtonAction) -> impl MavericNode<Con
         visibility: Visibility::Visible,
         border_color: BUTTON_BORDER,
         background_color: ICON_BUTTON_BACKGROUND,
+        border_radius: BorderRadius::all(Val::Percent(5.0)),
         marker: button_action,
         children: (TextNode {
             text: button_action.icon(),
@@ -148,6 +150,7 @@ fn text_button_node<'w, 's>(button_action: ButtonAction) -> impl MavericNode<Con
         visibility: Visibility::Visible,
         border_color: BUTTON_BORDER,
         background_color: TEXT_BUTTON_BACKGROUND,
+        border_radius: BorderRadius::all(Val::Percent(5.0)),
         marker: button_action,
         children: (TextNode {
             text: button_action.text(),
@@ -169,6 +172,7 @@ fn text_and_image_button_node<'w, 's>(
         visibility: Visibility::Visible,
         border_color: BUTTON_BORDER,
         background_color: TEXT_BUTTON_BACKGROUND,
+        border_radius: BorderRadius::all(Val::Percent(5.0)),
         marker: button_action,
         children: (
             TextNode {
@@ -222,7 +226,7 @@ impl MavericNode for MainOrLevelMenu {
                     for (key, action) in ButtonAction::main_buttons().iter().enumerate() {
                         let button = text_button_node(*action);
                         let button = button.with_transition_in::<BackgroundColorLens>(
-                            Color::WHITE.with_a(0.0),
+                            Color::WHITE.with_alpha(0.0),
                             Color::WHITE,
                             Duration::from_secs_f32(1.0),
                             None,
@@ -341,7 +345,7 @@ pub const BUTTON_FONT_SIZE: f32 = 22.0;
 const LEVELS_PER_PAGE: u32 = 8;
 
 pub const BUTTON_BORDER: Color = Color::BLACK;
-pub const BUTTON_TEXT_COLOR: Color = Color::rgb(0.1, 0.1, 0.1);
+pub const BUTTON_TEXT_COLOR: Color = Color::srgb(0.1, 0.1, 0.1);
 
 pub const ICON_BUTTON_BACKGROUND: Color = Color::NONE;
 pub const TEXT_BUTTON_BACKGROUND: Color = Color::WHITE;

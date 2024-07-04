@@ -1,32 +1,30 @@
 [package]
 name = "maveric"
-version = "0.1.0"
+version = "0.14.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 allocator-api2 = "0.2"
-bevy = { version = "0.13", default-features = false }
+bevy = { version = "0.14.0", default-features = false }
 bumpalo = { version = "3", features = ["allocator-api2"], optional = true }
-maveric-macro = { path = "./macro", version = "=0.1.0", optional = true }
+maveric-macro = { path = "./macro", version = "=0.14.0", optional = true }
 simple-easing = "1.0.1"
 
 
 [dev-dependencies]
-bevy = { version = "0.13", default-features = false, features = [
-    "bevy_render",
+bevy = { version = "0.14.0", default-features = false, features = [
     "bevy_ui",
     "bevy_winit",
     "png",
 ] }
 strum = { version = "0.26", features = ["derive"] }
 criterion = { version = "0.5", features = ["html_reports"] }
-maveric-macro = { path = "./macro", version = "=0.1.0" }
+maveric-macro = { path = "./macro", version = "=0.14.0" }
 
 [features]
-widgets = ["bevy_render", "bevy_text"]
-bevy_render = ["bevy/bevy_render"]
+widgets = ["bevy_text"]
 bevy_text = ["bevy/bevy_text"]
 bevy_ui = ["bevy_text", "bevy/bevy_ui"]
 derive = ["maveric-macro"]

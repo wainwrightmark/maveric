@@ -163,7 +163,7 @@ pub mod tests {
         assert_state(&app, 3, None);
 
         fn assert_state(app: &App, expected_count: usize, expected_prev: Option<usize>) {
-            let state = app.world.resource::<State>();
+            let state = app.world().resource::<State>();
 
             assert_eq!(
                 state,
@@ -175,7 +175,7 @@ pub mod tests {
         }
 
         fn increment_counter(app: &mut App) {
-            let mut counter = app.world.resource_mut::<Counter>();
+            let mut counter = app.world_mut().resource_mut::<Counter>();
 
             counter.count += 1;
         }

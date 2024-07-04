@@ -31,9 +31,9 @@ impl CanRegisterTransition for App {
 
         #[cfg(debug_assertions)]
         {
-            let component_id = self.world.init_component::<Transition<L>>();
+            let component_id = self.world_mut().init_component::<Transition<L>>();
 
-            if let Some(mut rt) = self.world.get_resource_mut::<RegisteredTransitions>() {
+            if let Some(mut rt) = self.world_mut().get_resource_mut::<RegisteredTransitions>() {
                 rt.0.insert(component_id);
             } else {
                 let mut set = HashSet::new();
