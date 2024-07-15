@@ -1,5 +1,5 @@
 use bevy::{
-    sprite::Anchor,
+    sprite::{Anchor, SpriteSource},
     text::{Text2dBounds, TextLayoutInfo},
 };
 
@@ -44,7 +44,7 @@ impl<T: core::fmt::Display + PartialEq + Clone + Send + Sync + 'static> MavericN
     type Context<'w, 's> = ();
 
     fn set_components(mut commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {
-        commands.insert_static_bundle((SpatialBundle::default(), TextLayoutInfo::default()));
+        commands.insert_static_bundle((SpatialBundle::default(), TextLayoutInfo::default(), SpriteSource::default()));
         commands.node_to_bundle(|x| &x.text_anchor);
         commands.node_to_component(|x| &x.text_2d_bounds, |l, r| text_2d_bound_compare(*l, *r));
 
