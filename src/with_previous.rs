@@ -8,8 +8,6 @@ use bevy::{
 
 use crate::has_changed::HasChanged;
 
-pub struct Cached {}
-
 #[derive(Debug)]
 pub struct WithPrevious<'w, 's, T: Resource + Clone> {
     inner: Res<'w, T>,

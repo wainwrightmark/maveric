@@ -1,4 +1,8 @@
-use std::{ops::Deref, sync::OnceLock};
+use std::{
+    fmt::Debug,
+    ops::Deref,
+    sync::{Arc, OnceLock},
+};
 
 use bevy::ecs::system::{ReadOnlySystemParam, SystemParam};
 
@@ -12,6 +16,7 @@ pub trait CacheableResource: Send + Sync + 'static {
 pub struct Cached<'w, 's, T: CacheableResource> {
     data: &'w OnceLock<T>,
     item: <<T as CacheableResource>::Argument<'w, 's> as SystemParam>::Item<'w, 's>,
+    previous_data: Arc<OnceLock<T>>,
 }
 
 impl<'w, 's, T: CacheableResource> Clone for Cached<'w, 's, T>
@@ -22,6 +27,7 @@ where
         Self {
             data: self.data,
             item: self.item.clone(),
+            previous_data: self.previous_data.clone(),
         }
     }
 }
@@ -29,9 +35,26 @@ where
 impl<'w, 's, T: CacheableResource> HasChanged for Cached<'w, 's, T>
 where
     <T::Argument<'w, 's> as SystemParam>::Item<'w, 's>: HasChanged,
+    T: PartialEq,
 {
     fn has_changed(&self) -> bool {
-        self.item.has_changed()
+        //Logic:
+        // If the item hasn't changed, then this has not changed
+        // If the item has changed
+        // If the previous cached value was not calculated, then this has changed
+        // The the previous cached value was calculated, then compare the two values
+
+        if !self.item.has_changed() {
+            return false;
+        }
+
+        if let Some(prev) = self.previous_data.get() {
+            let current = self.get_data();
+
+            current != prev
+        } else {
+            return true;
+        }
     }
 }
 
@@ -80,7 +103,10 @@ unsafe impl<'w, 's, T: CacheableResource> SystemParam for Cached<'w, 's, T>
 where
     <T::Argument<'static, 'static> as SystemParam>::Item<'static, 'static>: HasChanged,
 {
-    type State = <T::Argument<'static, 'static> as SystemParam>::State;
+    type State = (
+        <T::Argument<'static, 'static> as SystemParam>::State,
+        Arc<OnceLock<T>>,
+    );
     type Item<'world, 'state> = Cached<'world, 'state, T>;
 
     fn init_state(
@@ -89,7 +115,10 @@ where
     ) -> Self::State {
         world.init_resource::<CachedLazyCell<T>>();
 
-        <T::Argument<'static, 'static> as SystemParam>::init_state(world, system_meta)
+        let inner_state =
+            <T::Argument<'static, 'static> as SystemParam>::init_state(world, system_meta);
+
+        (inner_state, Arc::new(OnceLock::new()))
     }
 
     unsafe fn get_param<'world, 'state>(
@@ -99,7 +128,7 @@ where
         change_tick: bevy::ecs::component::Tick,
     ) -> Self::Item<'world, 'state> {
         let item = <T::Argument<'static, 'static> as SystemParam>::get_param(
-            state,
+            &mut state.0,
             system_meta,
             world,
             change_tick,
@@ -108,9 +137,12 @@ where
         let item: <T::Argument<'static, 'static> as SystemParam>::Item<'static, 'static> =
             std::mem::transmute(item);
 
+        let previous_data: Arc<OnceLock<T>> = state.1.clone();
+
         if item.has_changed() {
             if let Some(mut r) = world.get_resource_mut::<CachedLazyCell<T>>() {
                 *r = CachedLazyCell::default();
+                state.1 = r.0.clone();
             }
         }
 
@@ -122,6 +154,7 @@ where
         Cached::<'world, 'state, T> {
             item,
             data: cell.0.as_ref(),
+            previous_data,
         }
     }
 }
@@ -132,7 +165,10 @@ pub mod tests {
 
     use bevy::prelude::*;
 
-    use crate::cached::{CacheableResource, Cached};
+    use crate::{
+        cached::{CacheableResource, Cached},
+        has_changed::HasChanged,
+    };
 
     #[test]
     pub fn test_with_one_arg() {
@@ -145,7 +181,6 @@ pub mod tests {
 
         fn assert_times_updated(expected: usize) {
             let v = TIMES_UPDATED.load(std::sync::atomic::Ordering::SeqCst);
-
             assert_eq!(v, expected);
         }
 
@@ -196,6 +231,82 @@ pub mod tests {
         app.update();
 
         assert_times_updated(3);
+
+        fn set_count(app: &mut App, new_count: usize) {
+            let mut r = app.world_mut().resource_mut::<Counter>();
+
+            r.set_if_neq(Counter(new_count));
+        }
+    }
+
+    #[test]
+    pub fn test_has_changed() {
+        #[derive(Debug, Resource, Default, PartialEq, Eq)]
+        pub struct Counter(usize);
+
+        #[derive(PartialEq, Debug)]
+        pub struct CounterDiv2(usize);
+
+        static TIMES_CHANGED: AtomicUsize = AtomicUsize::new(0);
+
+        fn assert_times_changed(expected: usize, message: &'static str) {
+            let actual = TIMES_CHANGED.load(std::sync::atomic::Ordering::SeqCst);
+
+            assert_eq!(
+                actual, expected,
+                "actual: {actual} expected: {expected}. {message}"
+            );
+        }
+
+        impl CacheableResource for CounterDiv2 {
+            type Argument<'world, 'state> = Res<'world, Counter>;
+
+            fn calculate<'w, 's>(
+                arg: &<Self::Argument<'w, 's> as bevy::ecs::system::SystemParam>::Item<'w, 's>,
+            ) -> Self {
+                Self(arg.0 / 2)
+            }
+        }
+
+        let mut app = App::new();
+
+        app.init_resource::<Counter>();
+
+        app.add_systems(Update, check_count_and_half);
+
+        fn check_count_and_half(count: Res<Counter>, half: Cached<CounterDiv2>) {
+            let count = count.0;
+
+            if half.has_changed() {
+                TIMES_CHANGED.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            }
+
+            let double = half.get_data().0;
+
+            assert_eq!(count / 2, double);
+        }
+
+        assert_times_changed(0, "Initial value");
+        app.update();
+        assert_times_changed(1, "Has_Changed should be true on first system run"); //changed on initial value changing
+
+        app.update();
+        assert_times_changed(1, "The resource has not changed since the system last ran");
+
+        set_count(&mut app, 1);
+        app.update();
+        assert_times_changed(
+            1,
+            "The cached value has not changed since the system last ran",
+        );
+
+        set_count(&mut app, 2);
+        app.update();
+        assert_times_changed(2, "The cached value has now changed");
+
+        set_count(&mut app, 4);
+        app.update();
+        assert_times_changed(3, "The cached value has changed again");
 
         fn set_count(app: &mut App, new_count: usize) {
             let mut r = app.world_mut().resource_mut::<Counter>();
