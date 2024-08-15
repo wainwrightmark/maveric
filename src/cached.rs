@@ -1,5 +1,4 @@
 use std::{
-    fmt::Debug,
     ops::Deref,
     sync::{Arc, OnceLock},
 };
@@ -14,7 +13,7 @@ pub trait CacheableResource: Send + Sync + 'static {
 }
 
 pub struct Cached<'w, 's, T: CacheableResource> {
-    data: &'w OnceLock<T>,
+    data: Arc<OnceLock<T>>,
     item: <<T as CacheableResource>::Argument<'w, 's> as SystemParam>::Item<'w, 's>,
     previous_data: Arc<OnceLock<T>>,
 }
@@ -25,7 +24,7 @@ where
 {
     fn clone(&self) -> Self {
         Self {
-            data: self.data,
+            data: self.data.clone(),
             item: self.item.clone(),
             previous_data: self.previous_data.clone(),
         }
@@ -90,35 +89,29 @@ unsafe impl<'w, 's, T: CacheableResource> ReadOnlySystemParam for Cached<'w, 's,
 {
 }
 
-#[derive(Debug, Resource)]
-struct CachedLazyCell<T: CacheableResource>(std::sync::Arc<OnceLock<T>>);
-
-impl<T: CacheableResource> Default for CachedLazyCell<T> {
-    fn default() -> Self {
-        Self(std::sync::Arc::default())
-    }
+pub struct CachedState<T: CacheableResource> {
+    pub(crate) inner_state: <T::Argument<'static, 'static> as SystemParam>::State,
+    pub(crate) data: Arc<OnceLock<T>>,
 }
 
 unsafe impl<'w, 's, T: CacheableResource> SystemParam for Cached<'w, 's, T>
 where
     <T::Argument<'static, 'static> as SystemParam>::Item<'static, 'static>: HasChanged,
 {
-    type State = (
-        <T::Argument<'static, 'static> as SystemParam>::State,
-        Arc<OnceLock<T>>,
-    );
+    type State = CachedState<T>;
     type Item<'world, 'state> = Cached<'world, 'state, T>;
 
     fn init_state(
         world: &mut World,
         system_meta: &mut bevy::ecs::system::SystemMeta,
     ) -> Self::State {
-        world.init_resource::<CachedLazyCell<T>>();
-
         let inner_state =
             <T::Argument<'static, 'static> as SystemParam>::init_state(world, system_meta);
 
-        (inner_state, Arc::new(OnceLock::new()))
+        CachedState {
+            inner_state,
+            data: Arc::new(OnceLock::new()),
+        }
     }
 
     unsafe fn get_param<'world, 'state>(
@@ -128,7 +121,7 @@ where
         change_tick: bevy::ecs::component::Tick,
     ) -> Self::Item<'world, 'state> {
         let item = <T::Argument<'static, 'static> as SystemParam>::get_param(
-            &mut state.0,
+            &mut state.inner_state,
             system_meta,
             world,
             change_tick,
@@ -137,23 +130,18 @@ where
         let item: <T::Argument<'static, 'static> as SystemParam>::Item<'static, 'static> =
             std::mem::transmute(item);
 
-        let previous_data: Arc<OnceLock<T>> = state.1.clone();
+        let previous_data: Arc<OnceLock<T>> = state.data.clone();
 
         if item.has_changed() {
-            if let Some(mut r) = world.get_resource_mut::<CachedLazyCell<T>>() {
-                *r = CachedLazyCell::default();
-                state.1 = r.0.clone();
-            }
+            state.data = Default::default();
         }
 
         let item: <T::Argument<'world, 'state> as SystemParam>::Item<'world, 'state> =
             std::mem::transmute(item);
 
-        let cell = world.get_resource::<CachedLazyCell<T>>().unwrap();
-
         Cached::<'world, 'state, T> {
             item,
-            data: cell.0.as_ref(),
+            data: state.data.clone(),
             previous_data,
         }
     }
