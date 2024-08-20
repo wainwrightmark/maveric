@@ -219,50 +219,53 @@ impl MavericNode for MainOrLevelMenu {
     }
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>) {
-        commands
-            .ignore_context()
-            .unordered_children_with_node(|node, commands| match node {
-                MainOrLevelMenu::Main => {
-                    for (key, action) in ButtonAction::main_buttons().iter().enumerate() {
-                        let button = text_button_node(*action);
-                        let button = button.with_transition_in::<BackgroundColorLens>(
-                            Color::WHITE.with_alpha(0.0),
-                            Color::WHITE,
-                            Duration::from_secs_f32(1.0),
-                            None,
-                        );
+        let Some((node, mut commands)) = commands.ignore_context().unordered_children_with_node()
+        else {
+            return;
+        };
 
-                        commands.add_child(key as u32, button, &())
-                    }
+        match node {
+            MainOrLevelMenu::Main => {
+                for (key, action) in ButtonAction::main_buttons().iter().enumerate() {
+                    let button = text_button_node(*action);
+                    let button = button.with_transition_in::<BackgroundColorLens>(
+                        Color::WHITE.with_alpha(0.0),
+                        Color::WHITE,
+                        Duration::from_secs_f32(1.0),
+                        None,
+                    );
 
+                    commands.add_child(key as u32, button, &())
+                }
+
+                commands.add_child(
+                    "image",
+                    ImageNode {
+                        style: BigImageNodeStyle,
+                        background_color: Color::WHITE,
+                        path: r#"images\MedalsGold.png"#,
+                    },
+                    &(),
+                )
+            }
+            MainOrLevelMenu::Level(page) => {
+                let start = page * LEVELS_PER_PAGE;
+                let end = start + LEVELS_PER_PAGE;
+
+                for (key, level) in (start..end).enumerate() {
                     commands.add_child(
-                        "image",
-                        ImageNode {
-                            style: BigImageNodeStyle,
-                            background_color: Color::WHITE,
-                            path: r#"images\MedalsGold.png"#,
-                        },
+                        key as u32,
+                        text_and_image_button_node(
+                            ButtonAction::GotoLevel { level },
+                            r#"images/MedalsBlack.png"#,
+                        ),
                         &(),
                     )
                 }
-                MainOrLevelMenu::Level(page) => {
-                    let start = page * LEVELS_PER_PAGE;
-                    let end = start + LEVELS_PER_PAGE;
 
-                    for (key, level) in (start..end).enumerate() {
-                        commands.add_child(
-                            key as u32,
-                            text_and_image_button_node(
-                                ButtonAction::GotoLevel { level },
-                                r#"images/MedalsBlack.png"#,
-                            ),
-                            &(),
-                        )
-                    }
-
-                    commands.add_child("buttons", LevelMenuArrows(*page), &());
-                }
-            });
+                commands.add_child("buttons", LevelMenuArrows(*page), &());
+            }
+        };
     }
 }
 
@@ -303,7 +306,11 @@ impl MavericNode for LevelMenuArrows {
     }
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>) {
-        commands.unordered_children_with_node_and_context(|args, context, commands| {
+        let Some((args, context, mut commands)) = commands.unordered_children_with_node_and_context()
+        else {
+            return;
+        };
+        {
             if args.0 == 0 {
                 commands.add_child("left", icon_button_node(ButtonAction::OpenMenu), context)
             } else {
@@ -323,7 +330,7 @@ impl MavericNode for LevelMenuArrows {
             } else {
                 commands.add_child("right", icon_button_node(ButtonAction::None), context)
             }
-        });
+        };
     }
 }
 

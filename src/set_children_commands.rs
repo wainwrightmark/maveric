@@ -97,9 +97,10 @@ impl<
     > SetChildrenCommands<'n, 'p, 'c1, 'world, 'ec, 'a, 'alloc, N, C, R>
 {
     pub fn add_children(self) {
-        self.unordered_children_with_node_and_context(|args, context, commands| {
-            args.add_children(context, commands);
-        });
+        match self.unordered_children_with_node_and_context() {
+            Some((args, context, mut commands)) => args.add_children(context, &mut commands),
+            None => {}
+        }
     }
 }
 
@@ -110,45 +111,54 @@ impl<'n, 'p, 'c1, 'world, 'ec, 'a, 'alloc, N: PartialEq, C: MavericContext, R: M
 
     pub fn ordered_children_with_node_and_context(
         self,
-
-        f: impl FnOnce(&'n N, &'c1 C, &mut OrderedChildCommands<R>),
-    ) {
-        self.ordered(|a, cc| f(a.node, a.context, cc));
+    ) -> Option<(
+        &'n N,
+        &'c1 C,
+        OrderedChildCommands<'ec, 'a, 'world, 'alloc, R>,
+    )> {
+        self.ordered()
+            .map(|(node_args, commands)| (node_args.node, node_args.context, commands))
     }
 
     pub fn unordered_children_with_node_and_context(
         self,
-
-        f: impl FnOnce(&'n N, &'c1 C, &mut UnorderedChildCommands<R>),
-    ) {
-        self.unordered(|a, cc| f(a.node, a.context, cc));
+    ) -> Option<(
+        &'n N,
+        &'c1 C,
+        UnorderedChildCommands<'ec, 'a, 'world, 'alloc, R>,
+    )> {
+        self.unordered()
+            .map(|(node_args, commands)| (node_args.node, node_args.context, commands))
     }
 
     /// Gives you full access to args and commands
-    /// You must add children if you call this, even if not hot
     pub fn ordered(
         self,
-
-        f: impl FnOnce(&NodeArgs<'n, 'p, 'c1, N, C>, &mut OrderedChildCommands<R>),
-    ) {
+    ) -> Option<(
+        NodeArgs<'n, 'p, 'c1, N, C>,
+        OrderedChildCommands<'ec, 'a, 'world, 'alloc, R>,
+    )> {
         if self.args.is_hot() {
-            let mut occ = OrderedChildCommands::<R>::new(self.ec, self.world, self.alloc);
-            f(&self.args, &mut occ);
-            occ.finish();
+            let occ = OrderedChildCommands::<R>::new(self.ec, self.world, self.alloc);
+
+            Some((self.args, occ))
+        } else {
+            None
         }
     }
 
     /// Gives you full access to args and commands
-    /// You must add children if you call this, even if not hot
     pub fn unordered(
         self,
-
-        f: impl FnOnce(&NodeArgs<'n, 'p, 'c1, N, C>, &mut UnorderedChildCommands<R>),
-    ) {
+    ) -> Option<(
+        NodeArgs<'n, 'p, 'c1, N, C>,
+        UnorderedChildCommands<'ec, 'a, 'world, 'alloc, R>,
+    )> {
         if self.args.is_hot() {
-            let mut ucc = UnorderedChildCommands::<R>::new(self.ec, self.world, self.alloc);
-            f(&self.args, &mut ucc);
-            ucc.finish();
+            let ucc = UnorderedChildCommands::<R>::new(self.ec, self.world, self.alloc);
+            Some((self.args, ucc))
+        } else {
+            None
         }
     }
 }
@@ -156,28 +166,30 @@ impl<'n, 'p, 'c1, 'world, 'ec, 'a, 'alloc, N: PartialEq, C: MavericContext, R: M
 impl<'n, 'p, 'c1, 'world, 'ec, 'a, 'alloc, R: MavericRoot>
     SetChildrenCommands<'n, 'p, 'c1, 'world, 'ec, 'a, 'alloc, (), (), R>
 {
-    pub fn ordered_children(self, f: impl FnOnce(&mut OrderedChildCommands<R>)) {
-        self.ordered_children_with_node_and_context(|(), (), cc| f(cc));
+    pub fn ordered_children(self) -> Option<OrderedChildCommands<'ec, 'a, 'world, 'alloc, R>> {
+        self.ordered().map(|(_, commands)| commands)
     }
 
-    pub fn unordered_children(self, f: impl FnOnce(&mut UnorderedChildCommands<R>)) {
-        self.unordered_children_with_node_and_context(|(), (), cc| f(cc));
+    pub fn unordered_children(self) -> Option<UnorderedChildCommands<'ec, 'a, 'world, 'alloc, R>> {
+        self.unordered().map(|(_, commands)| commands)
     }
 }
 
 impl<'n, 'p, 'c1, 'world, 'ec, 'a, 'alloc, N: PartialEq, R: MavericRoot>
     SetChildrenCommands<'n, 'p, 'c1, 'world, 'ec, 'a, 'alloc, N, (), R>
 {
-    pub fn ordered_children_with_node(self, f: impl FnOnce(&'n N, &mut OrderedChildCommands<R>)) {
-        self.ordered_children_with_node_and_context(|n, (), cc| f(n, cc));
+    pub fn ordered_children_with_node(
+        self,
+    ) -> Option<(&'n N, OrderedChildCommands<'ec, 'a, 'world, 'alloc, R>)> {
+        self.ordered_children_with_node_and_context()
+            .map(|(node, _, commands)| (node, commands))
     }
 
     pub fn unordered_children_with_node(
         self,
-
-        f: impl FnOnce(&'n N, &mut UnorderedChildCommands<R>),
-    ) {
-        self.unordered_children_with_node_and_context(|n, (), cc| f(n, cc));
+    ) -> Option<(&'n N, UnorderedChildCommands<'ec, 'a, 'world, 'alloc, R>)> {
+        self.unordered_children_with_node_and_context()
+            .map(|(node, _, commands)| (node, commands))
     }
 }
 
@@ -186,17 +198,15 @@ impl<'n, 'p, 'c1, 'world, 'ec, 'a, 'alloc, C: MavericContext, R: MavericRoot>
 {
     pub fn ordered_children_with_context(
         self,
-
-        f: impl FnOnce(&'c1 C, &mut OrderedChildCommands<R>),
-    ) {
-        self.ordered_children_with_node_and_context(|_n, c, cc| f(c, cc));
+    ) -> Option<(&'c1 C, OrderedChildCommands<'ec, 'a, 'world, 'alloc, R>)> {
+        self.ordered_children_with_node_and_context()
+            .map(|(_n, c, cc)| (c, cc))
     }
 
     pub fn unordered_children_with_context(
         self,
-
-        f: impl FnOnce(&'c1 C, &mut UnorderedChildCommands<R>),
-    ) {
-        self.unordered_children_with_node_and_context(|_n, c, cc| f(c, cc));
+    ) -> Option<(&'c1 C, UnorderedChildCommands<'ec, 'a, 'world, 'alloc, R>)> {
+        self.unordered_children_with_node_and_context()
+            .map(|(_n, c, cc)| (c, cc))
     }
 }

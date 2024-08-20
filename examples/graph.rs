@@ -71,33 +71,35 @@ impl MavericNode for Buttons {
     }
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>) {
-        commands
-            .ignore_node()
-            .unordered_children_with_context(|context, commands| {
-                for button_marker in ButtonMarker::iter() {
-                    let text: &'static str = button_marker.into();
-                    commands.add_child(
-                        text,
-                        ButtonNode {
-                            style: ButtonStyle,
-                            background_color: TEXT_BUTTON_BACKGROUND,
-                            border_color: BUTTON_BORDER,
-                            border_radius: BorderRadius::all(Val::Percent(5.0)),
-                            visibility: Visibility::Visible,
-                            marker: button_marker,
-                            children: (TextNode {
-                                text,
-                                font_size: BUTTON_FONT_SIZE,
-                                color: BUTTON_TEXT_COLOR,
-                                font: FONT_PATH,
-                                justify_text: JustifyText::Center,
-                                linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
-                            },),
-                        },
-                        &context,
-                    )
-                }
-            });
+        let Some(mut commands) = commands.ignore_node().unordered_children() else {
+            return;
+        };
+
+        {
+            for button_marker in ButtonMarker::iter() {
+                let text: &'static str = button_marker.into();
+                commands.add_child(
+                    text,
+                    ButtonNode {
+                        style: ButtonStyle,
+                        background_color: TEXT_BUTTON_BACKGROUND,
+                        border_color: BUTTON_BORDER,
+                        border_radius: BorderRadius::all(Val::Percent(5.0)),
+                        visibility: Visibility::Visible,
+                        marker: button_marker,
+                        children: (TextNode {
+                            text,
+                            font_size: BUTTON_FONT_SIZE,
+                            color: BUTTON_TEXT_COLOR,
+                            font: FONT_PATH,
+                            justify_text: JustifyText::Center,
+                            linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
+                        },),
+                    },
+                    &(),
+                )
+            }
+        }
     }
 }
 
@@ -153,22 +155,24 @@ impl MavericNode for NumberNode {
     }
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>) {
-        commands.unordered_children_with_node_and_context(|args, context, commands| {
-            commands.add_child(
-                0,
-                Text2DNode {
-                    text: format!(" {} ", args.0),
-                    font_size: TEXT_FONT_SIZE,
-                    color: BUTTON_TEXT_COLOR,
-                    font: FONT_PATH,
-                    justify_text: JustifyText::Center,
-                    linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
-                    text_anchor: Anchor::default(),
-                    text_2d_bounds: Text2dBounds::default(),
-                },
-                context,
-            );
-        });
+        let Some((args, mut commands)) = commands.unordered_children_with_node() else {
+            return;
+        };
+
+        commands.add_child(
+            0,
+            Text2DNode {
+                text: format!(" {} ", args.0),
+                font_size: TEXT_FONT_SIZE,
+                color: BUTTON_TEXT_COLOR,
+                font: FONT_PATH,
+                justify_text: JustifyText::Center,
+                linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
+                text_anchor: Anchor::default(),
+                text_2d_bounds: Text2dBounds::default(),
+            },
+            &(),
+        );
     }
 
     fn on_deleted(&self, commands: &mut ComponentCommands) -> DeletionPolicy {

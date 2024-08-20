@@ -65,14 +65,15 @@ impl MavericNode for Branch {
     fn set_components(_commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {}
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>) {
-        commands
-            .ignore_node()
-            .ordered_children_with_context(|context, commands| {
-                for &number in context.0 .0.iter() {
-                    let linger = context.1 .0;
-                    commands.add_child(number, Leaf { number, linger }, &());
-                }
-            });
+        let Some((context, mut commands)) = commands.ignore_node().ordered_children_with_context()
+        else {
+            return;
+        };
+
+        for &number in context.0 .0.iter() {
+            let linger = context.1 .0;
+            commands.add_child(number, Leaf { number, linger }, &());
+        }
     }
 }
 

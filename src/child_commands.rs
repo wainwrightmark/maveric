@@ -47,6 +47,17 @@ pub struct UnorderedChildCommands<'c, 'a, 'world, 'alloc, R: MavericRoot> {
     duplicate_checker: DuplicateChecker,
 }
 
+impl<'c, 'a, 'world, 'alloc, R: MavericRoot> Drop
+    for UnorderedChildCommands<'c, 'a, 'world, 'alloc, R>
+{
+    fn drop(&mut self) {
+        //remove all remaining old entities
+        for (_key, entity) in &self.remaining_old_entities {
+            let _ = delete_recursive::<R>(&mut self.ec.commands(), *entity, self.world);
+        }
+    }
+}
+
 impl<'c, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
     for UnorderedChildCommands<'c, 'a, 'world, 'alloc, R>
 {
@@ -136,13 +147,6 @@ impl<'c, 'a, 'world, 'alloc, R: MavericRoot> UnorderedChildCommands<'c, 'a, 'wor
             duplicate_checker: DuplicateChecker::default(),
         }
     }
-
-    pub(crate) fn finish(self) {
-        //remove all remaining old entities
-        for (_key, entity) in &self.remaining_old_entities {
-            let _ = delete_recursive::<R>(&mut self.ec.commands(), *entity, self.world);
-        }
-    }
 }
 
 pub struct OrderedChildCommands<'c, 'a, 'world, 'alloc, R: MavericRoot> {
@@ -154,6 +158,77 @@ pub struct OrderedChildCommands<'c, 'a, 'world, 'alloc, R: MavericRoot> {
     new_children: allocator_api2::vec::Vec<Entity, &'alloc Allocator>,
     new_indices: allocator_api2::vec::Vec<Option<usize>, &'alloc Allocator>,
     duplicate_checker: DuplicateChecker,
+}
+
+impl<'c, 'a, 'world, 'alloc, R: MavericRoot> Drop
+    for OrderedChildCommands<'c, 'a, 'world, 'alloc, R>
+{
+    fn drop(&mut self) {
+        let order_changed = {
+            let mut changed = false;
+            let mut last = 0;
+            'oc: for old_index in &self.new_indices {
+                let Some(old_index) = *old_index else {
+                    changed = true;
+                    break 'oc;
+                };
+                if old_index < last {
+                    changed = true;
+                    break 'oc;
+                }
+                last = old_index;
+            }
+            changed
+        };
+
+        //remove all remaining old entities
+        for (_key, (old_deleted_index, entity)) in &self.remaining_old_entities {
+            let Some(lingering_entity) =
+                delete_recursive::<R>(&mut self.ec.commands(), *entity, self.world)
+            else {
+                continue;
+            };
+
+            if !order_changed {
+                continue;
+            }
+
+            let mut closest_to_next: Option<(usize, usize)> = None;
+            'inner: for (new_index, old_index) in self.new_indices.iter().enumerate() {
+                let Some(old_index) = old_index else {
+                    continue;
+                };
+                let Some(distance) = old_index.checked_sub(*old_deleted_index) else {
+                    continue;
+                };
+
+                let replace = if let Some((prev_distance, _)) = closest_to_next {
+                    distance < prev_distance
+                } else {
+                    true
+                };
+
+                if !replace {
+                    continue;
+                };
+                closest_to_next = Some((distance, new_index));
+                if distance == 1 {
+                    break 'inner;
+                };
+            }
+
+            if let Some((_, new_index)) = closest_to_next {
+                self.new_children.insert(new_index, lingering_entity);
+                self.new_indices.insert(new_index, Some(*old_deleted_index));
+            } else {
+                self.new_children.push(lingering_entity);
+                self.new_indices.push(Some(*old_deleted_index));
+            }
+        }
+        if order_changed {
+            self.ec.replace_children(&self.new_children);
+        }
+    }
 }
 
 impl<'c, 'a, 'world, 'alloc, R: MavericRoot> ChildCommands
@@ -253,73 +328,6 @@ impl<'c, 'a, 'world, 'alloc, R: MavericRoot> OrderedChildCommands<'c, 'a, 'world
             new_children: allocator_api2::vec::Vec::new_in(allocator),
             new_indices: allocator_api2::vec::Vec::new_in(allocator),
             duplicate_checker: DuplicateChecker::default(),
-        }
-    }
-
-    pub(crate) fn finish(mut self) {
-        let order_changed = {
-            let mut changed = false;
-            let mut last = 0;
-            'oc: for old_index in &self.new_indices {
-                let Some(old_index) = *old_index else {
-                    changed = true;
-                    break 'oc;
-                };
-                if old_index < last {
-                    changed = true;
-                    break 'oc;
-                }
-                last = old_index;
-            }
-            changed
-        };
-
-        //remove all remaining old entities
-        for (_key, (old_deleted_index, entity)) in &self.remaining_old_entities {
-            let Some(lingering_entity) =
-                delete_recursive::<R>(&mut self.ec.commands(), *entity, self.world)
-            else {
-                continue;
-            };
-
-            if !order_changed {
-                continue;
-            }
-
-            let mut closest_to_next: Option<(usize, usize)> = None;
-            'inner: for (new_index, old_index) in self.new_indices.iter().enumerate() {
-                let Some(old_index) = old_index else {
-                    continue;
-                };
-                let Some(distance) = old_index.checked_sub(*old_deleted_index) else {
-                    continue;
-                };
-
-                let replace = if let Some((prev_distance, _)) = closest_to_next {
-                    distance < prev_distance
-                } else {
-                    true
-                };
-
-                if !replace {
-                    continue;
-                };
-                closest_to_next = Some((distance, new_index));
-                if distance == 1 {
-                    break 'inner;
-                };
-            }
-
-            if let Some((_, new_index)) = closest_to_next {
-                self.new_children.insert(new_index, lingering_entity);
-                self.new_indices.insert(new_index, Some(*old_deleted_index));
-            } else {
-                self.new_children.push(lingering_entity);
-                self.new_indices.push(Some(*old_deleted_index));
-            }
-        }
-        if order_changed {
-            self.ec.replace_children(&self.new_children);
         }
     }
 }
@@ -493,14 +501,16 @@ mod tests {
         fn set_children<R: MavericRoot>(
             commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>,
         ) {
-            commands
-                .ignore_node()
-                .ordered_children_with_context(|context, commands| {
-                    for &number in &context.0 .0 {
-                        let linger = context.1 .0.contains(&number);
-                        commands.add_child(number, Leaf { number, linger }, &());
-                    }
-                });
+            let Some((context, mut commands)) =
+                commands.ignore_node().ordered_children_with_context()
+            else {
+                return;
+            };
+
+            for &number in &context.0 .0 {
+                let linger = context.1 .0.contains(&number);
+                commands.add_child(number, Leaf { number, linger }, &());
+            }
         }
     }
 

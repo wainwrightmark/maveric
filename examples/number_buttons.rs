@@ -110,31 +110,32 @@ impl MavericNode for CommandGrid {
     }
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>) {
-        commands
-            .ignore_node()
-            .unordered_children_with_context(|context, commands| {
-                for command in [Command::AddNew, Command::Reset] {
-                    let key: &'static str = command.into();
-                    let node = ButtonNode {
-                        style: ButtonStyle,
-                        visibility: Visibility::Visible,
-                        border_color: BUTTON_BORDER,
-                        background_color: TEXT_BUTTON_BACKGROUND,
-                        border_radius: BorderRadius::all(Val::Percent(5.0)),
-                        marker: command,
-                        children: (TextNode {
-                            text: command.to_string(),
-                            font: FONT_PATH,
-                            font_size: BUTTON_FONT_SIZE,
-                            color: BUTTON_TEXT_COLOR,
-                            justify_text: JustifyText::Center,
-                            linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
-                        },),
-                    };
+        let Some((context, mut commands)) =
+            commands.ignore_node().unordered_children_with_context()
+        else {
+            return;
+        };
+        for command in [Command::AddNew, Command::Reset] {
+            let key: &'static str = command.into();
+            let node = ButtonNode {
+                style: ButtonStyle,
+                visibility: Visibility::Visible,
+                border_color: BUTTON_BORDER,
+                background_color: TEXT_BUTTON_BACKGROUND,
+                border_radius: BorderRadius::all(Val::Percent(5.0)),
+                marker: command,
+                children: (TextNode {
+                    text: command.to_string(),
+                    font: FONT_PATH,
+                    font_size: BUTTON_FONT_SIZE,
+                    color: BUTTON_TEXT_COLOR,
+                    justify_text: JustifyText::Center,
+                    linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
+                },),
+            };
 
-                    commands.add_child(key, node, &context);
-                }
-            })
+            commands.add_child(key, node, &context);
+        }
     }
 }
 
@@ -161,41 +162,44 @@ impl MavericNode for DynamicGrid {
     }
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>) {
-        commands
-            .ignore_node()
-            .ordered_children_with_context(|context, commands| {
-                for number in context.dynamic_buttons.iter().cloned() {
-                    let node = ButtonNode {
-                        style: ButtonStyle,
-                        visibility: Visibility::Visible,
-                        border_color: BUTTON_BORDER,
-                        background_color: TEXT_BUTTON_BACKGROUND,
-                        border_radius: BorderRadius::all(Val::Percent(5.0)),
-                        marker: DynamicButtonComponent(number),
-                        children: (TextNode {
-                            text: number.to_string(),
-                            font: FONT_PATH,
-                            font_size: BUTTON_FONT_SIZE,
-                            color: BUTTON_TEXT_COLOR,
-                            justify_text: JustifyText::Center,
-                            linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
-                        },),
-                    };
+        let Some((context, mut commands)) = commands.ignore_node().ordered_children_with_context()
+        else {
+            return;
+        };
 
-                    let node = node
-                        .with_transition_in_out::<(TransformRotationZLens, TransformScaleLens)>(
-                            (-consts::FRAC_PI_8, Vec3::ONE),
-                            (0.0, Vec3::ONE),
-                            (consts::FRAC_PI_2, Vec3::ZERO),
-                            Duration::from_secs_f32(0.5),
-                            Duration::from_secs_f32(2.0),
-                            Some(Ease::CubicIn),
-                            Some(Ease::CubicIn),
-                        );
+        {
+            for number in context.dynamic_buttons.iter().cloned() {
+                let node = ButtonNode {
+                    style: ButtonStyle,
+                    visibility: Visibility::Visible,
+                    border_color: BUTTON_BORDER,
+                    background_color: TEXT_BUTTON_BACKGROUND,
+                    border_radius: BorderRadius::all(Val::Percent(5.0)),
+                    marker: DynamicButtonComponent(number),
+                    children: (TextNode {
+                        text: number.to_string(),
+                        font: FONT_PATH,
+                        font_size: BUTTON_FONT_SIZE,
+                        color: BUTTON_TEXT_COLOR,
+                        justify_text: JustifyText::Center,
+                        linebreak_behavior: bevy::text::BreakLineOn::NoWrap,
+                    },),
+                };
 
-                    commands.add_child(number, node, &());
-                }
-            })
+                let node = node
+                    .with_transition_in_out::<(TransformRotationZLens, TransformScaleLens)>(
+                        (-consts::FRAC_PI_8, Vec3::ONE),
+                        (0.0, Vec3::ONE),
+                        (consts::FRAC_PI_2, Vec3::ZERO),
+                        Duration::from_secs_f32(0.5),
+                        Duration::from_secs_f32(2.0),
+                        Some(Ease::CubicIn),
+                        Some(Ease::CubicIn),
+                    );
+
+                commands.add_child(number, node, &());
+            }
+        }
     }
 }
 

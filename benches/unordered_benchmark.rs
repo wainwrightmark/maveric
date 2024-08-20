@@ -130,19 +130,19 @@ impl MavericNode for Branch {
     fn set_components(_commands: SetComponentCommands<Self, Self::Context<'_, '_>>) {}
 
     fn set_children<R: MavericRoot>(commands: SetChildrenCommands<Self, Self::Context<'_, '_>, R>) {
-        commands
-            .ignore_node()
-            .unordered_children_with_context(|context, commands| {
-                for x in 0..(context.blue_leaf_count) {
-                    commands.add_child(x, Leaf::Blue, &());
-                }
+        let Some((context, mut commands)) =
+            commands.ignore_node().unordered_children_with_context()
+        else {
+            return;
+        };
 
-                for x in
-                    (context.blue_leaf_count)..(context.blue_leaf_count + context.red_leaf_count)
-                {
-                    commands.add_child(x, Leaf::Red, &());
-                }
-            })
+        for x in 0..(context.blue_leaf_count) {
+            commands.add_child(x, Leaf::Blue, &());
+        }
+
+        for x in (context.blue_leaf_count)..(context.blue_leaf_count + context.red_leaf_count) {
+            commands.add_child(x, Leaf::Red, &());
+        }
     }
 }
 
