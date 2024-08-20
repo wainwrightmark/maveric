@@ -1,13 +1,13 @@
 [package]
 name = "maveric"
-version = "0.14.1"
+version = "0.14.2"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 allocator-api2 = "0.2"
-bevy = { version = "0.14.0", default-features = false }
+bevy = { version = "0.14", default-features = false }
 bumpalo = { version = "3", features = ["allocator-api2"], optional = true }
 maveric-macro = { path = "./macro", version = "=0.14.0", optional = true }
 simple-easing = "1.0.1"
