@@ -8,16 +8,19 @@ pub trait MavericContext: ReadOnlySystemParam + HasChanged {
 
 impl<R: ReadOnlySystemParam + HasChanged> MavericContext for R
 where
-    <R as SystemParam>::Item<'static, 'static>: HasChanged,
+    <R as SystemParam>::Item<'static, 'static>: HasChanged + 'static,
 {
     fn has_item_changed<'a, 'w, 's>(item: &'a <Self as SystemParam>::Item<'w, 's>) -> bool {
         unsafe {
-            let transmuted_item = std::mem::transmute_copy::<
-                <Self as SystemParam>::Item<'w, 's>,
-                <Self as SystemParam>::Item<'static, 'static>,
+
+            let ti = std::mem::transmute::<
+            &'a <Self as SystemParam>::Item<'w, 's>,
+                &'static <Self as SystemParam>::Item<'static, 'static>,
             >(item);
 
-            transmuted_item.has_changed()
+            ti.has_changed()
         }
     }
 }
+
+
