@@ -29,6 +29,7 @@ pub mod set_children_commands;
 pub mod set_components_commands;
 pub mod set_event;
 pub mod transition;
+pub mod memo;
 
 #[cfg(feature = "tracing")]
 pub mod tracing;
