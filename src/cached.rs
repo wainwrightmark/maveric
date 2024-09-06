@@ -154,15 +154,81 @@ pub mod tests {
     use bevy::prelude::*;
 
     use crate::{
-        cached::{CacheableResource, Cached},
+        cached::{CacheableResource, Cached, CanRegisterMaveric},
         has_changed::HasChanged,
+        root::MavericRoot,
     };
 
     #[test]
-    pub fn test_with_one_arg() {
-        #[derive(Debug, Resource, Default, PartialEq, Eq)]
-        pub struct Counter(usize);
+    pub fn test_in_maveric() {
+        //This test is not passing at the moment (exit code: 0xc000001d, STATUS_ILLEGAL_INSTRUCTION)
 
+        #[derive(Debug, PartialEq)]
+        pub struct CounterDouble(usize);
+
+        #[derive(Debug, Component, PartialEq, Clone)]
+        pub struct CountComponent(usize);
+
+        impl CacheableResource for CounterDouble {
+            type Argument<'world, 'state> = Res<'world, Counter>;
+
+            fn calculate<'w, 's>(
+                arg: &<Self::Argument<'w, 's> as bevy::ecs::system::SystemParam>::Item<'w, 's>,
+            ) -> Self {
+                Self(arg.0 * 2)
+            }
+        }
+
+        struct CounterView;
+
+        impl MavericRoot for CounterView {
+            type Context<'w, 's> = Cached<'w, 's, CounterDouble>;
+
+            fn set_children(
+                context: &<Self::Context<'_, '_> as bevy::ecs::system::SystemParam>::Item<'_, '_>,
+                commands: &mut impl super::ChildCommands,
+            ) {
+                commands.add_child(0, CountComponent(context.0), &());
+            }
+        }
+
+        let mut app = App::new();
+
+        app.add_plugins(bevy::time::TimePlugin);
+
+        app.init_resource::<Counter>();
+
+        app.register_maveric::<CounterView>();
+
+        app.update();
+
+        assert_component_count(&mut app, 0);
+
+        set_count(&mut app, 1);
+
+        app.update();
+        app.update();
+        app.update();
+
+        assert_component_count(&mut app, 2);
+
+        app.update();
+
+        fn assert_component_count(app: &mut App, expected: usize) {
+            let world = app.world_mut();
+            let mut query = world.query::<&CountComponent>();
+            let components: Vec<_> = query.iter(&world).collect();
+
+            assert_eq!(1, components.len(), "Should be exactly one count component");
+
+            for count_component in components.iter() {
+                assert_eq!(expected, count_component.0, "Expected component count to be {expected} but was {}", count_component.0);
+            }
+        }
+    }
+
+    #[test]
+    pub fn test_with_one_arg() {
         pub struct CounterDouble(usize);
 
         static TIMES_UPDATED: AtomicUsize = AtomicUsize::new(0);
@@ -219,19 +285,18 @@ pub mod tests {
         app.update();
 
         assert_times_updated(3);
-
-        fn set_count(app: &mut App, new_count: usize) {
-            let mut r = app.world_mut().resource_mut::<Counter>();
-
-            r.set_if_neq(Counter(new_count));
-        }
     }
+    fn set_count(app: &mut App, new_count: usize) {
+        let mut r = app.world_mut().resource_mut::<Counter>();
+
+        r.set_if_neq(Counter(new_count));
+    }
+
+    #[derive(Debug, Resource, Default, PartialEq, Eq)]
+    pub struct Counter(usize);
 
     #[test]
     pub fn test_has_changed() {
-        #[derive(Debug, Resource, Default, PartialEq, Eq)]
-        pub struct Counter(usize);
-
         #[derive(PartialEq, Debug)]
         pub struct CounterDiv2(usize);
 
@@ -295,12 +360,6 @@ pub mod tests {
         set_count(&mut app, 4);
         app.update();
         assert_times_changed(3, "The cached value has changed again");
-
-        fn set_count(app: &mut App, new_count: usize) {
-            let mut r = app.world_mut().resource_mut::<Counter>();
-
-            r.set_if_neq(Counter(new_count));
-        }
     }
 
     #[test]
