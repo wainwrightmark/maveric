@@ -40,6 +40,41 @@ pub trait CanHaveTransition: MavericNode + Sized {
 
         self.with_transition(initial_value, transition, ())
     }
+
+    /// Transition from `initial_value` to `destination` after waiting when the node is first created
+    #[must_use]
+    fn with_transition_in_with_wait<L: Lens + GetValueLens + SetValueLens>(
+        self,
+        initial_value: L::Value,
+        destination: L::Value,
+        duration: Duration,
+        ease: Option<Ease>,
+        wait: Duration
+    ) -> WithTransition<Self, L, ()>
+    where
+        L::Value: Tweenable,
+        L::Object: Component,
+    {
+        let speed = calculate_speed(&initial_value, &destination, duration);
+
+        let transition = match ease {
+            Some(ease) => Transition::ThenEase {
+                destination,
+                speed,
+                next: None,
+                ease,
+            },
+            None => Transition::TweenValue {
+                destination,
+                speed,
+                next: None,
+            },
+        };
+
+        let transition2 = Transition::Wait { remaining: wait, next: Some(Box::new(transition)) };
+
+        self.with_transition(initial_value, transition2, ())
+    }
     /// Transition from `initial_value` to `destination` when the node is first created
     /// Transition to `out_destination` when the node is removed
     #[must_use]

@@ -120,7 +120,9 @@ where
 pub mod tests {
     use std::sync::atomic::AtomicUsize;
 
-    use bevy::prelude::*;
+    use crate as maveric;
+    use bevy::{ecs::system::SystemParam, prelude::*};
+    use maveric_macro::HasChanged;
 
     use crate::{
         has_changed::HasChanged,
@@ -130,8 +132,6 @@ pub mod tests {
 
     #[test]
     pub fn test_in_maveric() {
-        //This test is not passing at the moment (exit code: 0xc000001d, STATUS_ILLEGAL_INSTRUCTION)
-
         #[derive(Debug, PartialEq)]
         pub struct CounterDouble(usize);
 
@@ -148,16 +148,19 @@ pub mod tests {
             }
         }
 
+        #[derive(Debug, SystemParam, HasChanged)]
+        struct XContext<'w, 's>(Res<'w, Counter>, Memo<'s, CounterDouble>);
+
         struct CounterView;
 
         impl MavericRoot for CounterView {
-            type Context<'w, 's> = Memo<'s, CounterDouble>;
+            type Context<'w, 's> = XContext<'w, 's>;
 
             fn set_children(
                 context: &<Self::Context<'_, '_> as bevy::ecs::system::SystemParam>::Item<'_, '_>,
                 commands: &mut impl super::ChildCommands,
             ) {
-                commands.add_child(0, CountComponent(context.0), &());
+                commands.add_child(0, CountComponent(context.1 .0), &());
             }
         }
 
