@@ -35,7 +35,7 @@ pub fn count_transitions() -> usize {
     TRANSITIONS.load(std::sync::atomic::Ordering::SeqCst)
 }
 
-fn reset_tracing() {
+pub fn reset_tracing() {
     SCHEDULED_DELETIONS.store(0, std::sync::atomic::Ordering::SeqCst);
     SCHEDULED_CHANGES.store(0, std::sync::atomic::Ordering::SeqCst);
     GRAPH_UPDATES.store(0, std::sync::atomic::Ordering::SeqCst);
